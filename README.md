@@ -280,3 +280,10 @@ Integrasi ini terutama mendukung fitur pencarian dan pemilihan titik setoran, pe
 KelolaKita bertujuan membangun platform digital yang membantu masyarakat mengelola barang dan sampah dengan lebih terarah. Melalui proses pemeriksaan awal dan klasifikasi **Recycle, Reduce, dan Reuse**, setiap barang dapat diarahkan menuju metode penanganan yang sesuai dengan jenis dan kondisinya.
 
 Platform ini diharapkan dapat membantu masyarakat membangun kebiasaan pengelolaan barang yang lebih bertanggung jawab sekaligus mempermudah proses penyetoran, penyaluran, dan edukasi mengenai pengelolaan sampah.
+
+---
+
+| Name | Link |
+|---|---|---|
+| Figma Design | https://www.figma.com/design/qWvpcmwHTiBDkp8ccrIZ6m/KelolaKita?node-id=0-1&t=dVxiBbASnwhfqU7f-1 |
+| Deployment | https://rafa-darussalam-kelolakita.pws.cs.ui.ac.id/ |
