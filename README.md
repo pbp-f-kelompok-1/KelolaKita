@@ -284,6 +284,6 @@ Platform ini diharapkan dapat membantu masyarakat membangun kebiasaan pengelolaa
 ---
 
 | Name | Link |
-|---|---|---|
+|---|---|
 | Figma Design | https://www.figma.com/design/qWvpcmwHTiBDkp8ccrIZ6m/KelolaKita?node-id=0-1&t=dVxiBbASnwhfqU7f-1 |
 | Deployment | https://rafa-darussalam-kelolakita.pws.cs.ui.ac.id/ |
