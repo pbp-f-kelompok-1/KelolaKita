@@ -18,7 +18,7 @@ KelolaKita hadir untuk membantu masyarakat mengelola barang dan sampah dengan le
 
 | No. | Nama | NPM |
 |---|---|---|
-| 1 | Glenn Josia Devano | 250661472 |
+| 1 | Glenn Josia Devano | 2506614712 |
 | 2 | Ihsan Rafi Ahmad | 2506611326 |
 | 3 | Maxwelly F.H. Simatupang | 2506584294 |
 | 4 | Rafa Darussalam | 2506538924 |
@@ -88,7 +88,7 @@ Modul **Authentication / Profile** digunakan untuk mengelola identitas dan data 
 | Delete | Menonaktifkan atau menghapus data akun |
 
 **Penanggung Jawab:**  
-`Vanka'
+`Rayna Kayla Rayvanka`
 
 ---
 
@@ -116,7 +116,7 @@ Setiap barang yang akan diproses wajib melalui pemeriksaan awal. Hasil pemeriksa
 | Delete | Menghapus data pemeriksaan sesuai kewenangan |
 
 **Penanggung Jawab:**  
-`Rafa`
+`Rafa Darussalam`
 
 ---
 
@@ -144,7 +144,7 @@ Modul **Titik Setoran & Lokasi** digunakan untuk mengelola lokasi penyetoran dan
 | Delete | Menghapus lokasi yang tidak digunakan |
 
 **Penanggung Jawab:**  
-`Maxwell`
+`Maxwelly F.H. Simatupang`
 
 ---
 
@@ -173,7 +173,7 @@ Jadwal penyetoran terdiri atas dua sesi:
 | Delete | Membatalkan permintaan yang masih dapat dibatalkan |
 
 **Penanggung Jawab:**  
-`Ihsan`
+`Ihsan Rafi Ahmad`
 
 ---
 
@@ -202,7 +202,7 @@ Pada kategori **Reduce**, kegiatan difokuskan pada upaya mengurangi timbulan sam
 | Delete | Menghapus data yang sudah tidak digunakan |
 
 **Penanggung Jawab:**  
-`Devan`
+`Glenn Josia Devano`
 
 ---
 
