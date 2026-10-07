@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block content %}
+    <main>
+        <div id="map" style="height: 600px; width: 600px;"></div>
+
+        {{ locations|json_script:"locations_json" }}
+        <script>
+            const map = L.map('map').setView([-6.4025, 106.7942], 13); 
+
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            }).addTo(map);
+            
+            const locations = JSON.parse(
+                document.getElementById('locations_json').textContent
+            );
+
+            locations.forEach(loc => {
+                L.marker([loc.latitude, loc.longitude])
+                    .addTo(map)
+                    .bindPopup(`<b>${loc.name}</b><br>${loc.address}`);
+            });
+
+            L.marker([-6.4025, 106.7942]).addTo(map).bindPopup('Titik Setoran');
+            console.log(locations);
+        </script>
+    </main>
+{% endblock content %}

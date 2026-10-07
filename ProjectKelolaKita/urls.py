@@ -1,4 +1,4 @@
-"""
+""" 
 URL configuration for ProjectKelolaKita project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
@@ -17,9 +17,10 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-from ProjectKelolaKita.views import landing_page
+from ProjectKelolaKita.views import landing_page, show_location
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', landing_page, name='landing_page'),
+    path('locations/', show_location, name="show_location"),
 ]
