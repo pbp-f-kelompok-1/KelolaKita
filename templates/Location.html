@@ -1,29 +1,82 @@
 {% extends 'base.html' %}
 {% block content %}
-    <main>
-        <div id="map" style="height: 600px; width: 600px;"></div>
+<main class="finder">
 
-        {{ locations|json_script:"locations_json" }}
-        <script>
-            const map = L.map('map').setView([-6.4025, 106.7942], 13); 
+    <aside class="panel">
+        <h1 class="panel__title">Temukan titik setoran</h1>
+        <p class="panel__subtitle">Cari mitra berdasarkan lokasi, jenis, barang, dan layanan</p>
+        {% if user.is_superuser %}
+        <a href="{% url 'create_location' %}" class="sort-btn">+ Tambah lokasi</a>
+        {% endif %}
 
-            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            }).addTo(map);
-            
-            const locations = JSON.parse(
-                document.getElementById('locations_json').textContent
-            );
+        <ul class="loc-list" id="loc-list">
+            {% for loc in location_list %}
+            <li class="loc-card" data-id="{{ loc.id }}">
+                <div class="loc-card__top">
+                    <strong>{{ loc.name }}</strong>
+                    <span class="badge-dist">-</span>
+                </div>
+                <span class="loc-card__type">{{ loc.description }}</span>
+                <span class="loc-card__status">{{ loc.open_hours }}</span>
+                <span class="loc-card__meta">{{ loc.city }}</span>
 
-            locations.forEach(loc => {
-                L.marker([loc.latitude, loc.longitude])
-                    .addTo(map)
-                    .bindPopup(`<b>${loc.name}</b><br>${loc.address}`);
-            });
+                <button type="button" class="button-danger"
+                        popovertarget="delete-location-{{ loc.id }}">Hapus</button>
 
-            L.marker([-6.4025, 106.7942]).addTo(map).bindPopup('Titik Setoran');
-            console.log(locations);
-        </script>
-    </main>
+                <div id="delete-location-{{ loc.id }}" class="delete-modal" popover="auto">
+                    <h2>Hapus lokasi?</h2>
+                    <p>Yakin ingin menghapus <strong>{{ loc.name }}</strong>?</p>
+                    <div class="delete-modal__actions">
+                        <button type="button"
+                                popovertarget="delete-location-{{ loc.id }}"
+                                popovertargetaction="hide">Batal</button>
+                        <form method="post" action="{% url 'delete_location' loc.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="button-danger">Ya, hapus</button>
+                        </form>
+                    </div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </aside>
+
+    <section class="map-wrap">
+        <div id="map"></div>
+    </section>
+
+</main>
+
+{{ locations|json_script:"locations_json" }}
+<script>
+    const map = L.map('map').setView([-6.4025, 106.7942], 15);
+
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
+
+    const locations = JSON.parse(document.getElementById('locations_json').textContent);
+
+    locations.forEach(loc => {
+        L.marker([loc.latitude, loc.longitude])
+            .addTo(map)
+            .bindPopup(`<b>${loc.name}</b><br>${loc.address}`);
+    });
+
+    let userMarker = null;
+
+    map.on('locationfound', e => {
+        map.setView(e.latlng, 15);
+        if (userMarker) map.removeLayer(userMarker);
+        userMarker = L.circleMarker(e.latlng, {
+            radius: 8, color: '#fff', weight: 3,
+            fillColor: '#2E7D32', fillOpacity: 1
+        }).addTo(map).bindPopup('Lokasi Anda').openPopup();
+    });
+
+    map.on('locationerror', e => console.warn('Lokasi tidak ditemukan: ' + e.message));
+
+    map.locate({ setView: true, maxZoom: 20, enableHighAccuracy: true });
+</script>
 {% endblock content %}

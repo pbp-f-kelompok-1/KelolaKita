@@ -17,10 +17,12 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-from ProjectKelolaKita.views import landing_page, show_location
+from ProjectKelolaKita.views import landing_page, show_location, create_location, delete_location
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', landing_page, name='landing_page'),
     path('locations/', show_location, name="show_location"),
+    path('locations/add/', create_location, name="create_location"),
+    path("locations/<uuid:location_id>/delete/",delete_location,name="delete_location")
 ]
