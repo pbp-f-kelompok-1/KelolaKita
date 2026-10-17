@@ -15,8 +15,8 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
-
+from django.urls import path, include
+from django.conf import settings
 from ProjectKelolaKita.views import landing_page, show_location, create_location, delete_location
 
 urlpatterns = [
@@ -26,3 +26,9 @@ urlpatterns = [
     path('locations/add/', create_location, name="create_location"),
     path("locations/<uuid:location_id>/delete/",delete_location,name="delete_location")
 ]
+
+if settings.DEBUG:
+    # Include django_browser_reload URLs only in DEBUG mode
+    urlpatterns += [
+        path("__reload__/", include("django_browser_reload.urls")),
+    ]
