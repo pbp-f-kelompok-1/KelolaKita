@@ -146,8 +146,6 @@ WHITENOISE_USE_FINDERS = True
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-<<<<<<< HEAD
-
 TAILWIND_APP_NAME = 'theme'
 
 if DEBUG:
@@ -156,7 +154,4 @@ if DEBUG:
     MIDDLEWARE += [
         "django_browser_reload.middleware.BrowserReloadMiddleware",
     ]
-
-=======
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
->>>>>>> origin/main

@@ -15,15 +15,9 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-<<<<<<< HEAD
 from django.urls import path, include
 from django.conf import settings
-from ProjectKelolaKita.views import landing_page
-=======
-from django.urls import path
-
 from ProjectKelolaKita.views import landing_page, show_location, create_location, delete_location
->>>>>>> origin/main
 
 urlpatterns = [
     path('admin/', admin.site.urls),
