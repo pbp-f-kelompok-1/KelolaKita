@@ -14,6 +14,62 @@ KelolaKita hadir untuk membantu masyarakat mengelola barang dan sampah dengan le
 
 ---
 
+## Menjalankan Website di Localhost
+
+Ikuti langkah berikut untuk menjalankan website KelolaKita secara lokal:
+
+1. Pastikan Python sudah terpasang, lalu buka terminal pada folder utama proyek.
+
+2. Aktifkan virtual environment:
+
+	macOS/Linux:
+
+	```bash
+	source env/bin/activate
+	```
+
+	Windows PowerShell:
+
+	```powershell
+	.\env\Scripts\Activate.ps1
+	```
+
+	Windows Command Prompt:
+
+	```cmd
+	env\Scripts\activate.bat
+	```
+
+3. Install semua dependency proyek:
+
+	```bash
+	pip install -r requirements.txt
+	```
+
+4. Jalankan migrasi database:
+
+	```bash
+	python manage.py migrate
+	```
+
+5. Buka terminal baru pada folder utama proyek, lalu aktifkan kembali virtual environment dan jalankan Tailwind:
+
+	```bash
+	.\env\Scripts\activate
+	python manage.py tailwind start
+	```
+
+6. Pada terminal lainnya, aktifkan virtual environment dan jalankan server Django:
+
+	```bash
+	.\env\Scripts\activate
+	python manage.py runserver
+	```
+
+Tekan `Ctrl + C` pada terminal masing-masing untuk menghentikan Tailwind dan server Django.
+
+---
+
 ## Anggota Kelompok
 
 | No. | Nama | NPM |
