@@ -1,4 +1,4 @@
-"""
+""" 
 URL configuration for ProjectKelolaKita project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
@@ -15,11 +15,20 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
-
-from ProjectKelolaKita.views import landing_page
+from django.urls import path, include
+from django.conf import settings
+from ProjectKelolaKita.views import landing_page, show_location, create_location, delete_location
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', landing_page, name='landing_page'),
+    path('locations/', show_location, name="show_location"),
+    path('locations/add/', create_location, name="create_location"),
+    path("locations/<uuid:location_id>/delete/",delete_location,name="delete_location")
 ]
+
+if settings.DEBUG:
+    # Include django_browser_reload URLs only in DEBUG mode
+    urlpatterns += [
+        path("__reload__/", include("django_browser_reload.urls")),
+    ]
