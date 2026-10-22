@@ -28,7 +28,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-3il9ucw9*$v6-if$@3iq!1dhpxt=(dn3dhw)%$8bl_7!xx+fqh'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("PRODUCTION", "False").lower() == "false"
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "https://pws.cs.ui.ac.id/rafa.darussalam/kelolakita"]
 PRODUCTION = os.getenv('PRODUCTION', 'False').lower() == 'true'
@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'tailwind',
+    'theme',
     'main',
 ]
 
@@ -145,3 +147,13 @@ WHITENOISE_USE_FINDERS = True
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+
+TAILWIND_APP_NAME = 'theme'
+
+if DEBUG:
+    INSTALLED_APPS += ["django_browser_reload"]
+    # Add django_browser_reload middleware only in DEBUG mode
+    MIDDLEWARE += [
+        "django_browser_reload.middleware.BrowserReloadMiddleware",
+    ]
+
