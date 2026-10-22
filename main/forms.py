@@ -1,4 +1,4 @@
-from django.forms import ModelForm, TextInput, Textarea, NumberInput
+from django.forms import ModelForm, TextInput, Textarea, NumberInput, RadioSelect
 from main.models import Location
 
 class LocationForm(ModelForm) :
@@ -14,6 +14,7 @@ class LocationForm(ModelForm) :
             "contact_person",
             "latitude",
             "longitude",
+            "category", 
         ]
 
         labels = {
@@ -84,4 +85,5 @@ class LocationForm(ModelForm) :
                     "id": "id_longitude",
                 }
             ),
+            "category" : RadioSelect,
         }

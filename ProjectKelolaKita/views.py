@@ -44,3 +44,7 @@ def delete_location(request, location_id) :
         return redirect("show_location")
     
     return redirect("show_location")
+
+def location_detail(request, pk):
+    loc = get_object_or_404(Location, pk=pk, is_active=True)
+    return render(request, 'location_detail.html', {'loc': loc})

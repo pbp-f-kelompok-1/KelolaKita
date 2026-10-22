@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block content %}
+<main style="max-width: 720px; margin: 10px 10px; padding: 10px 10px 20px;">
+    <a href="{% url 'show_location' %}">kembali</a>    
+    <h1 class="panel__title" style="font-size: 1.6rem;">{{ loc.name }}</h1>
+    <p>{{ loc.description }}</p>
+    <p>{{ loc.address }}, {{ loc.city }}</p>
+    <p>Jam buka: {{ loc.open_hours }}</p>
+</main>
+{% endblock content %}
