@@ -1,5 +1,5 @@
 from django.forms import ModelForm, TextInput, Textarea, NumberInput, RadioSelect
-from main.models import Location
+from main.models import Location, Pemeriksaan
 
 class LocationForm(ModelForm) :
     class Meta :
@@ -97,3 +97,14 @@ class LocationForm(ModelForm) :
         for name, field in self.fields.items():
             if name != "category":
                 field.widget.attrs["class"] = input_classes
+
+
+class PengajuanBarangForm(ModelForm):
+    class Meta:
+        model = Pemeriksaan
+        fields = ['nama_barang', 'jenis_barang', 'kondisi_barang']
+
+class HasilPemeriksaanForm(ModelForm):
+    class Meta:
+        model = Pemeriksaan
+        fields = ['kategori_penanganan', 'rekomendasi_penanganan']
