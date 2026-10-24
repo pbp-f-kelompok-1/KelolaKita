@@ -1,6 +1,7 @@
 import uuid
 
 from django.db import models
+from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
 
 
@@ -34,3 +35,26 @@ class Location(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Pemeriksaan(models.Model):
+    KATEGORI_CHOICES = [
+        ('menunggu', 'Menunggu'),
+        ('recycle', 'Recycle'),
+        ('reduce', 'Reduce'),
+        ('reuse', 'Reuse'),
+    ]
+
+    pengguna = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    nama_barang = models.CharField(max_length=255)
+    jenis_barang = models.CharField(max_length=100)
+    kondisi_barang = models.TextField()
+
+    kategori_penanganan = models.CharField(max_length=20, choices=KATEGORI_CHOICES, default='Menunggu')
+    rekomendasi_penanganan = models.TextField(blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.nama_barang} - {self.kategori_penanganan}"
