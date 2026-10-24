@@ -5,6 +5,11 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 
 
 class Location(models.Model):
+    class Category(models.TextChoices) :
+        bank_sampah = "bank_sampah", "Bank Sampah"
+        panti_asuhan = "panti_asuhan", "Panti Asuhan"
+        komunitas = "komunitas", "Komunitas"
+    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=255)
@@ -24,6 +29,8 @@ class Location(models.Model):
         decimal_places=6,
         validators=[MinValueValidator(-180), MaxValueValidator(180)],
     )
+
+    category = models.CharField(default=Category.bank_sampah, max_length=20, choices=Category.choices)
 
     def __str__(self):
         return self.name
