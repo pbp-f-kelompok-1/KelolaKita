@@ -108,7 +108,7 @@
                 <h2 class="font-['Plus_Jakarta_Sans'] text-lg font-extrabold text-[#1a2e1c]">3. Sesi penjemputan</h2>
                 <div class="flex flex-col gap-3 sm:flex-row">
                     {% for session in sessions %}
-                    <label class="session-card flex flex-1 cursor-pointer items-center gap-3 rounded-xl border border-[#dce7de] p-4 has-[:checked]:border-[#2e7d32] has-[:checked]:bg-[#e8f5e9]">
+                    <label class="session-card flex flex-1 cursor-pointer items-center gap-3 rounded-xl border border-[#dce7de] p-4 has-[:checked]:border-[#2e7d32] has-[:checked]:bg-[#e8f5e9] has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-40 has-[:disabled]:pointer-events-none">
                         <input type="radio" name="session" value="{{ session.value }}" class="sr-only"
                                {% if session.value == selected_session %}checked{% endif %}
                                data-summary-label="{{ session.name }} &middot; {{ session.time }}">
@@ -116,10 +116,6 @@
                         <span class="flex flex-col gap-0.5">
                             <span class="text-sm font-extrabold text-[#1a2e1c]">{{ session.name }}</span>
                             <span class="text-xs text-[#557a5b]">{{ session.time }}</span>
-                        </span>
-                        <span class="ml-auto shrink-0 rounded-full px-2.5 py-1.5 text-xs font-bold"
-                              style="background-color: {{ session.badge_bg }}; color: {{ session.badge_text }};">
-                            {{ session.slot_count }} slot
                         </span>
                     </label>
                     {% endfor %}
@@ -208,6 +204,7 @@
                 Bisa diubah hingga 12 jam sebelum sesi tanpa biaya.
             </p>
         </aside>
+        {{ availability|json_script:"availability-data" }}
     </form>
 </main>
 
@@ -224,6 +221,28 @@
     const infoTitle = document.getElementById('info-title');
     const infoBody = document.getElementById('info-body');
 
+    const availability = JSON.parse(document.getElementById('availability-data').textContent);
+    const sessionInputs = Array.from(form.querySelectorAll('input[name="session"]'));
+
+    function updateSessionAvailability() {
+        const selectedDate = form.querySelector('input[name="date"]:checked');
+        if (!selectedDate) return;
+        const remainingBySession = availability[selectedDate.value] || {};
+        sessionInputs.forEach((input) => {
+            const remaining = remainingBySession[input.value] ?? 0;
+            const isFull = remaining <= 0;
+            input.disabled = isFull;
+            if (isFull && input.checked) {
+                input.checked = false;
+                const firstAvailable = sessionInputs.find((s) => !s.disabled);
+                if (firstAvailable) {
+                    firstAvailable.checked = true;
+                    summarySession.textContent = firstAvailable.dataset.summaryLabel;
+                }
+            }
+        });
+    }
+
     form.addEventListener('change', (event) => {
         const input = event.target;
         if (input.name === 'method') {
@@ -232,6 +251,7 @@
             infoBody.textContent = input.dataset.infoBody;
         } else if (input.name === 'date') {
             summaryDate.textContent = input.dataset.fullLabel;
+            updateSessionAvailability();
         } else if (input.name === 'session') {
             summarySession.textContent = input.dataset.summaryLabel;
         } else if (input.name === 'barang') {
@@ -241,6 +261,8 @@
             summaryItemKondisi.textContent = input.dataset.kondisi;
         }
     });
+
+    updateSessionAvailability();
 
     // Date pager: show only the active page of 6 date cards (30 days total).
     const dateLabels = Array.from(document.querySelectorAll('#date-track label.date-choice'));
