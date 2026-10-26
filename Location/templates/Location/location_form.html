@@ -1,85 +1,290 @@
 {% extends 'base.html' %}
+
 {% block content %}
 <style>
-    .chip-choice input {
-        position: absolute;
-        opacity: 0;
-        pointer-events: none;
+    /* Pembatas peta agar ukuran tidak merusak layout */
+    #map {
+        height: 320px !important;
+        width: 100% !important;
+        position: relative !important;
+        z-index: 1 !important;
+        border-radius: 0.5rem;
     }
-    .chip-choice:has(input:checked) {
-        background: #2e7d32;
-        border-color: #2e7d32;
-        color: #fff;
+    
+    .form-card {
+        max-width: 48rem;
+        margin: 2rem auto;
+        padding: 1.5rem;
+        background-color: #ffffff;
+        border-radius: 0.75rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
-    .chip-choice:has(input:focus-visible) {
-        outline: 2px solid #2e7d32;
-        outline-offset: 2px;
+
+    /* Style untuk merapikan radio button category dari Django */
+    #id_category {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 0.5rem;
+        margin-top: 0.25rem;
+    }
+    #id_category label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        font-size: 0.9rem;
+    }
+
+    .custom-green-pin {
+        width: 24px;
+        height: 24px;
+        background-color: #15803d; /* Warna hijau */
+        border: 3px solid #ffffff;  /* Bingkai putih */
+        border-radius: 50%;         /* Lingkaran sempurna */
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3); /* Bayangan lembut */
+        box-sizing: border-box;
     }
 </style>
 
-<main class="mx-auto max-w-full px-5 py-8 font-sans text-ink">
+<main class="form-card max-w-3xl mx-auto p-6 bg-white rounded-xl shadow-md my-8">
+    <h1 class="text-2xl font-bold text-gray-800 mb-2">Tambah Lokasi Setoran Baru</h1>
+    <p class="text-gray-600 text-sm mb-6">Cari lokasi menggunakan pencarian atau klik langsung titik lokasi pada peta.</p>
 
-    <a href="{% url 'show_location' %}"
-       class="mb-4 inline-flex items-center gap-1 text-sm font-bold text-brand hover:text-brand-dark">
-        Kembali ke peta
-    </a>
-
-    <div class="rounded-2xl border border-line bg-white p-6 shadow-[0_10px_30px_rgba(0,0,0,0.06)]">
-        <h1 class="text-[1.4rem] font-extrabold tracking-[-0.02em] text-[#1a2e1c]">Tambah lokasi</h1>
-        <p class="mb-6 mt-1 text-sm text-[#557A5B]">Isi data titik setoran dengan lengkap.</p>
-
-        <form method="post" action="" class="location-form flex flex-col gap-5">
-            {% csrf_token %}
-
-            {% if form.non_field_errors %}
-            <div class="rounded-[10px] border border-[#f1c0bb] bg-[#fdecea] px-3.5 py-3 text-sm font-semibold text-[#b42318]">
-                {{ form.non_field_errors }}
-            </div>
-            {% endif %}
-
-            {% for field in form.visible_fields %}
-                {% if field.name != "category" %}
-                <div class="flex flex-col gap-1.5">
-                    <label for="{{ field.id_for_label }}" class="text-[0.8rem] font-bold">{{ field.label }}</label>
-                    {{ field }}
-                    {% if field.help_text %}
-                        <p class="text-xs text-muted">{{ field.help_text }}</p>
-                    {% endif %}
-                    {% for error in field.errors %}
-                        <p class="text-xs font-semibold text-[#b42318]">{{ error }}</p>
-                    {% endfor %}
-                </div>
-                {% endif %}
-            {% endfor %}
-
-            <fieldset class="flex flex-col">
-                <legend class="mb-2 text-[0.8rem] font-bold">Kategori</legend>
-                <div class="flex flex-wrap justify-start gap-2">
-                    {% for radio in form.category %}
-                    <label class="chip-choice relative flex cursor-pointer items-center gap-1.5 rounded-full border border-[#dfe5e0] bg-white px-3.5 py-1.5 text-xs font-semibold text-[#5f6f64] transition-colors hover:border-[#2e7d32]">
-                        {{ radio.tag }}
-                        {{ radio.choice_label }}
-                    </label>
-                    {% endfor %}
-                </div>
-                {% for error in form.category.errors %}
-                    <p class="mt-1.5 text-xs font-semibold text-[#b42318]">{{ error }}</p>
-                {% endfor %}
-            </fieldset>
-
-            {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
-
-            <div class="mt-2 flex items-center justify-end gap-3">
-                <a href="{% url 'show_location' %}"
-                class="rounded-[10px] border border-[#dfe5e0] px-4 py-[11px] text-sm font-bold text-[#2e7d32] transition hover:border-[#81c784] hover:bg-[#e8f5e9]">
-                    Batal
-                </a>
-                <button type="submit"
-                        class="cursor-pointer rounded-[10px] bg-[#2e7d32] px-5 py-[11px] text-sm font-bold text-white transition hover:bg-[#1f5a23] active:scale-[0.98]">
-                    Simpan lokasi
-                </button>
-            </div>
-        </form>
+    <div class="mb-4">
+        <label for="form-search-input" class="block text-sm font-medium text-gray-700 mb-1">Cari Nama Tempat / Alamat</label>
+        <div class="flex gap-2" style="display: flex; gap: 0.5rem;">
+            <input 
+                type="search" 
+                id="form-search-input" 
+                class="w-full rounded-[10px] border border-line bg-white px-3.5 py-3 text-[0.9rem] text-ink focus:border-brand focus:outline-2 focus:outline-brand" 
+                placeholder="Contoh: Cibinong, Depok, atau Fasilkom UI"
+                autocomplete="off"
+            >
+            <button 
+                type="button" 
+                id="btn-search-loc" 
+                class="px-5 py-2.5 bg-green-700 text-white font-medium rounded-lg hover:bg-green-800 transition"
+                style="padding: 0.625rem 1.25rem; background-color: #15803d; color: white; border-radius: 0.5rem; border: none; cursor: pointer;"
+            >
+                Cari
+            </button>
+        </div>
+        <p id="search-status" class="text-xs text-gray-500 mt-1" role="status" aria-live="polite"></p>
     </div>
+
+    <div class="mb-6">
+        <div id="map"></div>
+    </div>
+
+    <form method="post" action="{% url 'create_location' %}" class="space-y-4">
+        {% csrf_token %}
+
+        {% for field in form %}
+            <div class="mb-4">
+                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                    {{ field.label }}
+                </label>
+
+                {{ field }}
+
+                {% if field.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ field.errors.0 }}</p>
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        <div class="pt-4">
+            <button 
+                type="submit" 
+                class="w-full py-3 bg-green-700 text-white font-semibold rounded-lg hover:bg-green-800 transition shadow-md"
+                style="width: 100%; padding: 0.75rem; background-color: #15803d; color: white; font-weight: 600; border-radius: 0.5rem; border: none; cursor: pointer;"
+            >
+                Simpan Lokasi
+            </button>
+        </div>
+    </form>
 </main>
+
+<script>
+    const map = L.map('map').setView([-6.4025, 106.7942], 12);
+
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    setTimeout(() => {
+        map.invalidateSize();
+    }, 200);
+
+    let marker = null;
+
+    function setLocationData(lat, lng, addressText = null, cityText = null, stateText = null) {
+        const latInput = document.getElementById('id_latitude');
+        const lngInput = document.getElementById('id_longitude');
+        const addressInput = document.getElementById('id_address');
+        const cityInput = document.getElementById('id_city');
+        const provinceInput = document.getElementById('id_province');
+
+        if (latInput) latInput.value = parseFloat(lat).toFixed(6);
+        if (lngInput) lngInput.value = parseFloat(lng).toFixed(6);
+
+        if (addressText && addressInput) addressInput.value = addressText;
+        if (cityText && cityInput) cityInput.value = cityText;
+        if (stateText && provinceInput) provinceInput.value = stateText;
+
+        if (marker) {
+            marker.setLatLng([lat, lng]);
+        } else {
+            marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+
+            marker.on('dragend', function (e) {
+                const pos = marker.getLatLng();
+                fetchAddressFromCoords(pos.lat, pos.lng);
+            });
+        }
+
+        map.flyTo([lat, lng], 16, { duration: 0.8 });
+    }
+
+    async function fetchAddressFromCoords(lat, lng) {
+        const addressInput = document.getElementById('id_address');
+        if (addressInput) addressInput.value = "Mengambil alamat...";
+
+        try {
+            // Memanggil API Geocode backend Anda
+            const params = new URLSearchParams({ q: `${lat}, ${lng}` });
+            const geocodeUrl = "{% url 'Location:geocode_location' %}";
+
+            const response = await fetch(`${geocodeUrl}?${params.toString()}`, {
+                headers: { "Accept": "application/json" }
+            });
+
+            if (!response.ok) throw new Error('Gagal mengambil data lokasi.');
+
+            const data = await response.json();
+
+            if (data.results && data.results.length > 0) {
+                const place = data.results[0];
+                const addr = place.address || {};
+                const cityName = addr.city || addr.regency || addr.town || addr.city_district || '';
+                const provinceName = addr.state || '';
+
+                setLocationData(lat, lng, place.display_name, cityName, provinceName);
+            } else {
+                setLocationData(lat, lng);
+            }
+        } catch (error) {
+            console.error('Error Reverse Geocoding:', error);
+            setLocationData(lat, lng);
+        }
+    }
+
+    map.on('click', function (e) {
+        fetchAddressFromCoords(e.latlng.lat, e.latlng.lng);
+    });
+
+    const searchBtn = document.getElementById('btn-search-loc');
+    const searchInput = document.getElementById('form-search-input');
+    const searchStatus = document.getElementById('search-status');
+
+    async function handleSearch() {
+        const query = searchInput.value.trim();
+        if (!query) {
+            searchStatus.textContent = 'Masukkan nama lokasi terlebih dahulu.';
+            return;
+        }
+
+        searchStatus.textContent = 'Mencari lokasi...';
+
+        try {
+            const params = new URLSearchParams({ q: query });
+            const geocodeUrl = "{% url 'Location:geocode_location' %}";
+
+            const response = await fetch(`${geocodeUrl}?${params.toString()}`, {
+                headers: { "Accept": "application/json" }
+            });
+
+            if (!response.ok) throw new Error('Pencarian gagal.');
+
+            const data = await response.json();
+
+            if (!data.results || data.results.length === 0) {
+                searchStatus.textContent = 'Lokasi tidak ditemukan.';
+                return;
+            }
+
+            const place = data.results[0];
+            const lat = Number(place.lat);
+            const lon = Number(place.lon);
+
+            const addr = place.address || {};
+            const cityName = addr.city || addr.regency || addr.town || addr.city_district || '';
+            const provinceName = addr.state || '';
+
+            const nameInput = document.getElementById('id_name');
+            if (nameInput && !nameInput.value) {
+                nameInput.value = place.name || place.display_name.split(',')[0];
+            }
+
+            setLocationData(lat, lon, place.display_name, cityName, provinceName);
+            searchStatus.textContent = ''; 
+
+        } catch (error) {
+            console.error('Error Geocoding:', error);
+            searchStatus.textContent = 'Gagal menghubungi layanan pencarian.';
+        }
+    }
+
+    searchBtn.addEventListener('click', handleSearch);
+
+    searchInput.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleSearch();
+        }
+    });
+
+    searchInput.addEventListener('input', function () {
+        searchStatus.textContent = '';
+    });
+
+    const greenCircleIcon = L.divIcon({
+        className: 'custom-green-pin-container', 
+        html: '<div class="custom-green-pin"></div>',
+        iconSize: [24, 24],
+        iconAnchor: [12, 12] 
+    });
+
+    function setLocationData(lat, lng, addressText = null, cityText = null, stateText = null) {
+        const latInput = document.getElementById('id_latitude');
+        const lngInput = document.getElementById('id_longitude');
+        const addressInput = document.getElementById('id_address');
+        const cityInput = document.getElementById('id_city');
+        const provinceInput = document.getElementById('id_province');
+
+        if (latInput) latInput.value = parseFloat(lat).toFixed(6);
+        if (lngInput) lngInput.value = parseFloat(lng).toFixed(6);
+
+        if (addressText && addressInput) addressInput.value = addressText;
+        if (cityText && cityInput) cityInput.value = cityText;
+        if (stateText && provinceInput) provinceInput.value = stateText;
+
+        if (marker) {
+            marker.setLatLng([lat, lng]);
+        } else {
+            marker = L.marker([lat, lng], { 
+                icon: greenCircleIcon, 
+                draggable: true 
+            }).addTo(map);
+
+            marker.on('dragend', function (e) {
+                const pos = marker.getLatLng();
+                fetchAddressFromCoords(pos.lat, pos.lng);
+            });
+        }
+
+        map.flyTo([lat, lng], 16, { duration: 0.8 });
+    }
+</script>
 {% endblock content %}

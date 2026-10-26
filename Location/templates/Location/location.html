@@ -120,6 +120,15 @@
         iconAnchor: [20, 20],
     });
 
+    // Custom Icon Bulat Biru untuk Hasil Pencarian
+    const searchPinIcon = L.divIcon({
+        className: 'search-pin-wrap',
+        html: '<div style="width:24px; height:24px; background-color:#2563eb; border:3px solid #ffffff; border-radius:50%; box-shadow:0 2px 6px rgba(0,0,0,0.35); box-sizing:border-box;"></div>',
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
+        popupAnchor: [0, -12]
+    });
+
     function setSelectedStyle(id, on) {
         if (id === null) return;
         const el = markers[id] && markers[id].getElement();
@@ -155,7 +164,6 @@
         dc.card.hidden = true;
     }
 
-    // Fungsi Pembantu: Menghitung Jarak ke Setiap Kartu
     function updateDistances(originLatLng) {
         document.querySelectorAll('.loc-card').forEach(card => {
             const loc = byId[card.dataset.id];
@@ -191,14 +199,18 @@
         console.log('Lokasi dipilih:', byId[selectedId].name);
     });
 
-    // Device Geolocation Handlers
+    // Device Geolocation Handlers (LOKASI PENGGUNA BERWARNA BIRU)
     let userMarker = null;
 
     map.on('locationfound', e => {
         if (userMarker) map.removeLayer(userMarker);
+        
         userMarker = L.circleMarker(e.latlng, {
-            radius: 8, color: '#fff', weight: 3,
-            fillColor: '#2E7D32', fillOpacity: 1
+            radius: 9,
+            color: '#ffffff',
+            weight: 3,
+            fillColor: '#2563eb',  // Warna Biru
+            fillOpacity: 1
         }).addTo(map);
 
         updateDistances(e.latlng);
@@ -208,10 +220,7 @@
 
     map.locate({ enableHighAccuracy: true });
 
-// ==========================================
     // NOMINATIM GEOCODING SEARCH
-    // ==========================================
-
     const searchForm = document.getElementById('search-form');
     const searchInput = document.getElementById('search-input');
     const searchStatus = document.getElementById('search-status');
@@ -282,12 +291,11 @@
             const popupContent = document.createElement('div');
             popupContent.textContent = place.display_name;
 
-            searchMarker = L.marker(targetLatLng)
+            searchMarker = L.marker(targetLatLng, { icon: searchPinIcon })
                 .addTo(map)
                 .bindPopup(popupContent)
                 .openPopup();
 
-            // Perbarui hitungan jarak mitra dari lokasi yang baru dicari
             updateDistances(targetLatLng);
 
             searchStatus.textContent = ``;
