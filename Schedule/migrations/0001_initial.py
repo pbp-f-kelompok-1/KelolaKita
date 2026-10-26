@@ -37,7 +37,7 @@ class Migration(migrations.Migration):
                 ('contact', models.CharField(max_length=255)),
                 ('notes', models.CharField(blank=True, default='', max_length=255)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('barang', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='penjadwalan_set', to='jadwal.pemeriksaan')),
+                ('barang', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='penjadwalan_set', to='Schedule.pemeriksaan')),
             ],
         ),
     ]

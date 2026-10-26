@@ -45,8 +45,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'tailwind',
     'theme',
-    'main',
-    'jadwal',
+    'Location',
+    'Schedule',
 ]
 
 MIDDLEWARE = [

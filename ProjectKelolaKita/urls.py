@@ -26,7 +26,7 @@ urlpatterns = [
     path('locations/add/', create_location, name="create_location"),
     path("locations/<uuid:location_id>/delete/",delete_location,name="delete_location"),
     path('location/<uuid:pk>/', location_detail, name='location_detail'),
-    path('jadwal/', include('jadwal.urls')),
+    path('jadwal/', include('Schedule.urls')),
 ]
 
 if settings.DEBUG:
