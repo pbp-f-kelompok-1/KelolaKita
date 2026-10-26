@@ -305,10 +305,6 @@
     width: calc(var(--spacing) * 11);
     height: calc(var(--spacing) * 11);
   }
-  .size-\[17px\] {
-    width: 17px;
-    height: 17px;
-  }
   .size-\[18px\] {
     width: 18px;
     height: 18px;
@@ -646,10 +642,6 @@
     font-size: var(--text-5xl);
     line-height: var(--tw-leading, var(--text-5xl--line-height));
   }
-  .text-base {
-    font-size: var(--text-base);
-    line-height: var(--tw-leading, var(--text-base--line-height));
-  }
   .text-lg {
     font-size: var(--text-lg);
     line-height: var(--tw-leading, var(--text-lg--line-height));
@@ -750,9 +742,6 @@
   }
   .text-\[\#5f6f64\] {
     color: #5f6f64;
-  }
-  .text-\[\#8a5b00\] {
-    color: #8a5b00;
   }
   .text-\[\#81c784\] {
     color: #81c784;

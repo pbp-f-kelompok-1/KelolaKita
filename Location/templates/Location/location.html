@@ -7,13 +7,29 @@
         <p class="panel__subtitle">Cari mitra berdasarkan lokasi, jenis, barang, dan layanan</p>
 
         <form class="search-box" id="search-form" role="search">
-            <svg class="search-box__icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-                <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
+            <svg class="search-box__icon" viewBox="0 0 24 24"
+                width="18" height="18" fill="none"
+                stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7"/>
+                <path d="M20 20l-3.5-3.5"/>
             </svg>
-            <input type="search" id="search-input" class="search-input"
-                placeholder="Contoh: Tebet, Jakarta Selatan" autocomplete="off">
+
+            <input
+                type="search"
+                id="search-input"
+                class="search-input"
+                placeholder="Contoh: Tebet, Jakarta Selatan"
+                autocomplete="off"
+            >
+
+            <button type="submit" class="sort-btn">
+                Cari
+            </button>
         </form>
+
+        <p id="search-status" role="status" aria-live="polite"></p>
+        
         <a href="{% url 'create_location' %}" class="sort-btn">Tambah lokasi</a>
 
         <ul class="loc-list" id="loc-list">
@@ -26,7 +42,9 @@
                 <span class="loc-card__type">{{ loc.description }}</span>
                 <span class="loc-card__status">{{ loc.open_hours }}</span>
                 <span class="loc-card__meta">{{ loc.city }}</span>
-                <span>{{ loc.category }}</span>
+                <span class="chip-choice relative flex cursor-pointer items-center gap-1.5 rounded-full border border-[#dfe5e0] bg-white px-3.5 py-1.5 text-xs font-semibold text-[#5f6f64] transition-colors hover:border-[#2e7d32]">
+                   {{ loc.get_category_display }}
+                </span>
 
                 <button type="button" class="button-danger"
                         popovertarget="delete-location-{{ loc.id }}">Hapus</button>
@@ -69,6 +87,7 @@
 </main>
 
 {{ locations|json_script:"locations_json" }}
+
 <script>
     const map = L.map('map').setView([-6.4025, 106.7942], 15);
 
@@ -136,6 +155,19 @@
         dc.card.hidden = true;
     }
 
+    // Fungsi Pembantu: Menghitung Jarak ke Setiap Kartu
+    function updateDistances(originLatLng) {
+        document.querySelectorAll('.loc-card').forEach(card => {
+            const loc = byId[card.dataset.id];
+            if (!loc) return;
+            const m = map.distance(originLatLng, [loc.latitude, loc.longitude]);
+            const badge = card.querySelector('.badge-dist');
+            if (badge) {
+                badge.textContent = m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`;
+            }
+        });
+    }
+
     locations.forEach(loc => {
         byId[loc.id] = loc;
         markers[loc.id] = L.marker([loc.latitude, loc.longitude], { icon: pinIcon })
@@ -159,6 +191,7 @@
         console.log('Lokasi dipilih:', byId[selectedId].name);
     });
 
+    // Device Geolocation Handlers
     let userMarker = null;
 
     map.on('locationfound', e => {
@@ -168,17 +201,101 @@
             fillColor: '#2E7D32', fillOpacity: 1
         }).addTo(map);
 
-        document.querySelectorAll('.loc-card').forEach(card => {
-            const loc = byId[card.dataset.id];
-            if (!loc) return;
-            const m = map.distance(e.latlng, [loc.latitude, loc.longitude]);
-            card.querySelector('.badge-dist').textContent =
-                m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`;
-        });
+        updateDistances(e.latlng);
     });
 
-    map.on('locationerror', e => console.warn('Lokasi tidak ditemukan: ' + e.message));
+    map.on('locationerror', e => console.warn('Lokasi pengguna tidak ditemukan: ' + e.message));
 
     map.locate({ enableHighAccuracy: true });
-    </script>
+
+// ==========================================
+    // NOMINATIM GEOCODING SEARCH
+    // ==========================================
+
+    const searchForm = document.getElementById('search-form');
+    const searchInput = document.getElementById('search-input');
+    const searchStatus = document.getElementById('search-status');
+
+    let searchMarker = null;
+    let lastSearchTime = 0;
+
+    searchForm.addEventListener('submit', async function (event) {
+        event.preventDefault();
+
+        const query = searchInput.value.trim();
+
+        if (!query) {
+            searchStatus.textContent = 'Masukkan nama lokasi terlebih dahulu.';
+            return;
+        }
+
+        const now = Date.now();
+        if (now - lastSearchTime < 1000) {
+            searchStatus.textContent = 'Tunggu sebentar sebelum mencari lagi.';
+            return;
+        }
+
+        lastSearchTime = now;
+        searchStatus.textContent = 'Mencari lokasi...';
+
+        try {
+            const params = new URLSearchParams({ q: query });
+            const geocodeUrl = "{% url 'Location:geocode_location' %}";
+            const response = await fetch(`${geocodeUrl}?${params.toString()}`, {
+                headers: { "Accept": "application/json" }
+            });
+
+            const contentType = response.headers.get("content-type") || "";
+
+            if (!response.ok || !contentType.includes("application/json")) {
+                throw new Error(`Koneksi server gagal (HTTP ${response.status}).`);
+            }
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Pencarian gagal.');
+            }
+
+            const results = data.results;
+
+            if (!results || results.length === 0) {
+                searchStatus.textContent = 'Lokasi tidak ditemukan.';
+                return;
+            }
+
+            const place = results[0];
+            const lat = Number(place.lat);
+            const lon = Number(place.lon);
+
+            if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+                throw new Error('Koordinat lokasi tidak valid.');
+            }
+
+            const targetLatLng = L.latLng(lat, lon);
+            map.flyTo(targetLatLng, 16, { duration: 0.8 });
+
+            if (searchMarker) {
+                map.removeLayer(searchMarker);
+            }
+
+            const popupContent = document.createElement('div');
+            popupContent.textContent = place.display_name;
+
+            searchMarker = L.marker(targetLatLng)
+                .addTo(map)
+                .bindPopup(popupContent)
+                .openPopup();
+
+            // Perbarui hitungan jarak mitra dari lokasi yang baru dicari
+            updateDistances(targetLatLng);
+
+            searchStatus.textContent = ``;
+
+        } catch (error) {
+            console.error('Location search error:', error);
+            searchStatus.textContent = error.message || 'Pencarian gagal. Coba lagi nanti.';
+        }
+    });
+</script>
 {% endblock content %}
