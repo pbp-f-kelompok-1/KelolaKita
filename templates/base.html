@@ -1,24 +1,97 @@
 {% load static tailwind_tags %}
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}KelolaKita{% endblock title %}</title>
     <link rel="stylesheet" href="/static/css/globals.css">
     {% tailwind_css %}
     {% block meta %} {% endblock meta %}
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&family=Plus+Jakarta+Sans:wght@800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 
-<body>
-    <header class="site-header">
-        Header
+<body class="bg-[#f4f6f5] font-['Inter']">
+    <header class="site-header sticky top-0 z-20 flex h-[76px] w-full items-center justify-between border-b border-[#dce7de] bg-white px-16">
+        <a href="{% url 'landing_page' %}" class="flex shrink-0 items-center gap-2.5">
+            <span class="flex size-[38px] shrink-0 items-center justify-center rounded-xl bg-[#2e7d32]">
+                <img src="{% static 'icons/leaf.svg' %}" alt="" class="size-[22px]">
+            </span>
+            <span class="font-['Plus_Jakarta_Sans'] text-xl font-extrabold text-[#1a2e1c]">KelolaKita</span>
+        </a>
+
+        <nav class="flex items-center gap-[30px]">
+            <a href="{% url 'landing_page' %}"
+               class="flex flex-col items-center gap-[9px] text-sm whitespace-nowrap {% if active_nav == 'beranda' %}font-bold text-[#2e7d32]{% else %}font-medium text-[#557a5b] hover:text-[#2e7d32]{% endif %}">
+                Beranda
+                <span class="h-[3px] w-6 rounded-full bg-[#2e7d32] {% if active_nav != 'beranda' %}invisible{% endif %}"></span>
+            </a>
+            <a href="#"
+               class="flex flex-col items-center gap-[9px] text-sm whitespace-nowrap {% if active_nav == 'pengajuan' %}font-bold text-[#2e7d32]{% else %}font-medium text-[#557a5b] hover:text-[#2e7d32]{% endif %}">
+                Pengajuan
+                <span class="h-[3px] w-6 rounded-full bg-[#2e7d32] {% if active_nav != 'pengajuan' %}invisible{% endif %}"></span>
+            </a>
+            <a href="{% url 'show_location' %}"
+               class="flex flex-col items-center gap-[9px] text-sm whitespace-nowrap {% if active_nav == 'peta' %}font-bold text-[#2e7d32]{% else %}font-medium text-[#557a5b] hover:text-[#2e7d32]{% endif %}">
+                Peta Setoran
+                <span class="h-[3px] w-6 rounded-full bg-[#2e7d32] {% if active_nav != 'peta' %}invisible{% endif %}"></span>
+            </a>
+            <a href="{% url 'show_schedule' %}"
+               class="flex flex-col items-center gap-[9px] text-sm whitespace-nowrap {% if active_nav == 'jadwal' %}font-bold text-[#2e7d32]{% else %}font-medium text-[#557a5b] hover:text-[#2e7d32]{% endif %}">
+                Jadwal
+                <span class="h-[3px] w-6 rounded-full bg-[#2e7d32] {% if active_nav != 'jadwal' %}invisible{% endif %}"></span>
+            </a>
+            <a href="#"
+               class="flex flex-col items-center gap-[9px] text-sm whitespace-nowrap {% if active_nav == 'edukasi' %}font-bold text-[#2e7d32]{% else %}font-medium text-[#557a5b] hover:text-[#2e7d32]{% endif %}">
+                Edukasi
+                <span class="h-[3px] w-6 rounded-full bg-[#2e7d32] {% if active_nav != 'edukasi' %}invisible{% endif %}"></span>
+            </a>
+        </nav>
+
+        <div class="flex shrink-0 items-center gap-3">
+            <span class="flex items-center gap-[7px] rounded-full bg-[#fff4d6] px-3 py-2">
+                <img src="{% static 'icons/sparkles.svg' %}" alt="" class="size-4">
+                <span class="text-[13px] font-bold whitespace-nowrap text-[#1a2e1c]">1.240 poin</span>
+            </span>
+            <img src="{% static 'img/schedule/avatar-placeholder.png' %}" alt="Avatar pengguna"
+                 class="size-[38px] shrink-0 rounded-full object-cover">
+        </div>
     </header>
+
+    {% if messages %}
+    <div class="mx-auto flex w-full max-w-[1440px] flex-col gap-2 px-16 pt-4">
+        {% for message in messages %}
+        <div class="rounded-[10px] border px-4 py-3 text-sm font-semibold {% if message.tags == 'success' %}border-[#81c784] bg-[#e8f5e9] text-[#1f5a23]{% else %}border-[#f1c0bb] bg-[#fdecea] text-[#b42318]{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     {% block content %} {% endblock content %}
 
-    <footer class="site-footer">
-        Footer
+    <footer class="site-footer flex w-full flex-wrap items-center justify-between gap-6 bg-[#1a2e1c] px-16 py-8">
+        <div class="flex flex-col gap-2">
+            <p class="font-['Plus_Jakarta_Sans'] text-lg font-extrabold text-white">KelolaKita</p>
+            <p class="text-[13px] text-[#81c784]">Barang lebih berguna, kota lebih berdaya.</p>
+        </div>
+        <div class="flex flex-wrap gap-7 text-[13px] text-white">
+            <a href="#" class="hover:text-[#81c784]">Tentang</a>
+            <a href="#" class="hover:text-[#81c784]">Mitra</a>
+            <a href="#" class="hover:text-[#81c784]">Privasi</a>
+            <a href="#" class="hover:text-[#81c784]">Pusat Bantuan</a>
+        </div>
+        <p class="text-xs text-[#81c784]">&copy; {% now "Y" %} KelolaKita</p>
     </footer>
 </body>
 

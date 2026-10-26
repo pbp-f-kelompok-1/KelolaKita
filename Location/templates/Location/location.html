@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+{% block content %}
+<main class="finder">
+
+    <aside class="panel">
+        <h1 class="panel__title">Temukan titik setoran</h1>
+        <p class="panel__subtitle">Cari mitra berdasarkan lokasi, jenis, barang, dan layanan</p>
+
+        <form class="search-box" id="search-form" role="search">
+            <svg class="search-box__icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
+            </svg>
+            <input type="search" id="search-input" class="search-input"
+                placeholder="Contoh: Tebet, Jakarta Selatan" autocomplete="off">
+        </form>
+        <a href="{% url 'create_location' %}" class="sort-btn">Tambah lokasi</a>
+
+        <ul class="loc-list" id="loc-list">
+            {% for loc in location_list %}
+            <li class="loc-card" data-id="{{ loc.id }}">
+                <div class="loc-card__top">
+                    <strong>{{ loc.name }}</strong>
+                    <span class="badge-dist">-</span>
+                </div>
+                <span class="loc-card__type">{{ loc.description }}</span>
+                <span class="loc-card__status">{{ loc.open_hours }}</span>
+                <span class="loc-card__meta">{{ loc.city }}</span>
+                <span>{{ loc.category }}</span>
+
+                <button type="button" class="button-danger"
+                        popovertarget="delete-location-{{ loc.id }}">Hapus</button>
+
+                <div id="delete-location-{{ loc.id }}" class="delete-modal" popover="auto">
+                    <h2>Hapus lokasi?</h2>
+                    <p>Yakin ingin menghapus <strong>{{ loc.name }}</strong>?</p>
+                    <div class="delete-modal__actions">
+                        <button type="button"
+                                popovertarget="delete-location-{{ loc.id }}"
+                                popovertargetaction="hide">Batal</button>
+                        <form method="post" action="{% url 'delete_location' loc.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="button-danger">Ya, hapus</button>
+                        </form>
+                    </div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        <p class="empty-note" id="empty-note" hidden>Tidak ada lokasi yang cocok. Coba kata kunci lain.</p>
+    </aside>
+
+    <section class="map-wrap">
+        <div id="map"></div>
+
+        <div class="detail-card" id="detail-card" hidden>
+            <div class="detail-card__head">
+                <strong id="dc-name"></strong>
+                <span class="badge-open" id="dc-hours"></span>
+            </div>
+            <p id="dc-address"></p>
+            <div class="detail-card__actions">
+                <a class="btn btn--ghost" id="dc-detail" href="#">Lihat detail</a>
+                <button class="btn btn--primary" id="dc-pick" type="button">Pilih lokasi</button>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+{{ locations|json_script:"locations_json" }}
+<script>
+    const map = L.map('map').setView([-6.4025, 106.7942], 15);
+
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
+
+    const locations = JSON.parse(document.getElementById('locations_json').textContent);
+    const byId = {};
+    const markers = {};
+    let selectedId = null;
+
+    const NIL_UUID = '00000000-0000-0000-0000-000000000000';
+    const detailUrlTpl = "{% url 'location_detail' '00000000-0000-0000-0000-000000000000' %}";
+    
+    const dc = {
+        card:    document.getElementById('detail-card'),
+        name:    document.getElementById('dc-name'),
+        hours:   document.getElementById('dc-hours'),
+        address: document.getElementById('dc-address'),
+        detail:  document.getElementById('dc-detail'),
+        pick:    document.getElementById('dc-pick'),
+    };
+
+    const pinIcon = L.divIcon({
+        className: 'pin-wrap',
+        html: '<div class="pin-marker"></div>',
+        iconSize: [40, 40],
+        iconAnchor: [20, 20],
+    });
+
+    function setSelectedStyle(id, on) {
+        if (id === null) return;
+        const el = markers[id] && markers[id].getElement();
+        if (el) el.querySelector('.pin-marker').classList.toggle('is-selected', on);
+        const card = document.querySelector(`.loc-card[data-id="${id}"]`);
+        if (card) card.classList.toggle('is-selected', on);
+    }
+
+    function selectLocation(id) {
+        const loc = byId[id];
+        if (!loc) return;
+
+        setSelectedStyle(selectedId, false);
+        selectedId = id;
+        setSelectedStyle(id, true);
+
+        dc.name.textContent = loc.name;
+        dc.hours.textContent = loc.open_hours;
+        dc.hours.classList.toggle('is-closed', /tutup/i.test(loc.open_hours));
+        dc.address.textContent = `${loc.address} · ${loc.city}`;
+        dc.detail.href = detailUrlTpl.replace(NIL_UUID, id);
+        dc.card.hidden = false;
+
+        map.flyTo([loc.latitude, loc.longitude], Math.max(map.getZoom(), 16), { duration: 0.5 });
+
+        const card = document.querySelector(`.loc-card[data-id="${id}"]`);
+        if (card) card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+
+    function clearSelection() {
+        setSelectedStyle(selectedId, false);
+        selectedId = null;
+        dc.card.hidden = true;
+    }
+
+    locations.forEach(loc => {
+        byId[loc.id] = loc;
+        markers[loc.id] = L.marker([loc.latitude, loc.longitude], { icon: pinIcon })
+            .addTo(map)
+            .on('click', e => {
+                L.DomEvent.stopPropagation(e);
+                selectLocation(loc.id);
+            });
+    });
+
+    document.getElementById('loc-list').addEventListener('click', e => {
+        if (e.target.closest('.button-danger, .delete-modal')) return;
+        const card = e.target.closest('.loc-card');
+        if (card) selectLocation(card.dataset.id);
+    });
+
+    map.on('click', clearSelection);
+
+    dc.pick.addEventListener('click', () => {
+        if (selectedId === null) return;
+        console.log('Lokasi dipilih:', byId[selectedId].name);
+    });
+
+    let userMarker = null;
+
+    map.on('locationfound', e => {
+        if (userMarker) map.removeLayer(userMarker);
+        userMarker = L.circleMarker(e.latlng, {
+            radius: 8, color: '#fff', weight: 3,
+            fillColor: '#2E7D32', fillOpacity: 1
+        }).addTo(map);
+
+        document.querySelectorAll('.loc-card').forEach(card => {
+            const loc = byId[card.dataset.id];
+            if (!loc) return;
+            const m = map.distance(e.latlng, [loc.latitude, loc.longitude]);
+            card.querySelector('.badge-dist').textContent =
+                m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`;
+        });
+    });
+
+    map.on('locationerror', e => console.warn('Lokasi tidak ditemukan: ' + e.message));
+
+    map.locate({ enableHighAccuracy: true });
+    </script>
+{% endblock content %}
