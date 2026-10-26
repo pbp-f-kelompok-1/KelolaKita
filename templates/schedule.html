@@ -81,11 +81,19 @@
             <section class="flex flex-col gap-3.5">
                 <div class="flex items-center justify-between">
                     <h2 class="font-['Plus_Jakarta_Sans'] text-lg font-extrabold text-[#1a2e1c]">2. Tanggal</h2>
-                    <p class="text-[13px] font-bold text-[#2e7d32]">{{ current_month_label }}</p>
+                    <div class="flex items-center gap-2">
+                        <p class="text-[13px] font-bold text-[#2e7d32]">{{ current_month_label }}</p>
+                        <button type="button" id="date-prev" aria-label="Tanggal sebelumnya"
+                                class="flex size-7 items-center justify-center rounded-full border border-[#dce7de] text-[#557a5b] disabled:opacity-40"
+                                disabled>&larr;</button>
+                        <button type="button" id="date-next" aria-label="Tanggal selanjutnya"
+                                class="flex size-7 items-center justify-center rounded-full border border-[#dce7de] text-[#557a5b]">&rarr;</button>
+                    </div>
                 </div>
-                <div class="grid grid-cols-3 gap-2.5 sm:grid-cols-6">
+                <div id="date-track" class="grid grid-cols-3 gap-2.5 sm:grid-cols-6">
                     {% for date in dates %}
-                    <label class="date-choice group flex h-[74px] cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border border-[#dce7de] bg-white has-[:checked]:border-[#2e7d32] has-[:checked]:bg-[#2e7d32]">
+                    <label class="date-choice group flex h-[74px] cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border border-[#dce7de] bg-white has-[:checked]:border-[#2e7d32] has-[:checked]:bg-[#2e7d32]"
+                           data-page="{{ date.page }}">
                         <input type="radio" name="date" value="{{ date.iso }}" class="sr-only"
                                {% if date.iso == selected_date %}checked{% endif %}
                                data-full-label="{{ date.full_label }}">
@@ -233,5 +241,37 @@
             summaryItemKondisi.textContent = input.dataset.kondisi;
         }
     });
+
+    // Date pager: show only the active page of 6 date cards (30 days total).
+    const dateLabels = Array.from(document.querySelectorAll('#date-track label.date-choice'));
+    const totalPages = dateLabels.length
+        ? Math.max(...dateLabels.map((el) => Number(el.dataset.page))) + 1
+        : 1;
+    let currentPage = 0;
+    const datePrevBtn = document.getElementById('date-prev');
+    const dateNextBtn = document.getElementById('date-next');
+
+    function renderDatePage() {
+        dateLabels.forEach((el) => {
+            el.classList.toggle('hidden', Number(el.dataset.page) !== currentPage);
+        });
+        datePrevBtn.disabled = currentPage === 0;
+        dateNextBtn.disabled = currentPage === totalPages - 1;
+    }
+
+    datePrevBtn.addEventListener('click', () => {
+        if (currentPage > 0) {
+            currentPage -= 1;
+            renderDatePage();
+        }
+    });
+    dateNextBtn.addEventListener('click', () => {
+        if (currentPage < totalPages - 1) {
+            currentPage += 1;
+            renderDatePage();
+        }
+    });
+
+    renderDatePage();
 </script>
 {% endblock content %}
