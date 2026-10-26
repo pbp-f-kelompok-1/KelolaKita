@@ -146,4 +146,4 @@ def show_schedule(request):
         "contact_default": "Nabila · +62 812 3456 7890",
         "notes_default": "Hubungi saat tiba di gerbang.",
     }
-    return render(request, "jadwal/schedule.html", context)
+    return render(request, "Schedule/schedule.html", context)
