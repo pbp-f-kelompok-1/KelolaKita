@@ -1,11 +1,14 @@
 from datetime import timedelta
 
+from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.db.models.deletion import ProtectedError
-from django.test import TestCase
+from django.test import Client, TestCase
+from django.urls import reverse
 from django.utils import timezone
 
+from education.forms import ArticleForm, DistributionForm, EventForm
 from education.models import Article, Distribution, Event
 from Location.models import Location
 
@@ -219,3 +222,193 @@ class DistributionModelTests(TestCase):
         with self.assertRaises(IntegrityError):
             with transaction.atomic():
                 make_distribution(self.panti, quantity=0)
+
+
+
+class FormTests(TestCase):
+    def setUp(self):
+        self.location = make_location()
+
+    def test_article_form_saves_published_article(self):
+        form = ArticleForm(data={
+            "title": "Artikel dari Form",
+            "summary": "Ringkasan",
+            "body": "Isi artikel",
+            "category": Article.Category.panduan,
+            "is_published": "on",
+            "published_at": "2026-10-26T10:00",
+        })
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.save().slug, "artikel-dari-form")
+
+    def test_article_form_rejects_missing_title(self):
+        form = ArticleForm(data={
+            "title": "",
+            "summary": "Ringkasan",
+            "body": "Isi",
+            "category": Article.Category.panduan,
+            "published_at": "2026-10-26T10:00",
+        })
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("title", form.errors)
+
+    def test_event_form_rejects_end_before_start(self):
+        form = EventForm(data={
+            "title": "Agenda salah",
+            "description": "",
+            "start_at": "2026-11-01T11:00",
+            "end_at": "2026-11-01T09:00",
+            "location": self.location.pk,
+            "is_published": "on",
+        })
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("end_at", form.errors)
+
+    def test_distribution_form_rejects_bank_destination(self):
+        bank = make_location(name="Bank Sampah", category=Location.Category.bank_sampah)
+        form = DistributionForm(data={
+            "item_name": "Tote bag",
+            "description": "",
+            "quantity": 1,
+            "destination": bank.pk,
+            "status": Distribution.Status.planned,
+        })
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("destination", form.errors)
+
+    def test_event_form_keeps_inactive_location_on_edit(self):
+        inactive = make_location(name="Nonaktif", is_active=False)
+        create = EventForm().fields["location"].queryset
+        edit = EventForm(instance=make_event(inactive)).fields["location"].queryset
+        self.assertIn(self.location, create)
+        self.assertNotIn(inactive, create)
+        self.assertIn(inactive, edit)
+
+    def test_distribution_form_keeps_inactive_destination_on_edit(self):
+        inactive = make_location(name="Nonaktif", is_active=False)
+        bank = make_location(name="Bank", category=Location.Category.bank_sampah)
+        create = DistributionForm().fields["destination"].queryset
+        edit = DistributionForm(instance=make_distribution(inactive)).fields["destination"].queryset
+        self.assertIn(self.location, create)
+        self.assertNotIn(inactive, create)
+        self.assertNotIn(bank, create)
+        self.assertIn(inactive, edit)
+
+
+class ManagementAccessTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user("staff", password="x", is_staff=True)
+        self.user = User.objects.create_user("user", password="x")
+
+    def test_anonymous_is_redirected_to_login(self):
+        response = self.client.get(reverse("education_manage"))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/admin/login/", response["Location"])
+
+    def test_non_staff_is_forbidden(self):
+        self.client.force_login(self.user)
+
+        self.assertEqual(self.client.get(reverse("education_manage")).status_code, 403)
+
+    def test_staff_can_open_management_and_forms(self):
+        self.client.force_login(self.staff)
+
+        self.assertEqual(self.client.get(reverse("education_manage")).status_code, 200)
+        for name in ["article_create", "event_create", "distribution_create"]:
+            self.assertEqual(self.client.get(reverse(name)).status_code, 200)
+
+
+class CrudTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user("staff", password="x", is_staff=True)
+        self.client.force_login(self.staff)
+        self.location = make_location()
+
+    def test_article_create_update_and_post_only_delete(self):
+        self.client.post(reverse("article_create"), {
+            "title": "Artikel Baru",
+            "summary": "Ringkasan",
+            "body": "Isi",
+            "category": Article.Category.panduan,
+            "is_published": "on",
+            "published_at": "2026-10-26T10:00",
+        })
+        article = Article.objects.get(title="Artikel Baru")
+
+        self.client.post(reverse("article_update", args=[article.pk]), {
+            "title": "Artikel Diubah",
+            "summary": "Ringkasan",
+            "body": "Isi",
+            "category": Article.Category.panduan,
+            "is_published": "on",
+            "published_at": "2026-10-26T10:00",
+        })
+        article.refresh_from_db()
+        self.assertEqual(article.title, "Artikel Diubah")
+
+        self.assertEqual(self.client.get(reverse("article_delete", args=[article.pk])).status_code, 200)
+        self.assertTrue(Article.objects.filter(pk=article.pk).exists())
+        self.client.post(reverse("article_delete", args=[article.pk]))
+        self.assertFalse(Article.objects.filter(pk=article.pk).exists())
+
+    def test_event_and_distribution_create(self):
+        self.client.post(reverse("event_create"), {
+            "title": "Agenda Baru", "description": "",
+            "start_at": "2026-11-01T09:00", "end_at": "2026-11-01T11:00",
+            "location": self.location.pk, "is_published": "on",
+        })
+        self.client.post(reverse("distribution_create"), {
+            "item_name": "Tote bag", "description": "", "quantity": 2,
+            "destination": self.location.pk, "status": Distribution.Status.planned,
+        })
+
+        self.assertTrue(Event.objects.filter(title="Agenda Baru").exists())
+        self.assertTrue(Distribution.objects.filter(item_name="Tote bag").exists())
+
+    def test_invalid_form_does_not_create_article(self):
+        self.client.post(reverse("article_create"), {
+            "title": "", "summary": "Ringkasan", "body": "Isi",
+            "category": Article.Category.panduan, "published_at": "2026-10-26T10:00",
+        })
+
+        self.assertFalse(Article.objects.exists())
+
+    def test_csrf_required_for_delete(self):
+        article = make_article()
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(self.staff)
+
+        response = client.post(reverse("article_delete", args=[article.pk]))
+
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(Article.objects.filter(pk=article.pk).exists())
+
+
+class LocationRegressionTests(TestCase):
+    def test_location_used_by_event_cannot_be_deleted(self):
+        location = make_location()
+        event = make_event(location)
+        distribution = make_distribution(location)
+
+        response = self.client.post(reverse("delete_location", args=[location.pk]))
+
+        self.assertRedirects(response, reverse("show_location"))
+        self.assertTrue(Location.objects.filter(pk=location.pk).exists())
+        self.assertTrue(Event.objects.filter(pk=event.pk).exists())
+        self.assertTrue(Distribution.objects.filter(pk=distribution.pk).exists())
+
+
+class UrlTests(TestCase):
+    def test_management_url_names_resolve(self):
+        for name in [
+            "education_manage", "article_create", "article_update", "article_delete",
+            "event_create", "event_update", "event_delete",
+            "distribution_create", "distribution_update", "distribution_delete",
+        ]:
+            with self.subTest(name=name):
+                self.assertTrue(reverse(name, args=[1]) if name.endswith(("update", "delete")) else reverse(name))

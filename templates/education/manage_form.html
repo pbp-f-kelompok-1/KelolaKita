@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block content %}
+<main>
+    <h1>{{ form_title }}</h1>
+    <p><a href="{% url 'education_manage' %}">Kembali ke pengelolaan</a></p>
+    <form method="post" novalidate>
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        {% for field in form %}
+        <p>
+            {{ field.label_tag }}
+            {{ field }}
+            {{ field.errors }}
+        </p>
+        {% endfor %}
+        <button type="submit">Simpan</button>
+        <a href="{% url 'education_manage' %}">Batal</a>
+    </form>
+</main>
+{% endblock content %}

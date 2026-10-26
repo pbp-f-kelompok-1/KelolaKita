@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+<main>
+    <h1>Hapus data</h1>
+    <p>Yakin ingin menghapus <strong>{{ object }}</strong>? Tindakan ini tidak bisa dibatalkan.</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit">Ya, hapus</button>
+        <a href="{% url 'education_manage' %}">Batal</a>
+    </form>
+</main>
+{% endblock content %}

@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from Location.models import Location
 from Location.forms import LocationForm
 from django.contrib import messages
+from django.db.models import ProtectedError
 
 
 def landing_page(request):
@@ -40,7 +41,14 @@ def delete_location(request, location_id) :
     location = get_object_or_404(Location, pk=location_id)
 
     if request.method == "POST" :
-        location.delete()
+        try:
+            location.delete()
+        except ProtectedError:
+            messages.error(
+                request,
+                "Lokasi tidak bisa dihapus karena masih dipakai agenda atau catatan penyaluran.",
+            )
+            return redirect("show_location")
         messages.success(request, "Lokasi berhasil dihapus!")
         return redirect("show_location")
 

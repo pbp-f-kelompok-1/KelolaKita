@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block content %}
+<main>
+    <h1>Kelola Edukasi &amp; Komunitas</h1>
+    <p><a href="{% url 'landing_page' %}">Kembali ke beranda</a></p>
+    <section>
+        <h2>Artikel</h2>
+        <p><a href="{% url 'article_create' %}">Tambah artikel</a></p>
+        <ul>
+            {% for article in articles %}
+            <li>
+                {{ article.title }} —
+                {% if article.is_published %}Terbit{% else %}Draf{% endif %} —
+                <a href="{% url 'article_update' article.pk %}">Ubah</a>
+                <a href="{% url 'article_delete' article.pk %}">Hapus</a>
+            </li>
+            {% empty %}<li>Belum ada artikel.</li>{% endfor %}
+        </ul>
+    </section>
+    <section>
+        <h2>Agenda</h2>
+        <p><a href="{% url 'event_create' %}">Tambah agenda</a></p>
+        <ul>
+            {% for event in events %}
+            <li>
+                {{ event.title }} — {{ event.start_at|date:"j M Y H:i" }} —
+                {% if event.is_published %}Terbit{% else %}Draf{% endif %} —
+                <a href="{% url 'event_update' event.pk %}">Ubah</a>
+                <a href="{% url 'event_delete' event.pk %}">Hapus</a>
+            </li>
+            {% empty %}<li>Belum ada agenda.</li>{% endfor %}
+        </ul>
+    </section>
+    <section>
+        <h2>Penyaluran</h2>
+        <p><a href="{% url 'distribution_create' %}">Tambah catatan penyaluran</a></p>
+        <ul>
+            {% for distribution in distributions %}
+            <li>
+                {{ distribution.item_name }} → {{ distribution.destination.name }} —
+                {{ distribution.get_status_display }} —
+                <a href="{% url 'distribution_update' distribution.pk %}">Ubah</a>
+                <a href="{% url 'distribution_delete' distribution.pk %}">Hapus</a>
+            </li>
+            {% empty %}<li>Belum ada catatan penyaluran.</li>{% endfor %}
+        </ul>
+    </section>
+</main>
+{% endblock content %}
