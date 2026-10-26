@@ -45,6 +45,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'tailwind',
     'theme',
+    'main',
+    'penanganan',
     'Location',
     'Schedule',
 ]
