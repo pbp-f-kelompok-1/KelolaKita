@@ -23,7 +23,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', landing_page, name='landing_page'),
     path('', include('Location.urls')),
-    path('jadwal/', include('Schedule.urls')),
+    path('schedule/', include('Schedule.urls')),
 ]
 
 if settings.DEBUG:
