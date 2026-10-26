@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'penanganan',
     'Location',
     'Schedule',
+    'education',
 ]
 
 MIDDLEWARE = [
