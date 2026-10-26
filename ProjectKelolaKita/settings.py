@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'tailwind',
     'theme',
     'main',
+    'jadwal',
 ]
 
 MIDDLEWARE = [
