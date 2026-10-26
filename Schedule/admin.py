@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from jadwal.models import Pemeriksaan, Penjadwalan
+from Schedule.models import Pemeriksaan, Penjadwalan
 
 
 @admin.register(Pemeriksaan)

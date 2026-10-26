@@ -1,5 +1,5 @@
 from django.forms import ModelForm, TextInput, Textarea, NumberInput, RadioSelect
-from main.models import Location
+from Location.models import Location
 
 class LocationForm(ModelForm) :
     class Meta :

@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404, redirect, render
-from main.models import Location
-from main.forms import LocationForm
+from Location.models import Location
+from Location.forms import LocationForm
 from django.contrib import messages
 
 

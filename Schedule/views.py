@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.db.models import Count
 from django.shortcuts import redirect, render
 
-from jadwal.models import Pemeriksaan, Penjadwalan
+from Schedule.models import Pemeriksaan, Penjadwalan
 
 
 DAY_ABBR_ID = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"]

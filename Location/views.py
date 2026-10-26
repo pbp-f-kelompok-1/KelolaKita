@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from main.models import Location
+from Location.models import Location
 # Create your views here.
 
 
