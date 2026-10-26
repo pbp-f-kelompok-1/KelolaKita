@@ -1,0 +1,310 @@
+.leaflet-tile-pane { filter: grayscale(0.5) brightness(1.08) contrast(0.88) saturate(0.8); }
+
+:root {
+    --green: #2e7d32;
+    --green-soft: #e8f5e9;
+    --green-border: #81c784;
+    --ink: #17261b;
+    --muted: #5f6f64;
+    --line: #dfe5e0;
+    --radius: 12px;
+}
+
+/* ===== Layout utama ===== */
+.finder {
+    display: grid;
+    grid-template-columns: 30% 70%;
+    height: 630px;
+    max-width: 100%;
+}
+
+/* ===== Panel kiri ===== */
+.panel {
+    padding: 24px 20px;
+    overflow-y: auto;
+    border-right: 1px dashed #4a90d9;
+    display: flex;
+    flex-direction: column;
+}
+
+.panel__title {
+    margin: 0 0 6px;
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: #1a2e1c;
+}
+
+.panel__subtitle {
+    margin: 0 0 18px;
+    font-size: 0.7rem;
+    line-height: 1.45;
+    color: #557A5B;
+}
+
+.sort-btn {
+    margin-bottom: 12px;
+    color: var(--green);
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* ===== Kartu lokasi ===== */
+.loc-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.loc-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: #fff;
+    cursor: pointer;
+    transition: border-color 0.15s;
+}
+
+.loc-card:hover { border-color: var(--green-border); }
+
+.loc-card__top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.loc-card__top strong { font-size: 0.95rem; }
+
+.badge-dist {
+    flex-shrink: 0;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: #eef2ee;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.loc-card__type { font-size: 0.78rem; color: var(--muted); }
+.loc-card__status { font-size: 0.78rem; font-weight: 600; color: var(--green); }
+.loc-card__meta { font-size: 0.72rem; color: var(--muted); }
+
+/* ===== Peta ===== */
+.map-wrap {
+    position: relative;
+    min-width: 0;
+}
+
+#map {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+}
+
+.leaflet-tile-pane {
+    filter: grayscale(0.6) brightness(1.1) contrast(0.85) saturate(0.7);
+}
+
+.pin-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pin-marker {
+    width: 20px;
+    height: 20px;
+    box-sizing: border-box;
+    border-radius: 50%;
+    background: #2e7d32;
+    border: 3px solid #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.pin-marker.is-selected {
+    width: 25px;
+    height: 25px;
+    background: #f9a825;
+}
+/* ===== Hapus lokasi ===== */
+.button-danger {
+    align-self: flex-start;
+    margin-top: 6px;
+    padding: 4px 10px;
+    border: 1px solid #f1c0bb;
+    border-radius: 8px;
+    background: #fff;
+    color: #b42318;
+    font: inherit;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.button-danger:hover { background: #fdecea; }
+
+.delete-modal {
+    margin: auto;
+    padding: 20px;
+    width: min(90vw, 400px);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+.delete-modal::backdrop { background: rgba(0, 0, 0, 0.5); }
+
+.delete-modal__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+/* ===== Responsif ===== */
+@media (max-width: 800px) {
+    .finder {
+        grid-template-columns: 1fr;
+        grid-template-rows: 45vh 1fr;
+        height: auto;
+    }
+    .map-wrap { order: -1; height: 45vh; }
+    .panel { border-right: 0; border-top: 1px solid var(--line); }
+}
+
+/* ===== Kartu detail bawah ===== */
+.detail-card {
+    position: absolute;
+    z-index: 1000;
+    left: 50%;
+    bottom: 24px;
+    width: min(340px, calc(100% - 32px));
+    padding: 16px;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+    transform: translateX(-50%);
+    animation: card-up 0.2s ease-out;
+}
+
+.detail-card[hidden] { display: none; }
+
+@keyframes card-up {
+    from { opacity: 0; transform: translate(-50%, 12px); }
+    to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.detail-card__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.detail-card__head strong {
+    font-size: 1.05rem;
+    line-height: 1.3;
+}
+
+.detail-card p {
+    margin: 4px 0 14px;
+    color: var(--muted);
+    font-size: 0.78rem;
+    line-height: 1.4;
+}
+
+/* badge status */
+.badge-open {
+    flex-shrink: 0;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: var(--green-soft);
+    color: var(--green);
+    font-size: 0.72rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.badge-open.is-closed {
+    background: #fdecea;
+    color: #b42318;
+}
+
+/* tombol aksi */
+.detail-card__actions {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 10px;
+}
+
+.btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 11px 12px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.btn:active { transform: scale(0.98); }
+
+.btn:focus-visible {
+    outline: 2px solid var(--green);
+    outline-offset: 2px;
+}
+
+.btn--ghost {
+    background: #fff;
+    border-color: var(--line);
+    color: var(--green);
+}
+
+.btn--ghost:hover {
+    background: var(--green-soft);
+    border-color: var(--green-border);
+}
+
+.btn--primary {
+    background: var(--green);
+    color: #fff;
+}
+
+.btn--primary:hover { background: var(--green-dark); }
+
+.search-box { position: relative; }
+
+.search-box__icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--green);
+    pointer-events: none;
+}
+
+.search-box .search-input { padding-left: 42px; }
+
+.search-hint {
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: 0.75rem;
+    line-height: 1.4;
+}
+
+.search-box + .search-hint { margin-bottom: 16px; }
+
+/* display:flex di .loc-card menimpa atribut hidden, jadi ditegaskan di sini */
+.loc-card[hidden] { display: none; }

@@ -74,7 +74,7 @@ Tekan `Ctrl + C` pada terminal masing-masing untuk menghentikan Tailwind dan ser
 
 | No. | Nama | NPM |
 |---|---|---|
-| 1 | Glenn Josia Devano | 250661472 |
+| 1 | Glenn Josia Devano | 2506614712 |
 | 2 | Ihsan Rafi Ahmad | 2506611326 |
 | 3 | Maxwelly F.H. Simatupang | 2506584294 |
 | 4 | Rafa Darussalam | 2506538924 |
@@ -144,7 +144,7 @@ Modul **Authentication / Profile** digunakan untuk mengelola identitas dan data 
 | Delete | Menonaktifkan atau menghapus data akun |
 
 **Penanggung Jawab:**  
-`Vanka'
+`Rayna Kayla Rayvanka`
 
 ---
 
@@ -172,7 +172,7 @@ Setiap barang yang akan diproses wajib melalui pemeriksaan awal. Hasil pemeriksa
 | Delete | Menghapus data pemeriksaan sesuai kewenangan |
 
 **Penanggung Jawab:**  
-`Rafa`
+`Rafa Darussalam`
 
 ---
 
@@ -200,7 +200,7 @@ Modul **Titik Setoran & Lokasi** digunakan untuk mengelola lokasi penyetoran dan
 | Delete | Menghapus lokasi yang tidak digunakan |
 
 **Penanggung Jawab:**  
-`Maxwell`
+`Maxwelly F.H. Simatupang`
 
 ---
 
@@ -229,7 +229,7 @@ Jadwal penyetoran terdiri atas dua sesi:
 | Delete | Membatalkan permintaan yang masih dapat dibatalkan |
 
 **Penanggung Jawab:**  
-`Ihsan`
+`Ihsan Rafi Ahmad`
 
 ---
 
@@ -258,7 +258,7 @@ Pada kategori **Reduce**, kegiatan difokuskan pada upaya mengurangi timbulan sam
 | Delete | Menghapus data yang sudah tidak digunakan |
 
 **Penanggung Jawab:**  
-`Devan`
+`Glenn Josia Devano`
 
 ---
 
@@ -336,3 +336,10 @@ Integrasi ini terutama mendukung fitur pencarian dan pemilihan titik setoran, pe
 KelolaKita bertujuan membangun platform digital yang membantu masyarakat mengelola barang dan sampah dengan lebih terarah. Melalui proses pemeriksaan awal dan klasifikasi **Recycle, Reduce, dan Reuse**, setiap barang dapat diarahkan menuju metode penanganan yang sesuai dengan jenis dan kondisinya.
 
 Platform ini diharapkan dapat membantu masyarakat membangun kebiasaan pengelolaan barang yang lebih bertanggung jawab sekaligus mempermudah proses penyetoran, penyaluran, dan edukasi mengenai pengelolaan sampah.
+
+---
+
+| Name | Link |
+|---|---|
+| Figma Design | https://www.figma.com/design/qWvpcmwHTiBDkp8ccrIZ6m/KelolaKita?node-id=0-1&t=dVxiBbASnwhfqU7f-1 |
+| Deployment | https://rafa-darussalam-kelolakita.pws.cs.ui.ac.id/ |

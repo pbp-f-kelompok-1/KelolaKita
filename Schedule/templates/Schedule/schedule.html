@@ -1,0 +1,299 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Jadwal Penyetoran - KelolaKita{% endblock title %}
+
+{% block content %}
+<main class="mx-auto flex w-full max-w-[1440px] flex-col items-start gap-7 px-16 py-[42px]">
+
+    <div class="flex flex-col gap-2">
+        <p class="text-xs font-extrabold tracking-wide text-[#2e7d32] uppercase">Atur penyerahan</p>
+        <h1 class="font-['Plus_Jakarta_Sans'] text-2xl leading-tight font-extrabold text-[#1a2e1c]">
+            Pilih cara dan waktu yang nyaman
+        </h1>
+        <p class="max-w-[60rem] text-[15px] leading-relaxed text-[#557a5b]">
+            Antar langsung ke lokasi mitra atau jadwalkan kurir penjemputan.
+        </p>
+    </div>
+
+    <form method="post" action="{% url 'show_schedule' %}" id="schedule-form"
+          class="flex w-full flex-col items-start gap-[22px] lg:flex-row">
+        {% csrf_token %}
+
+        <div class="flex min-w-0 flex-1 flex-col gap-6 rounded-2xl bg-white p-[26px] shadow-[0px_8px_24px_0px_rgba(23,53,28,0.07)]">
+
+            <section class="flex flex-col gap-3.5">
+                <h2 class="font-['Plus_Jakarta_Sans'] text-lg font-extrabold text-[#1a2e1c]">0. Pilih barang</h2>
+                {% if items %}
+                <div class="flex flex-col gap-3">
+                    {% for item in items %}
+                    <label class="item-card group flex cursor-pointer items-center gap-3 rounded-xl border border-[#dce7de] bg-white p-3.5 has-[:checked]:border-[#2e7d32] has-[:checked]:bg-[#e8f5e9]">
+                        <input type="radio" name="barang" value="{{ item.pk }}" class="sr-only"
+                               {% if item.pk == selected_item_id %}checked{% endif %}
+                               data-nama="{{ item.nama_barang }}"
+                               data-jenis="{{ item.jenis_barang }}"
+                               data-kondisi="{{ item.kondisi_barang }}"
+                               data-kategori="{{ item.get_kategori_penanganan_display }}">
+                        <img src="{% static 'img/schedule/item-placeholder.jpg' %}" alt=""
+                             class="size-11 shrink-0 rounded-lg object-cover">
+                        <span class="flex flex-col gap-0.5">
+                            <span class="text-sm font-extrabold text-[#1a2e1c]">{{ item.nama_barang }}</span>
+                            <span class="text-xs text-[#557a5b]">{{ item.jenis_barang }}</span>
+                        </span>
+                        <span class="ml-auto shrink-0 rounded-full bg-[#e7f6ee] px-2.5 py-1.5 text-xs font-bold text-[#237b4b]">
+                            {{ item.get_kategori_penanganan_display }}
+                        </span>
+                    </label>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-sm text-[#557a5b]">Belum ada barang yang disetujui untuk dijadwalkan.</p>
+                {% endif %}
+            </section>
+
+            <section class="flex flex-col gap-3.5">
+                <h2 class="font-['Plus_Jakarta_Sans'] text-lg font-extrabold text-[#1a2e1c]">1. Metode penyetoran</h2>
+                <div class="flex flex-col gap-3 sm:flex-row">
+                    {% for method in methods %}
+                    <label class="method-card group relative flex flex-1 cursor-pointer flex-col gap-2.5 rounded-xl border border-[#dce7de] bg-white p-4 transition-colors has-[:checked]:border-[#2e7d32] has-[:checked]:bg-[#e8f5e9]">
+                        <input type="radio" name="method" value="{{ method.value }}" class="sr-only"
+                               {% if method.value == selected_method %}checked{% endif %}
+                               data-info-title="{{ method.info_title }}"
+                               data-info-body="{{ method.info_body }}"
+                               data-summary-label="{{ method.summary_label }}">
+                        <span class="flex size-[38px] items-center justify-center rounded-lg bg-[#f4f6f5] text-[#557a5b] group-has-[:checked]:bg-[#2e7d32] group-has-[:checked]:text-white">
+                            {% if method.value == "kurir" %}
+                            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-linecap="round" class="size-5">
+                                <path d="M11.6668 14.9995V6.667M11.6668 14.9995H12.5002M11.6668 14.9995H7.4998M11.6668 6.667V5.0005C11.6668 4.55852 11.4912 4.13464 11.1786 3.82211C10.866 3.50958 10.4421 3.334 10 3.334H3.3328C2.89074 3.334 2.46678 3.50958 2.15419 3.82211C1.84161 4.13464 1.666 4.55852 1.666 5.0005V14.1662C1.666 14.3872 1.7538 14.5992 1.9101 14.7554C2.06639 14.9117 2.27837 14.9995 2.4994 14.9995H4.1662M11.6668 6.667H14.6004C14.7253 6.66718 14.8485 6.69543 14.9611 6.74966C15.0736 6.80389 15.1725 6.88271 15.2504 6.9803L18.1507 10.6049C18.269 10.7524 18.3337 10.9358 18.334 11.1249V14.1662C18.334 14.3872 18.2462 14.5992 18.0899 14.7554C17.9336 14.9117 17.7216 14.9995 17.5006 14.9995H15.8338M4.1662 14.9995C4.1662 15.9199 4.91245 16.666 5.833 16.666C6.75355 16.666 7.4998 15.9199 7.4998 14.9995M4.1662 14.9995C4.1662 14.0791 4.91245 13.333 5.833 13.333C6.75355 13.333 7.4998 14.0791 7.4998 14.9995M12.5002 14.9995C12.5002 15.9199 13.2465 16.666 14.167 16.666C15.0875 16.666 15.8338 15.9199 15.8338 14.9995M12.5002 14.9995C12.5002 14.0791 13.2465 13.333 14.167 13.333C15.0875 13.333 15.8338 14.0791 15.8338 14.9995" />
+                            </svg>
+                            {% else %}
+                            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-linecap="round" class="size-5">
+                                <path d="M16.666 8.33328C16.666 12.4945 12.0506 16.8282 10.5008 18.1667C10.3564 18.2753 10.1806 18.334 10 18.334C9.81935 18.334 9.6436 18.2753 9.49922 18.1667C7.94937 16.8282 3.334 12.4945 3.334 8.33328C3.334 6.56501 4.03631 4.86916 5.28643 3.6188C6.53654 2.36844 8.23207 1.666 10 1.666C11.7679 1.666 13.4635 2.36844 14.7136 3.6188C15.9637 4.86916 16.666 6.56501 16.666 8.33328ZM12.4997 8.33328C12.4997 9.71412 11.3806 10.8335 10 10.8335C8.61943 10.8335 7.50025 9.71412 7.50025 8.33328C7.50025 6.95244 8.61943 5.83305 10 5.83305C11.3806 5.83305 12.4997 6.95244 12.4997 8.33328Z" />
+                            </svg>
+                            {% endif %}
+                        </span>
+                        <span class="text-sm font-extrabold text-[#1a2e1c]">{{ method.title }}</span>
+                        <span class="text-xs text-[#557a5b]">{{ method.description }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="flex flex-col gap-3.5">
+                <div class="flex items-center justify-between">
+                    <h2 class="font-['Plus_Jakarta_Sans'] text-lg font-extrabold text-[#1a2e1c]">2. Tanggal</h2>
+                    <div class="flex items-center gap-2">
+                        <p class="text-[13px] font-bold text-[#2e7d32]">{{ current_month_label }}</p>
+                        <button type="button" id="date-prev" aria-label="Tanggal sebelumnya"
+                                class="flex size-7 items-center justify-center rounded-full border border-[#dce7de] text-[#557a5b] disabled:opacity-40"
+                                disabled>&larr;</button>
+                        <button type="button" id="date-next" aria-label="Tanggal selanjutnya"
+                                class="flex size-7 items-center justify-center rounded-full border border-[#dce7de] text-[#557a5b]">&rarr;</button>
+                    </div>
+                </div>
+                <div id="date-track" class="grid grid-cols-3 gap-2.5 sm:grid-cols-6">
+                    {% for date in dates %}
+                    <label class="date-choice group flex h-[74px] cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border border-[#dce7de] bg-white has-[:checked]:border-[#2e7d32] has-[:checked]:bg-[#2e7d32]"
+                           data-page="{{ date.page }}">
+                        <input type="radio" name="date" value="{{ date.iso }}" class="sr-only"
+                               {% if date.iso == selected_date %}checked{% endif %}
+                               data-full-label="{{ date.full_label }}">
+                        <span class="text-[11px] text-[#557a5b] group-has-[:checked]:text-[#e8f5e9]">{{ date.day_abbr }}</span>
+                        <span class="font-['Plus_Jakarta_Sans'] text-[19px] font-extrabold text-[#1a2e1c] group-has-[:checked]:text-white">{{ date.day_num }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="flex flex-col gap-3.5">
+                <h2 class="font-['Plus_Jakarta_Sans'] text-lg font-extrabold text-[#1a2e1c]">3. Sesi penjemputan</h2>
+                <div class="flex flex-col gap-3 sm:flex-row">
+                    {% for session in sessions %}
+                    <label class="session-card flex flex-1 cursor-pointer items-center gap-3 rounded-xl border border-[#dce7de] p-4 has-[:checked]:border-[#2e7d32] has-[:checked]:bg-[#e8f5e9] has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-40 has-[:disabled]:pointer-events-none">
+                        <input type="radio" name="session" value="{{ session.value }}" class="sr-only"
+                               {% if session.value == selected_session %}checked{% endif %}
+                               data-summary-label="{{ session.name }} &middot; {{ session.time }}">
+                        <img src="{% static session.icon %}" alt="" class="size-6 shrink-0">
+                        <span class="flex flex-col gap-0.5">
+                            <span class="text-sm font-extrabold text-[#1a2e1c]">{{ session.name }}</span>
+                            <span class="text-xs text-[#557a5b]">{{ session.time }}</span>
+                        </span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="flex flex-col gap-4 sm:flex-row">
+                <div class="flex flex-1 flex-col gap-1.5">
+                    <label for="id_contact" class="text-[13px] font-bold text-[#1a2e1c]">Kontak penerima</label>
+                    <input type="text" name="contact" id="id_contact" required
+                           value="{{ contact_default }}"
+                           class="h-11 w-full rounded-lg border border-[#dce7de] bg-white px-3.5 text-sm text-[#1a2e1c] focus:border-[#2e7d32] focus:outline-2 focus:outline-[#2e7d32]">
+                </div>
+                <div class="flex flex-1 flex-col gap-1.5">
+                    <label for="id_notes" class="text-[13px] font-bold text-[#1a2e1c]">Catatan kurir</label>
+                    <input type="text" name="notes" id="id_notes"
+                           value="{{ notes_default }}"
+                           class="h-11 w-full rounded-lg border border-[#dce7de] bg-white px-3.5 text-sm text-[#1a2e1c] focus:border-[#2e7d32] focus:outline-2 focus:outline-[#2e7d32]">
+                </div>
+            </section>
+
+            <section class="flex items-center gap-2.5 rounded-lg bg-[#eaf2fb] p-3">
+                <img src="{% static 'icons/info.svg' %}" alt="" class="size-[18px] shrink-0 self-start">
+                <div class="flex flex-col gap-0.5">
+                    <p id="info-title" class="text-[13px] font-bold text-[#2b6cb0]">
+                        {{ methods.0.info_title }}
+                    </p>
+                    <p id="info-body" class="text-xs leading-normal text-[#557a5b]">
+                        {{ methods.0.info_body }}
+                    </p>
+                </div>
+            </section>
+        </div>
+
+        <aside class="flex w-full shrink-0 flex-col gap-[18px] rounded-2xl bg-white p-6 shadow-[0px_8px_24px_0px_rgba(23,53,28,0.07)] lg:w-[400px]">
+            <div class="flex items-center justify-between">
+                <h2 class="font-['Plus_Jakarta_Sans'] text-xl font-extrabold text-[#1a2e1c]">Ringkasan pemesanan</h2>
+                <span class="rounded-full bg-[#f4f6f5] px-2.5 py-1.5 text-xs font-bold text-[#557a5b]">Draf</span>
+            </div>
+
+            <img src="{% static 'img/schedule/item-placeholder.jpg' %}" alt=""
+                 class="h-[150px] w-full rounded-xl object-cover">
+
+            <div class="flex flex-col gap-1.5">
+                <p id="summary-item-name" class="text-[15px] font-extrabold text-[#1a2e1c]">
+                    {% if items %}{{ items.0.nama_barang }}{% else %}Belum ada barang{% endif %}
+                </p>
+                <div class="flex gap-2">
+                    <span id="summary-item-kategori" class="rounded-full bg-[#e7f6ee] px-2.5 py-1.5 text-xs font-bold text-[#237b4b]">
+                        {% if items %}{{ items.0.get_kategori_penanganan_display }}{% endif %}
+                    </span>
+                    <span id="summary-item-jenis" class="rounded-full bg-[#f4f6f5] px-2.5 py-1.5 text-xs font-bold text-[#557a5b]">
+                        {% if items %}{{ items.0.jenis_barang }}{% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <dl class="flex flex-col gap-2 text-xs">
+                <div class="flex items-start justify-between gap-3">
+                    <dt class="text-[#557a5b]">Kondisi</dt>
+                    <dd id="summary-item-kondisi" class="w-[220px] text-right font-bold text-[#1a2e1c]">
+                        {% if items %}{{ items.0.kondisi_barang }}{% endif %}
+                    </dd>
+                </div>
+                <div class="flex items-start justify-between gap-3">
+                    <dt class="text-[#557a5b]">Metode</dt>
+                    <dd id="summary-method" class="w-[220px] text-right font-bold text-[#1a2e1c]">{{ methods.0.summary_label }}</dd>
+                </div>
+                <div class="flex items-start justify-between gap-3">
+                    <dt class="text-[#557a5b]">Tanggal</dt>
+                    <dd id="summary-date" class="w-[220px] text-right font-bold text-[#1a2e1c]">{{ dates.0.full_label }}</dd>
+                </div>
+                <div class="flex items-start justify-between gap-3">
+                    <dt class="text-[#557a5b]">Sesi</dt>
+                    <dd id="summary-session" class="w-[220px] text-right font-bold text-[#1a2e1c]">{{ sessions.0.name }} &middot; {{ sessions.0.time }}</dd>
+                </div>
+            </dl>
+
+            <div class="h-px w-full bg-[#dce7de]"></div>
+
+            <button type="submit"
+                    class="flex h-11 w-full cursor-pointer items-center justify-center rounded-lg bg-[#2e7d32] px-[18px] text-sm font-bold text-white transition hover:bg-[#1f5a23] active:scale-[0.98]">
+                Konfirmasi jadwal
+            </button>
+            <p class="text-center text-[11px] leading-relaxed text-[#557a5b]">
+                Bisa diubah hingga 12 jam sebelum sesi tanpa biaya.
+            </p>
+        </aside>
+        {{ availability|json_script:"availability-data" }}
+    </form>
+</main>
+
+<script>
+    const form = document.getElementById('schedule-form');
+
+    const summaryMethod = document.getElementById('summary-method');
+    const summaryDate = document.getElementById('summary-date');
+    const summarySession = document.getElementById('summary-session');
+    const summaryItemName = document.getElementById('summary-item-name');
+    const summaryItemKategori = document.getElementById('summary-item-kategori');
+    const summaryItemJenis = document.getElementById('summary-item-jenis');
+    const summaryItemKondisi = document.getElementById('summary-item-kondisi');
+    const infoTitle = document.getElementById('info-title');
+    const infoBody = document.getElementById('info-body');
+
+    const availability = JSON.parse(document.getElementById('availability-data').textContent);
+    const sessionInputs = Array.from(form.querySelectorAll('input[name="session"]'));
+
+    function updateSessionAvailability() {
+        const selectedDate = form.querySelector('input[name="date"]:checked');
+        if (!selectedDate) return;
+        const remainingBySession = availability[selectedDate.value] || {};
+        sessionInputs.forEach((input) => {
+            const remaining = remainingBySession[input.value] ?? 0;
+            const isFull = remaining <= 0;
+            input.disabled = isFull;
+            if (isFull && input.checked) {
+                input.checked = false;
+                const firstAvailable = sessionInputs.find((s) => !s.disabled);
+                if (firstAvailable) {
+                    firstAvailable.checked = true;
+                    summarySession.textContent = firstAvailable.dataset.summaryLabel;
+                }
+            }
+        });
+    }
+
+    form.addEventListener('change', (event) => {
+        const input = event.target;
+        if (input.name === 'method') {
+            summaryMethod.textContent = input.dataset.summaryLabel;
+            infoTitle.textContent = input.dataset.infoTitle;
+            infoBody.textContent = input.dataset.infoBody;
+        } else if (input.name === 'date') {
+            summaryDate.textContent = input.dataset.fullLabel;
+            updateSessionAvailability();
+        } else if (input.name === 'session') {
+            summarySession.textContent = input.dataset.summaryLabel;
+        } else if (input.name === 'barang') {
+            summaryItemName.textContent = input.dataset.nama;
+            summaryItemKategori.textContent = input.dataset.kategori;
+            summaryItemJenis.textContent = input.dataset.jenis;
+            summaryItemKondisi.textContent = input.dataset.kondisi;
+        }
+    });
+
+    updateSessionAvailability();
+
+    // Date pager: show only the active page of 6 date cards (30 days total).
+    const dateLabels = Array.from(document.querySelectorAll('#date-track label.date-choice'));
+    const totalPages = dateLabels.length
+        ? Math.max(...dateLabels.map((el) => Number(el.dataset.page))) + 1
+        : 1;
+    let currentPage = 0;
+    const datePrevBtn = document.getElementById('date-prev');
+    const dateNextBtn = document.getElementById('date-next');
+
+    function renderDatePage() {
+        dateLabels.forEach((el) => {
+            el.classList.toggle('hidden', Number(el.dataset.page) !== currentPage);
+        });
+        datePrevBtn.disabled = currentPage === 0;
+        dateNextBtn.disabled = currentPage === totalPages - 1;
+    }
+
+    datePrevBtn.addEventListener('click', () => {
+        if (currentPage > 0) {
+            currentPage -= 1;
+            renderDatePage();
+        }
+    });
+    dateNextBtn.addEventListener('click', () => {
+        if (currentPage < totalPages - 1) {
+            currentPage += 1;
+            renderDatePage();
+        }
+    });
+
+    renderDatePage();
+</script>
+{% endblock content %}
