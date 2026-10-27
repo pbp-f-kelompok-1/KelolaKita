@@ -30,7 +30,7 @@ SECRET_KEY = 'django-insecure-3il9ucw9*$v6-if$@3iq!1dhpxt=(dn3dhw)%$8bl_7!xx+fqh
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("PRODUCTION", "False").lower() == "false"
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "https://pws.cs.ui.ac.id/rafa.darussalam/kelolakita", "https://rafa-darussalam-kelolakita.pws.cs.ui.ac.id/", "rafa-darussalam-cobaahmoment.pws.ui.ac.id/"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "rafa-darussalam-kelolakita.pws.cs.ui.ac.id"]
 PRODUCTION = os.getenv('PRODUCTION', 'False').lower() == 'true'
 
 
@@ -45,7 +45,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'tailwind',
     'theme',
-    'main',
     'penanganan',
     'Location',
     'Schedule',
@@ -129,9 +128,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'id'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Jakarta'
 
 USE_I18N = True
 
