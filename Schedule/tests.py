@@ -284,3 +284,57 @@ class ShowSchedulePostTests(TestCase):
         self.assertEqual(Penjadwalan.objects.count(), 1)
         messages = list(response.context["messages"])
         self.assertTrue(any("penuh" in str(m) for m in messages))
+
+
+class ScheduleListViewTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="budi", password="pass12345")
+
+    def _create_booking(self, tanggal, sesi):
+        item = Pemeriksaan.objects.create(
+            pengguna=self.user,
+            nama_barang="Botol plastik",
+            jenis_barang="Plastik",
+            kondisi_barang="Baik",
+            kategori_penanganan="recycle",
+        )
+        booking = Penjadwalan.objects.create(
+            metode=Penjadwalan.Metode.kurir,
+            tanggal=tanggal,
+            sesi=sesi,
+            nama_penerima="Budi",
+            nomor_hp="08123456789",
+            alamat_penjemputan="Jl. Melati No. 5",
+        )
+        booking.barang.set([item])
+        return booking
+
+    def test_empty_state_message(self):
+        response = self.client.get(reverse("schedule_list"))
+        self.assertContains(response, "Belum ada jadwal")
+
+    def test_future_booking_is_terjadwal_and_cancelable(self):
+        self._create_booking(datetime.date.today() + datetime.timedelta(days=5), Penjadwalan.Sesi.pagi)
+        response = self.client.get(reverse("schedule_list"))
+        row = response.context["rows"][0]
+        self.assertEqual(row["status"], "terjadwal")
+        self.assertTrue(row["can_cancel"])
+
+    def test_past_booking_is_selesai_and_not_cancelable(self):
+        self._create_booking(datetime.date.today() - datetime.timedelta(days=1), Penjadwalan.Sesi.pagi)
+        response = self.client.get(reverse("schedule_list"))
+        row = response.context["rows"][0]
+        self.assertEqual(row["status"], "selesai")
+        self.assertFalse(row["can_cancel"])
+
+    def test_booking_within_cutoff_window_is_terkunci(self):
+        session_date = datetime.date.today() + datetime.timedelta(days=10)
+        self._create_booking(session_date, Penjadwalan.Sesi.pagi)
+
+        mocked_now = timezone.make_aware(datetime.datetime.combine(session_date, datetime.time(2, 0)))
+        with patch("django.utils.timezone.now", return_value=mocked_now):
+            response = self.client.get(reverse("schedule_list"))
+            row = response.context["rows"][0]
+
+        self.assertEqual(row["status"], "terkunci")
+        self.assertFalse(row["can_cancel"])
