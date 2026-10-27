@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block title %}Riwayat Jadwal - KelolaKita{% endblock title %}
+
+{% block content %}
+<main class="mx-auto flex w-full max-w-[960px] flex-col gap-7 px-16 py-[42px]">
+
+    <div class="flex flex-col gap-2">
+        <a href="{% url 'show_schedule' %}" class="text-sm font-bold text-[#2e7d32] underline-offset-2 hover:underline">
+            &larr; Kembali ke jadwalkan barang
+        </a>
+        <h1 class="font-['Plus_Jakarta_Sans'] text-2xl leading-tight font-extrabold text-[#1a2e1c]">
+            Riwayat jadwal
+        </h1>
+        <p class="max-w-[48rem] text-[15px] leading-relaxed text-[#557a5b]">
+            Semua jadwal penyetoran yang sudah dikonfirmasi. Pembatalan hanya bisa dilakukan hingga
+            12 jam sebelum sesi dimulai.
+        </p>
+    </div>
+
+    {% if rows %}
+    <div class="flex flex-col gap-4">
+        {% for row in rows %}
+        {% with booking=row.booking %}
+        <div class="flex flex-col gap-4 rounded-2xl bg-white p-5 shadow-[0px_8px_24px_0px_rgba(23,53,28,0.07)] sm:flex-row sm:items-start sm:justify-between">
+            <div class="flex flex-col gap-2">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="rounded-full px-2.5 py-1.5 text-xs font-bold
+                        {% if row.status == 'selesai' %}bg-[#f4f6f5] text-[#557a5b]
+                        {% elif row.status == 'terkunci' %}bg-[#fff4d6] text-[#8a6d1d]
+                        {% else %}bg-[#e8f5e9] text-[#2e7d32]{% endif %}">
+                        {% if row.status == 'selesai' %}Selesai
+                        {% elif row.status == 'terkunci' %}Terjadwal &middot; tidak bisa dibatalkan
+                        {% else %}Terjadwal{% endif %}
+                    </span>
+                    <span class="text-xs text-[#557a5b]">
+                        {{ booking.get_metode_display }}
+                    </span>
+                </div>
+
+                <p class="text-[15px] font-extrabold text-[#1a2e1c]">
+                    {% for barang in booking.barang.all %}{{ barang.nama_barang }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                </p>
+
+                <dl class="flex flex-col gap-1 text-xs text-[#557a5b]">
+                    <div class="flex gap-1.5">
+                        <dt class="font-bold text-[#1a2e1c]">Jadwal:</dt>
+                        <dd>{{ booking.tanggal|date:"l, j F Y" }} &middot; {{ booking.get_sesi_display }}</dd>
+                    </div>
+                    <div class="flex gap-1.5">
+                        <dt class="font-bold text-[#1a2e1c]">
+                            {% if booking.metode == 'kurir' %}Alamat:{% else %}Lokasi:{% endif %}
+                        </dt>
+                        <dd>
+                            {% if booking.metode == 'kurir' %}{{ booking.alamat_penjemputan }}
+                            {% else %}{{ booking.lokasi_mitra.name|default:"—" }}{% endif %}
+                        </dd>
+                    </div>
+                    <div class="flex gap-1.5">
+                        <dt class="font-bold text-[#1a2e1c]">Penerima:</dt>
+                        <dd>{{ booking.nama_penerima }} &middot; {{ booking.nomor_hp }}</dd>
+                    </div>
+                </dl>
+            </div>
+
+            <div class="flex shrink-0 flex-col items-stretch gap-1.5 sm:items-end">
+                {% if row.can_cancel %}
+                <form method="post" action="{% url 'cancel_schedule' booking.pk %}"
+                      onsubmit="return confirm('Batalkan jadwal ini?');">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="h-9 w-full rounded-lg border border-[#f1c0bb] px-4 text-xs font-bold text-[#b42318] hover:bg-[#fdecea] sm:w-auto">
+                        Batalkan
+                    </button>
+                </form>
+                {% elif row.status == 'terkunci' %}
+                <p class="max-w-[180px] text-right text-[11px] text-[#8a6d1d]">
+                    Kurang dari 12 jam menjelang sesi, tidak bisa dibatalkan.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+        {% endwith %}
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="rounded-lg bg-[#f4f6f5] px-3.5 py-3 text-sm text-[#557a5b]">
+        Belum ada jadwal penyetoran yang dikonfirmasi.
+    </p>
+    {% endif %}
+</main>
+{% endblock content %}
