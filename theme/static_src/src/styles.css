@@ -1,10 +1,27 @@
 @import "tailwindcss";
 
 /**
-  * A catch-all path to Django template files, JavaScript, and Python files
-  * that contain Tailwind CSS classes and will be scanned by Tailwind to generate the final CSS file.
-  *
-  * If your final CSS file is not being updated after code changes, you may want to broaden or narrow
-  * the scope of this path.
+  * Scan only Django templates that contain Tailwind classes.
+  * Keeping the virtualenv and other generated files out also keeps the
+  * standalone build reliable.
   */
-@source "../../../**/*.{html,py,js}";
+@source "../../../templates";
+@source "../../../Location/templates";
+@source "../../../Schedule/templates";
+
+@theme {
+  --color-brand: #2e7d32;
+  --color-brand-dark: #1f5a23;
+  --color-brand-soft: #e8f5e9;
+  --color-brand-border: #81c784;
+  --color-ink: #17261b;
+  --color-muted: #5f6f64;
+  --color-line: #dfe5e0;
+  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+
+  --animate-card-up: card-up 0.2s ease-out;
+  @keyframes card-up {
+    from { opacity: 0; translate: -50% 12px; }
+    to   { opacity: 1; translate: -50% 0; }
+  }
+}

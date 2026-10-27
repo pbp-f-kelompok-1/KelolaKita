@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'penanganan',
     'Location',
     'Schedule',
+    'education',
 ]
 
 MIDDLEWARE = [
@@ -127,9 +128,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'id'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Jakarta'
 
 USE_I18N = True
 
@@ -151,6 +152,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 
 TAILWIND_APP_NAME = 'theme'
+# v4.3.0 standalone binary exits abnormally during build; v4.3.3 is verified.
+TAILWIND_STANDALONE_BINARY_VERSION = "v4.3.3"
 
 if DEBUG:
     INSTALLED_APPS += ["django_browser_reload"]
