@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Pengajuan Barang - KelolaKita{% endblock title %}
+
+{% block content %}
+<main class="mx-auto w-full max-w-[1440px] px-16 py-8">
+    <!-- Header & Stepper -->
+    <div class="mb-8">
+        <p class="text-xs font-bold text-[#2e7d32] uppercase tracking-wide mb-2">Pengajuan Barang</p>
+        <h1 class="font-['Plus_Jakarta_Sans'] text-3xl font-extrabold text-[#1a2e1c] mb-2">
+            Bantu kami menentukan jalur terbaik
+        </h1>
+        <p class="text-sm text-[#557a5b]">
+            Lengkapi informasi berikut. Pemeriksaan awal akan merekomendasikan Recycle, Reuse, atau Reduce.
+        </p>
+        
+        <!-- Stepper Visual -->
+        <div class="flex items-center gap-4 mt-8">
+            <div class="flex items-center gap-2">
+                <span class="flex size-7 items-center justify-center rounded-full bg-[#2e7d32] text-white text-xs font-bold">1</span>
+                <span class="text-sm font-bold text-[#1a2e1c]">Foto & detail</span>
+            </div>
+            <div class="h-[2px] w-24 bg-[#2e7d32]"></div>
+            <div class="flex items-center gap-2">
+                <span class="flex size-7 items-center justify-center rounded-full bg-[#2e7d32] text-white text-xs font-bold">2</span>
+                <span class="text-sm font-bold text-[#1a2e1c]">Pemeriksaan</span>
+            </div>
+            <div class="h-[2px] w-24 bg-[#dce7de]"></div>
+            <div class="flex items-center gap-2">
+                <span class="flex size-7 items-center justify-center rounded-full bg-white border border-[#dce7de] text-[#81c784] text-xs font-bold">3</span>
+                <span class="text-sm font-medium text-[#81c784]">Tujuan</span>
+            </div>
+            <div class="h-[2px] w-24 bg-[#dce7de]"></div>
+            <div class="flex items-center gap-2">
+                <span class="flex size-7 items-center justify-center rounded-full bg-white border border-[#dce7de] text-[#81c784] text-xs font-bold">4</span>
+                <span class="text-sm font-medium text-[#81c784]">Konfirmasi</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Grid Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Kolom Kiri: Form Pengajuan -->
+        <div class="lg:col-span-2 bg-white rounded-2xl p-8 shadow-sm border border-[#dce7de]">
+            <p class="text-xs font-bold text-[#2e7d32] mb-1">LANGKAH 1</p>
+            <h2 class="font-['Plus_Jakarta_Sans'] text-2xl font-extrabold text-[#1a2e1c] mb-2">
+                Foto dan detail barang
+            </h2>
+            <p class="text-sm text-[#557a5b] mb-6">
+                Gunakan foto terang dari beberapa sisi agar hasil pemeriksaan lebih akurat.
+            </p>
+
+            <!-- FORM START: enctype="multipart/form-data" wajib untuk upload file -->
+            <form method="POST" enctype="multipart/form-data" action="{% url 'penanganan:tambah_pengajuan' %}">
+                {% csrf_token %}
+                
+                <!-- Input Foto -->
+                <div class="mb-6 rounded-xl border border-dashed border-[#81c784] bg-[#e8f5e9] p-8 text-center relative hover:bg-[#dce7de] transition">
+                    <input type="file" name="foto_barang" id="foto_barang" multiple accept="image/png, image/jpeg" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" required>
+                    <div class="flex flex-col items-center pointer-events-none">
+                        <span class="flex size-10 items-center justify-center rounded-full bg-white mb-3 shadow-sm">
+                            <svg class="w-5 h-5 text-[#2e7d32]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        </span>
+                        <p class="text-sm font-bold text-[#1a2e1c]">Tarik foto ke sini atau pilih dari perangkat</p>
+                        <p class="text-xs text-[#557a5b] mt-1">JPG, PNG - Maks. 10 MB - Minimal 2 foto</p>
+                        <button type="button" class="mt-4 rounded-lg bg-white px-4 py-2 text-sm font-bold text-[#1a2e1c] border border-[#dce7de] shadow-sm">Pilih foto</button>
+                    </div>
+                </div>
+
+                <!-- Grid Input: Nama & Kategori -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div class="location-form">
+                        <label class="block text-sm font-bold text-[#1a2e1c] mb-2">Nama barang</label>
+                        <input type="text" name="nama_barang" placeholder="Meja belajar kayu" required>
+                    </div>
+                    <div class="location-form">
+                        <label class="block text-sm font-bold text-[#1a2e1c] mb-2">Kategori</label>
+                        <select name="kategori_barang" required>
+                            <option value="" disabled selected>Pilih Kategori</option>
+                            <option value="Furnitur rumah">Furnitur rumah</option>
+                            <option value="Elektronik">Elektronik</option>
+                            <option value="Pakaian">Pakaian</option>
+                            <option value="Lainnya">Lainnya</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Pilihan Kondisi Barang (Radio Buttons) -->
+                <div class="mb-6">
+                    <label class="block text-sm font-bold text-[#1a2e1c] mb-2">Kondisi barang</label>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <label class="flex items-center justify-center gap-2 rounded-lg border border-[#dce7de] py-3 cursor-pointer hover:bg-gray-50 has-[:checked]:bg-[#e8f5e9] has-[:checked]:border-[#81c784] has-[:checked]:text-[#1f5a23]">
+                            <input type="radio" name="kondisi_barang" value="Sangat baik" class="w-4 h-4 text-[#2e7d32] focus:ring-[#2e7d32]" required>
+                            <span class="text-sm font-medium">Sangat baik</span>
+                        </label>
+                        <label class="flex items-center justify-center gap-2 rounded-lg border border-[#dce7de] py-3 cursor-pointer hover:bg-gray-50 has-[:checked]:bg-[#e8f5e9] has-[:checked]:border-[#81c784] has-[:checked]:text-[#1f5a23]">
+                            <input type="radio" name="kondisi_barang" value="Layak pakai" class="w-4 h-4 text-[#2e7d32] focus:ring-[#2e7d32]">
+                            <span class="text-sm font-medium">Layak pakai</span>
+                        </label>
+                        <label class="flex items-center justify-center gap-2 rounded-lg border border-[#dce7de] py-3 cursor-pointer hover:bg-gray-50 has-[:checked]:bg-[#e8f5e9] has-[:checked]:border-[#81c784] has-[:checked]:text-[#1f5a23]">
+                            <input type="radio" name="kondisi_barang" value="Perlu perbaikan" class="w-4 h-4 text-[#2e7d32] focus:ring-[#2e7d32]">
+                            <span class="text-sm font-medium">Perlu perbaikan</span>
+                        </label>
+                        <label class="flex items-center justify-center gap-2 rounded-lg border border-[#dce7de] py-3 cursor-pointer hover:bg-gray-50 has-[:checked]:bg-[#e8f5e9] has-[:checked]:border-[#81c784] has-[:checked]:text-[#1f5a23]">
+                            <input type="radio" name="kondisi_barang" value="Rusak" class="w-4 h-4 text-[#2e7d32] focus:ring-[#2e7d32]">
+                            <span class="text-sm font-medium">Rusak</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Catatan Tambahan -->
+                <div class="location-form mb-8">
+                    <label class="block text-sm font-bold text-[#1a2e1c] mb-2">Catatan tambahan</label>
+                    <textarea name="catatan_tambahan" rows="2" placeholder="Kokoh, ada goresan ringan di sisi kanan. Ukuran 100 x 50 x 75 cm."></textarea>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center justify-between border-t border-[#dce7de] pt-6">
+                    <button type="button" class="text-sm font-bold text-[#2e7d32] hover:text-[#1f5a23]">Simpan draf</button>
+                    <button type="submit" class="flex items-center gap-2 rounded-lg bg-[#2e7d32] px-6 py-3 text-sm font-bold text-white hover:bg-[#1f5a23] transition">
+                        <img src="{% static 'icons/sparkles-white.svg' %}" alt="" class="size-4" onerror="this.style.display='none'">
+                        Periksa barang
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Kolom Kanan: Placeholder / Info -->
+        <div class="flex flex-col gap-4">
+            <!-- Info Status Box (Mirip desain memuat) -->
+            <div class="bg-[#fff8e1] rounded-xl p-5 border border-[#ffe082]">
+                <div class="flex items-start gap-3">
+                    <svg class="w-5 h-5 text-[#f57f17] animate-spin shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <div>
+                        <p class="text-sm font-bold text-[#4e342e]">Memeriksa foto dan detail...</p>
+                        <p class="text-xs text-[#5d4037] mt-1">Mencocokkan kondisi dengan panduan material.</p>
+                    </div>
+                </div>
+                <div class="w-full bg-[#ffe082] rounded-full h-1.5 mt-4">
+                    <div class="bg-[#f57f17] h-1.5 rounded-full w-1/2"></div>
+                </div>
+            </div>
+
+            <!-- Kartu Bantuan -->
+            <div class="bg-[#e3f2fd] rounded-xl p-5 border border-[#bbdefb] mt-auto">
+                <div class="flex items-start gap-3">
+                    <svg class="w-5 h-5 text-[#1976d2] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <div>
+                        <p class="text-sm font-bold text-[#0d47a1]">Tidak yakin dengan hasil?</p>
+                        <p class="text-xs text-[#1565c0] mt-1">Minta pemeriksaan manual; tim kami merespons maksimal 1x24 jam.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</main>
+{% endblock content %}

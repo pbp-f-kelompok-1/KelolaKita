@@ -22,7 +22,7 @@ class Pemeriksaan(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     # Relasi ke pengguna
-    pengguna = models.ForeignKey(User, on_delete=models.CASCADE)
+    pengguna = models.ForeignKey(User, related_name='pemeriksaan_penanganan', on_delete=models.CASCADE)
 
     # Data pengajuan barang dari pengguna
     nama_barang = models.CharField(max_length=255)
