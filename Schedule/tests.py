@@ -338,3 +338,53 @@ class ScheduleListViewTests(TestCase):
 
         self.assertEqual(row["status"], "terkunci")
         self.assertFalse(row["can_cancel"])
+
+
+class CancelScheduleViewTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="budi", password="pass12345")
+        self.item = Pemeriksaan.objects.create(
+            pengguna=self.user,
+            nama_barang="Botol plastik",
+            jenis_barang="Plastik",
+            kondisi_barang="Baik",
+            kategori_penanganan="recycle",
+        )
+
+    def _create_booking(self, tanggal, sesi=Penjadwalan.Sesi.pagi):
+        booking = Penjadwalan.objects.create(
+            metode=Penjadwalan.Metode.kurir,
+            tanggal=tanggal,
+            sesi=sesi,
+            nama_penerima="Budi",
+            nomor_hp="08123456789",
+            alamat_penjemputan="Jl. Melati No. 5",
+        )
+        booking.barang.set([self.item])
+        return booking
+
+    def test_cancel_deletes_booking_before_cutoff(self):
+        booking = self._create_booking(datetime.date.today() + datetime.timedelta(days=5))
+        response = self.client.post(reverse("cancel_schedule", args=[booking.pk]))
+        self.assertRedirects(response, reverse("schedule_list"))
+        self.assertFalse(Penjadwalan.objects.filter(pk=booking.pk).exists())
+
+    def test_cancel_rejected_within_cutoff_window(self):
+        session_date = datetime.date.today() + datetime.timedelta(days=10)
+        booking = self._create_booking(session_date)
+
+        mocked_now = timezone.make_aware(datetime.datetime.combine(session_date, datetime.time(2, 0)))
+        with patch("django.utils.timezone.now", return_value=mocked_now):
+            response = self.client.post(reverse("cancel_schedule", args=[booking.pk]))
+
+        self.assertRedirects(response, reverse("schedule_list"))
+        self.assertTrue(Penjadwalan.objects.filter(pk=booking.pk).exists())
+
+    def test_get_request_does_not_delete_booking(self):
+        booking = self._create_booking(datetime.date.today() + datetime.timedelta(days=5))
+        self.client.get(reverse("cancel_schedule", args=[booking.pk]))
+        self.assertTrue(Penjadwalan.objects.filter(pk=booking.pk).exists())
+
+    def test_cancel_nonexistent_booking_returns_404(self):
+        response = self.client.post(reverse("cancel_schedule", args=[999999]))
+        self.assertEqual(response.status_code, 404)
