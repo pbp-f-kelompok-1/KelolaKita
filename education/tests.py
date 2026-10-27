@@ -1,4 +1,5 @@
-from datetime import timedelta
+from datetime import date, datetime, timedelta, timezone as dt_timezone
+from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -513,3 +514,158 @@ class PublicPagesTests(TestCase):
         self.assertEqual(self.client.get(reverse("article_list")).status_code, 200)
         self.assertEqual(self.client.get(reverse("event_list")).status_code, 200)
         self.assertEqual(self.client.get(reverse("education_manage")).status_code, 302)
+
+
+class PublicDistributionTests(TestCase):
+    def setUp(self):
+        self.panti = make_location(
+            name="Panti Publik",
+            description="Deskripsi Lokasi Internal",
+            address="Jl. Rahasia 99",
+            contact_person="081299999999",
+            city="Kota Rahasia",
+            province="Provinsi Rahasia",
+            open_hours="Jam Rahasia",
+            longitude=106.999999,
+        )
+        self.komunitas = make_location(
+            name="Komunitas Publik",
+            category=Location.Category.komunitas,
+        )
+        self.bank = make_location(name="Bank Rahasia", category=Location.Category.bank_sampah)
+
+    def test_list_shows_only_completed_relevant_distributions(self):
+        selimut = make_distribution(
+            self.panti,
+            item_name="Selimut",
+            quantity=5,
+            distributed_at=timezone.localdate() - timedelta(days=2),
+        )
+        buku = make_distribution(
+            self.komunitas,
+            item_name="Buku",
+            quantity=3,
+            distributed_at=timezone.localdate() - timedelta(days=1),
+        )
+        make_distribution(self.panti, item_name="Rencana", status=Distribution.Status.planned)
+        make_distribution(self.panti, item_name="Batal", status=Distribution.Status.cancelled)
+        make_distribution(self.bank, item_name="Bank", quantity=100)
+        make_distribution(
+            self.panti,
+            item_name="Masa Depan",
+            distributed_at=timezone.localdate() + timedelta(days=1),
+        )
+
+        response = self.client.get(reverse("distribution_list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, selimut.item_name)
+        self.assertContains(response, buku.item_name)
+        self.assertNotContains(response, "Rencana")
+        self.assertNotContains(response, "Batal")
+        self.assertNotContains(response, "Bank")
+        self.assertNotContains(response, "Masa Depan")
+        self.assertEqual(response.context["stats"]["total_records"], 2)
+        self.assertEqual(response.context["stats"]["total_quantity"], 8)
+        self.assertEqual(response.context["stats"]["total_destinations"], 2)
+
+    def test_public_list_does_not_render_private_location_fields(self):
+        distribution = make_distribution(
+            self.panti,
+            item_name="Barang Aman",
+            description="Catatan internal jangan tampil",
+            quantity=4,
+            distributed_at=timezone.localdate(),
+        )
+
+        response = self.client.get(reverse("distribution_list"))
+
+        self.assertContains(response, distribution.item_name)
+        self.assertContains(response, self.panti.name)
+        self.assertContains(response, self.panti.get_category_display())
+        for private_value in [
+            "Catatan internal jangan tampil",
+            "Deskripsi Lokasi Internal",
+            "Jl. Rahasia 99",
+            "081299999999",
+            "Kota Rahasia",
+            "Provinsi Rahasia",
+            "Jam Rahasia",
+            str(self.panti.latitude),
+            str(self.panti.longitude),
+        ]:
+            self.assertNotContains(response, private_value)
+
+    def test_inactive_destination_is_rendered_without_error(self):
+        inactive = make_location(name="Panti Nonaktif", is_active=False)
+        distribution = make_distribution(
+            inactive,
+            item_name="Barang Historis",
+            distributed_at=timezone.localdate(),
+        )
+
+        response = self.client.get(reverse("distribution_list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, distribution.item_name)
+        self.assertContains(response, "Panti Nonaktif")
+        self.assertEqual(response.context["stats"]["total_records"], 1)
+
+    @patch("django.utils.timezone.now")
+    def test_public_date_uses_jakarta_business_day(self, mock_now):
+        mock_now.return_value = datetime(2026, 10, 26, 18, 30, tzinfo=dt_timezone.utc)
+        distribution = make_distribution(
+            self.panti,
+            item_name="Hari Ini WIB",
+            quantity=4,
+            distributed_at=date(2026, 10, 27),
+        )
+
+        response = self.client.get(reverse("distribution_list"))
+
+        self.assertContains(response, distribution.item_name)
+        self.assertEqual(response.context["stats"]["total_records"], 1)
+        self.assertEqual(response.context["stats"]["total_quantity"], 4)
+        self.assertEqual(response.context["stats"]["total_destinations"], 1)
+
+    def test_empty_state_and_zero_statistics(self):
+        response = self.client.get(reverse("distribution_list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Belum ada catatan penyaluran")
+        self.assertEqual(response.context["stats"]["total_records"], 0)
+        self.assertEqual(response.context["stats"]["total_destinations"], 0)
+
+    def test_home_links_to_public_distribution_page(self):
+        response = self.client.get(reverse("education_home"))
+
+        self.assertContains(response, reverse("distribution_list"))
+
+    def test_public_route_does_not_open_staff_management(self):
+        self.assertEqual(self.client.get(reverse("distribution_list")).status_code, 200)
+        self.assertEqual(self.client.get(reverse("education_manage")).status_code, 302)
+
+    def test_statistics_count_distinct_destinations(self):
+        make_distribution(self.panti, item_name="Barang A", quantity=2)
+        make_distribution(self.panti, item_name="Barang B", quantity=3)
+
+        response = self.client.get(reverse("distribution_list"))
+
+        self.assertEqual(response.context["stats"]["total_records"], 2)
+        self.assertEqual(response.context["stats"]["total_quantity"], 5)
+        self.assertEqual(response.context["stats"]["total_destinations"], 1)
+
+    def test_list_orders_by_delivery_date_and_excludes_missing_date(self):
+        older = make_distribution(
+            self.panti, item_name="Lebih Lama",
+            distributed_at=timezone.localdate() - timedelta(days=2),
+        )
+        newer = make_distribution(
+            self.panti, item_name="Lebih Baru",
+            distributed_at=timezone.localdate() - timedelta(days=1),
+        )
+        make_distribution(self.panti, item_name="Tanpa Tanggal", distributed_at=None)
+
+        response = self.client.get(reverse("distribution_list"))
+
+        self.assertEqual(list(response.context["distributions"]), [newer, older])

@@ -1,6 +1,9 @@
+from zoneinfo import ZoneInfo
+
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import PermissionDenied
+from django.db.models import Count, Sum
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.utils import timezone
@@ -8,10 +11,25 @@ from django.views.generic import CreateView, DeleteView, DetailView, ListView, T
 
 from education.forms import ArticleForm, DistributionForm, EventForm
 from education.models import Article, Distribution, Event
+from Location.models import Location
+
+BUSINESS_TIMEZONE = ZoneInfo("Asia/Jakarta")
 
 
 def published_events():
     return Event.objects.filter(is_published=True).select_related("location")
+
+
+def public_distributions():
+    return Distribution.objects.filter(
+        status=Distribution.Status.delivered,
+        distributed_at__isnull=False,
+        distributed_at__lte=timezone.localdate(timezone=BUSINESS_TIMEZONE),
+        destination__category__in=[
+            Location.Category.panti_asuhan,
+            Location.Category.komunitas,
+        ],
+    ).select_related("destination")
 
 
 class PublicEducationContextMixin:
@@ -62,6 +80,23 @@ class EventDetailView(PublicEducationContextMixin, DetailView):
 
     def get_queryset(self):
         return published_events()
+
+
+class DistributionListView(PublicEducationContextMixin, ListView):
+    template_name = "education/public_distribution_list.html"
+    context_object_name = "distributions"
+
+    def get_queryset(self):
+        return public_distributions().order_by("-distributed_at", "-created_at")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["stats"] = self.object_list.aggregate(
+            total_records=Count("id"),
+            total_quantity=Sum("quantity"),
+            total_destinations=Count("destination", distinct=True),
+        )
+        return context
 
 
 

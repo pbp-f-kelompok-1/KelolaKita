@@ -8,6 +8,7 @@ urlpatterns = [
     path("artikel/<slug:slug>/", views.ArticleDetailView.as_view(), name="article_detail"),
     path("agenda/", views.EventListView.as_view(), name="event_list"),
     path("agenda/<int:pk>/", views.EventDetailView.as_view(), name="event_detail"),
+    path("penyaluran/", views.DistributionListView.as_view(), name="distribution_list"),
     path("kelola/", views.ManageDashboard.as_view(), name="education_manage"),
     path("kelola/artikel/tambah/", views.ArticleCreateView.as_view(), name="article_create"),
     path("kelola/artikel/<int:pk>/ubah/", views.ArticleUpdateView.as_view(), name="article_update"),
