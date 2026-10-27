@@ -165,3 +165,122 @@ class ShowScheduleGetTests(TestCase):
 
         response = self.client.get(reverse("show_schedule"))
         self.assertNotIn(self.ready_item, list(response.context["items"]))
+
+
+class ShowSchedulePostTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="budi", password="pass12345")
+        self.item = Pemeriksaan.objects.create(
+            pengguna=self.user,
+            nama_barang="Botol plastik",
+            jenis_barang="Plastik",
+            kondisi_barang="Baik",
+            kategori_penanganan="recycle",
+        )
+        self.item2 = Pemeriksaan.objects.create(
+            pengguna=self.user,
+            nama_barang="Kardus",
+            jenis_barang="Kertas",
+            kondisi_barang="Baik",
+            kategori_penanganan="reuse",
+        )
+        self.location = Location.objects.create(
+            name="Bank Sampah Sejahtera",
+            description="desc",
+            address="Jl. Mawar",
+            contact_person="08123456789",
+            open_hours="08.00-16.00",
+            province="DKI Jakarta",
+            city="Jakarta",
+            latitude=Decimal("-6.2000"),
+            longitude=Decimal("106.8000"),
+        )
+
+    def _valid_kurir_payload(self, **overrides):
+        payload = {
+            "method": "kurir",
+            "date": _date_offset(3),
+            "session": "pagi",
+            "nama_penerima": "Budi",
+            "nomor_hp": "08123456789",
+            "alamat_penjemputan": "Jl. Melati No. 5",
+            "notes": "",
+            "barang": [str(self.item.pk)],
+        }
+        payload.update(overrides)
+        return payload
+
+    def test_valid_kurir_submission_creates_booking(self):
+        response = self.client.post(reverse("show_schedule"), self._valid_kurir_payload())
+        self.assertRedirects(response, reverse("show_schedule"))
+        self.assertEqual(Penjadwalan.objects.count(), 1)
+        booking = Penjadwalan.objects.first()
+        self.assertEqual(booking.metode, "kurir")
+        self.assertEqual(booking.alamat_penjemputan, "Jl. Melati No. 5")
+        self.assertEqual(list(booking.barang.all()), [self.item])
+
+    def test_valid_titik_submission_creates_booking(self):
+        payload = self._valid_kurir_payload(
+            method="titik",
+            lokasi_mitra=str(self.location.pk),
+            alamat_penjemputan="",
+        )
+        response = self.client.post(reverse("show_schedule"), payload)
+        self.assertRedirects(response, reverse("show_schedule"))
+        booking = Penjadwalan.objects.get()
+        self.assertEqual(booking.metode, "titik")
+        self.assertEqual(booking.lokasi_mitra, self.location)
+
+    def test_multi_item_submission_links_all_items(self):
+        payload = self._valid_kurir_payload(barang=[str(self.item.pk), str(self.item2.pk)])
+        self.client.post(reverse("show_schedule"), payload)
+        booking = Penjadwalan.objects.get()
+        self.assertEqual(set(booking.barang.all()), {self.item, self.item2})
+
+    def test_missing_nama_penerima_shows_error_and_creates_nothing(self):
+        payload = self._valid_kurir_payload(nama_penerima="")
+        response = self.client.post(reverse("show_schedule"), payload)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Penjadwalan.objects.count(), 0)
+        messages = list(response.context["messages"])
+        self.assertTrue(any("Lengkapi" in str(m) for m in messages))
+
+    def test_invalid_phone_shows_error_and_creates_nothing(self):
+        payload = self._valid_kurir_payload(nomor_hp="12345")
+        response = self.client.post(reverse("show_schedule"), payload)
+        self.assertEqual(Penjadwalan.objects.count(), 0)
+        self.assertEqual(response.status_code, 200)
+
+    def test_kurir_without_alamat_is_rejected(self):
+        payload = self._valid_kurir_payload(alamat_penjemputan="")
+        response = self.client.post(reverse("show_schedule"), payload)
+        self.assertEqual(Penjadwalan.objects.count(), 0)
+        self.assertEqual(response.status_code, 200)
+
+    def test_titik_without_lokasi_is_rejected(self):
+        payload = self._valid_kurir_payload(method="titik", alamat_penjemputan="")
+        response = self.client.post(reverse("show_schedule"), payload)
+        self.assertEqual(Penjadwalan.objects.count(), 0)
+
+    def test_no_barang_selected_is_rejected(self):
+        payload = self._valid_kurir_payload(barang=[])
+        response = self.client.post(reverse("show_schedule"), payload)
+        self.assertEqual(Penjadwalan.objects.count(), 0)
+
+    def test_full_session_is_rejected(self):
+        date_iso = _date_offset(3)
+        Penjadwalan.objects.create(
+            metode=Penjadwalan.Metode.titik,
+            tanggal=date_iso,
+            sesi=Penjadwalan.Sesi.siang,
+            nama_penerima="Lain",
+            nomor_hp="08129999999",
+            lokasi_mitra=self.location,
+        )
+
+        payload = self._valid_kurir_payload(date=date_iso, session="siang")
+        response = self.client.post(reverse("show_schedule"), payload)
+
+        self.assertEqual(Penjadwalan.objects.count(), 1)
+        messages = list(response.context["messages"])
+        self.assertTrue(any("penuh" in str(m) for m in messages))
