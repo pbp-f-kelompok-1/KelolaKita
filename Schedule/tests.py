@@ -30,3 +30,27 @@ class PhoneValidatorTests(TestCase):
     def test_rejects_too_short(self):
         with self.assertRaises(ValidationError):
             phone_validator("08123")
+
+
+class PemeriksaanModelTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="budi", password="pass12345")
+
+    def test_str_shows_nama_dan_kategori(self):
+        item = Pemeriksaan.objects.create(
+            pengguna=self.user,
+            nama_barang="Botol plastik",
+            jenis_barang="Plastik",
+            kondisi_barang="Masih bagus",
+            kategori_penanganan="recycle",
+        )
+        self.assertEqual(str(item), "Botol plastik (Recycle)")
+
+    def test_default_kategori_is_menunggu(self):
+        item = Pemeriksaan.objects.create(
+            pengguna=self.user,
+            nama_barang="Baju lama",
+            jenis_barang="Tekstil",
+            kondisi_barang="Sobek",
+        )
+        self.assertEqual(item.kategori_penanganan, "menunggu")
