@@ -17,15 +17,39 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
-from ProjectKelolaKita.views import landing_page, show_location, create_location, delete_location
+from ProjectKelolaKita.views import landing_page, show_location, create_location, delete_location, location_detail
+
+from django.conf import settings
+from django.contrib import admin
+from django.urls import include, path
+
+from ProjectKelolaKita.views import (
+    create_location,
+    delete_location,
+    landing_page,
+    location_detail,
+    show_location,
+)
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', landing_page, name='landing_page'),
-    path('locations/', show_location, name="show_location"),
-    path('locations/add/', create_location, name="create_location"),
-    path("locations/<uuid:location_id>/delete/",delete_location,name="delete_location"),
 
+    path('locations/', show_location, name='show_location'),
+    path('locations/add/', create_location, name='create_location'),
+    path(
+        'locations/<uuid:location_id>/delete/',
+        delete_location,
+        name='delete_location',
+    ),
+    path(
+        'location/<uuid:pk>/',
+        location_detail,
+        name='location_detail',
+    ),
+
+    path('jadwal/', include('Schedule.urls')),
     path('accounts/', include('accounts.urls')),
 ]
 

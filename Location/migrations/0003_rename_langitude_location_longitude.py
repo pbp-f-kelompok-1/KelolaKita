@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('main', '0002_location_langitude_location_latitude'),
+        ('Location', '0002_location_langitude_location_latitude'),
     ]
 
     operations = [

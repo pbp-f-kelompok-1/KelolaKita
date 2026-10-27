@@ -1,8 +1,8 @@
 from django.urls import path
-from main import views
+from Location import views
 
-from main.views import landing_page
-from main.views import show_main
+from Location.views import landing_page
+from Location.views import show_main
 
 app_name = "main"
 

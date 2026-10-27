@@ -1,5 +1,5 @@
-from django.forms import ModelForm, TextInput, Textarea, NumberInput
-from main.models import Location
+from django.forms import ModelForm, TextInput, Textarea, NumberInput, RadioSelect
+from Location.models import Location
 
 class LocationForm(ModelForm) :
     class Meta :
@@ -14,6 +14,7 @@ class LocationForm(ModelForm) :
             "contact_person",
             "latitude",
             "longitude",
+            "category", 
         ]
 
         labels = {
@@ -84,4 +85,15 @@ class LocationForm(ModelForm) :
                     "id": "id_longitude",
                 }
             ),
+            "category" : RadioSelect,
         }
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        input_classes = (
+            "w-full rounded-[10px] border border-line bg-white px-3.5 py-3 "
+            "text-[0.9rem] text-ink focus:border-brand focus:outline-2 focus:outline-brand"
+        )
+        for name, field in self.fields.items():
+            if name != "category":
+                field.widget.attrs["class"] = input_classes
