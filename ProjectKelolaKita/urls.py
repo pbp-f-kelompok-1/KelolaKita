@@ -24,7 +24,9 @@ urlpatterns = [
     path('', landing_page, name='landing_page'),
     path('locations/', show_location, name="show_location"),
     path('locations/add/', create_location, name="create_location"),
-    path("locations/<uuid:location_id>/delete/",delete_location,name="delete_location")
+    path("locations/<uuid:location_id>/delete/",delete_location,name="delete_location"),
+
+    path('accounts/', include('accounts.urls')),
 ]
 
 if settings.DEBUG:
