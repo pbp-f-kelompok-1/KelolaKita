@@ -18,10 +18,11 @@
 
             <article>
                 <header class="article-head">
-                    <p class="meta">
-                        {{ article.get_category_display }} · {{ article.published_at|date:"j F Y" }} ·
-                        {{ article.read_minutes }} menit baca
-                    </p>
+                    <div class="meta article-meta">
+                        <span class="article-meta__category">{{ article.category_label }}</span>
+                        <time class="article-meta__detail" datetime="{{ article.published_at|date:'c' }}">{{ article.published_at|date:"j F Y" }}</time>
+                        <span class="article-meta__detail">{{ article.read_minutes }} menit baca</span>
+                    </div>
                     <h1>{{ article.title }}</h1>
                     <p class="article-lead">{{ article.summary }}</p>
                 </header>

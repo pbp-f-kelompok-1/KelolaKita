@@ -153,6 +153,14 @@ class ArticlePresentationTests(TestCase):
             with self.subTest(src=cover["src"]):
                 self.assertIsNotNone(finders.find(cover["src"]))
 
+    def test_category_labels_use_public_indonesian_terms(self):
+        self.assertEqual(
+            Article(category=Article.Category.reuse).category_label, "Guna ulang"
+        )
+        self.assertEqual(
+            Article(category=Article.Category.reduce).category_label, "Pengurangan sampah"
+        )
+
 
 class EventModelTests(TestCase):
     def setUp(self):
@@ -286,6 +294,12 @@ class FormTests(TestCase):
 
         self.assertTrue(form.is_valid(), form.errors)
         self.assertEqual(form.save().slug, "artikel-dari-form")
+
+    def test_article_form_uses_public_category_labels(self):
+        labels = dict(ArticleForm().fields["category"].choices)
+
+        self.assertEqual(labels[Article.Category.reuse], "Guna ulang")
+        self.assertEqual(labels[Article.Category.reduce], "Pengurangan sampah")
 
     def test_article_form_rejects_missing_title(self):
         form = ArticleForm(data={
@@ -698,6 +712,17 @@ class PublicDistributionTests(TestCase):
         self.assertEqual(response.context["stats"]["total_records"], 1)
         self.assertEqual(response.context["stats"]["total_quantity"], 4)
         self.assertEqual(response.context["stats"]["total_destinations"], 1)
+
+    def test_distribution_dates_use_iso_date_attributes(self):
+        make_distribution(
+            self.panti,
+            item_name="Barang Bertanggal",
+            distributed_at=date(2026, 10, 21),
+        )
+
+        for name in ["distribution_list", "education_home"]:
+            response = self.client.get(reverse(name))
+            self.assertContains(response, 'datetime="2026-10-21"')
 
     def test_empty_state_and_zero_statistics(self):
         response = self.client.get(reverse("distribution_list"))

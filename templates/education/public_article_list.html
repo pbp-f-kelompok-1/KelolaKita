@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block title %}Artikel Edukasi — KelolaKita{% endblock title %}
-{% block meta_description %}Panduan Reduce dan Reuse untuk mengelola barang dan sampah rumah tangga.{% endblock meta_description %}
+{% block meta_description %}Panduan guna ulang dan pengurangan sampah untuk mengelola barang dan sampah rumah tangga.{% endblock meta_description %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/education.css' %}">
@@ -32,10 +32,11 @@
                             decoding="async">
                     </div>
                     <div class="article-card__body">
-                        <p class="meta">
-                            {{ article.get_category_display }} · {{ article.published_at|date:"j M Y" }} ·
-                            {{ article.read_minutes }} menit baca
-                        </p>
+                        <div class="meta article-meta">
+                            <span class="article-meta__category">{{ article.category_label }}</span>
+                            <time class="article-meta__detail" datetime="{{ article.published_at|date:'c' }}">{{ article.published_at|date:"j M Y" }}</time>
+                            <span class="article-meta__detail">{{ article.read_minutes }} menit baca</span>
+                        </div>
                         <h2><a href="{% url 'article_detail' article.slug %}">{{ article.title }}</a></h2>
                         <p class="article-card__summary">{{ article.summary }}</p>
                         <a class="text-link" href="{% url 'article_detail' article.slug %}">
@@ -47,12 +48,12 @@
             </div>
             {% else %}
             <div class="empty-box">
-                <p class="empty-box__title">Belum ada artikel yang diterbitkan</p>
-                <p class="empty-box__text">Artikel baru akan muncul di sini setelah diterbitkan pengelola.</p>
+                <p class="empty-box__title">Belum ada artikel yang terbit</p>
+                <p class="empty-box__text">Artikel baru akan tampil setelah diterbitkan pengelola.</p>
             </div>
             {% endif %}
 
-            <p class="mt-8"><a class="text-link" href="{% url 'event_list' %}">Lihat agenda kegiatan <span aria-hidden="true">→</span></a></p>
+            <p class="mt-8"><a class="text-link" href="{% url 'event_list' %}">Lihat agenda mendatang <span aria-hidden="true">→</span></a></p>
         </div>
     </div>
 </main>

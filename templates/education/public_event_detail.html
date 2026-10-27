@@ -18,7 +18,10 @@
 
             <article>
                 <header class="article-head">
-                    <p class="meta">Agenda · {{ event.start_at|date:"j F Y" }}</p>
+                    <p class="meta meta-list">
+                        <span>Agenda</span>
+                        <time datetime="{{ event.start_at|date:'c' }}">{{ event.start_at|date:"j F Y" }}</time>
+                    </p>
                     <h1>{{ event.title }}</h1>
                     {% if event.description %}<p class="article-lead">{{ event.description }}</p>{% endif %}
                 </header>
@@ -26,8 +29,7 @@
                 <div class="prose">
                     <p>
                         <strong>Waktu:</strong>
-                        <time datetime="{{ event.start_at|date:'c' }}">{{ event.start_at|date:"j M Y, H.i" }}</time>
-                        {% if event.end_at %}–{{ event.end_at|date:"H.i" }}{% endif %}
+                        <time datetime="{{ event.start_at|date:'c' }}">{{ event.start_at|date:"j M Y, H.i" }}</time>{% if event.end_at %}–{{ event.end_at|date:"H.i" }}{% endif %}
                     </p>
                     <p><strong>Lokasi:</strong> {{ event.location.name }}</p>
                 </div>

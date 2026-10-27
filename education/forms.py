@@ -2,7 +2,7 @@ from django import forms
 from django.forms import ModelForm
 
 from Location.models import Location
-from education.models import Article, Distribution, Event
+from education.models import ARTICLE_CATEGORY_LABELS, Article, Distribution, Event
 
 
 class ArticleForm(ModelForm):
@@ -22,6 +22,13 @@ class ArticleForm(ModelForm):
                 attrs={"type": "datetime-local"}, format="%Y-%m-%dT%H:%M"
             ),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["category"].choices = [
+            (value, ARTICLE_CATEGORY_LABELS.get(value, label))
+            for value, label in self.fields["category"].choices
+        ]
 
 
 class EventForm(ModelForm):

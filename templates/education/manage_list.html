@@ -47,7 +47,7 @@
                                     <span class="data-table__title">{{ article.title }}</span>
                                     <span class="data-table__sub">/edukasi/artikel/{{ article.slug }}/</span>
                                 </td>
-                                <td>{{ article.get_category_display }}</td>
+                                <td>{{ article.category_label }}</td>
                                 <td>
                                     {% if not article.is_published %}
                                     <span class="tag tag--draft">Draf</span>
@@ -129,7 +129,7 @@
                                 <td colspan="5">
                                     <div class="empty-box">
                                         <p class="empty-box__title">Belum ada agenda</p>
-                                        <p class="empty-box__text">Tambahkan kegiatan komunitas yang akan datang.</p>
+                                        <p class="empty-box__text">Tambahkan agenda komunitas mendatang.</p>
                                         <a class="btn btn--ghost btn--sm" href="{% url 'event_create' %}">Tambah agenda</a>
                                     </div>
                                 </td>
@@ -144,7 +144,7 @@
                 <div class="manage-section__head">
                     <div>
                         <h2 id="kelola-penyaluran">Catatan penyaluran</h2>
-                        <p>Barang Reuse yang diarahkan ke panti asuhan atau komunitas.</p>
+                        <p>Barang guna ulang yang disalurkan ke panti asuhan atau komunitas.</p>
                     </div>
                     <a class="btn btn--primary btn--sm" href="{% url 'distribution_create' %}">Tambah catatan</a>
                 </div>
@@ -165,7 +165,7 @@
                             <tr>
                                 <td><span class="data-table__title">{{ distribution.item_name }}</span></td>
                                 <td>{{ distribution.destination.name }}</td>
-                                <td>Jumlah tercatat: {{ distribution.quantity }}</td>
+                                <td>{{ distribution.quantity }}</td>
                                 <td>
                                     {% if distribution.status == "delivered" %}
                                     <span class="tag tag--live">{{ distribution.get_status_display }}</span>

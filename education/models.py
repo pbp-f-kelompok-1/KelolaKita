@@ -23,7 +23,7 @@ ARTICLE_COVERS = {
     },
     "cek-cepat-barang-layak-pakai-atau-perlu-diperbaiki": {
         "src": "images/education/articles/barang-layak-pakai.jpg",
-        "alt": "Rak pakaian bekas layak pakai di toko thrift",
+        "alt": "Rak pakaian layak pakai di toko pakaian bekas",
     },
 }
 
@@ -32,6 +32,11 @@ ARTICLE_COVERS_BY_CATEGORY = {
     "reuse": ARTICLE_COVERS["cek-cepat-barang-layak-pakai-atau-perlu-diperbaiki"],
     "reduce": ARTICLE_COVERS["mulai-reduce-dari-belanja-mingguan-keluarga"],
     "kebiasaan": ARTICLE_COVERS["mulai-reduce-dari-belanja-mingguan-keluarga"],
+}
+
+ARTICLE_CATEGORY_LABELS = {
+    "reuse": "Guna ulang",
+    "reduce": "Pengurangan sampah",
 }
 
 
@@ -80,6 +85,12 @@ class Article(models.Model):
         return max(1, round(len(self.body.split()) / 200))
 
     @property
+    def category_label(self):
+        return ARTICLE_CATEGORY_LABELS.get(
+            self.category, self.get_category_display()
+        )
+
+    @property
     def cover(self):
         # short: cover is curated statically; upgrade to ImageField when editors need uploads.
         return ARTICLE_COVERS.get(self.slug) or ARTICLE_COVERS_BY_CATEGORY.get(
@@ -114,7 +125,7 @@ class Event(models.Model):
 
     def clean(self):
         if self.start_at and self.end_at and self.end_at < self.start_at:
-            raise ValidationError({"end_at": "Waktu selesai tidak boleh sebelum waktu mulai."})
+            raise ValidationError({"end_at": "Waktu selesai tidak boleh lebih awal daripada waktu mulai."})
 
 
 class Distribution(models.Model):
@@ -150,8 +161,8 @@ class Distribution(models.Model):
             Location.Category.panti_asuhan,
             Location.Category.komunitas,
         ):
-            errors["destination"] = "Tujuan penyaluran harus panti asuhan atau komunitas."
+            errors["destination"] = "Tujuan penyaluran harus berupa panti asuhan atau komunitas."
         if self.status == self.Status.delivered and not self.distributed_at:
-            errors["distributed_at"] = "Isi tanggal penyaluran untuk status tersalurkan."
+            errors["distributed_at"] = "Tanggal penyaluran wajib diisi untuk status Tersalurkan."
         if errors:
             raise ValidationError(errors)
