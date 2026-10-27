@@ -22,51 +22,53 @@
 </head>
 
 <body class="bg-[#f4f6f5] font-['Inter']">
-    <header class="site-header sticky top-0 z-20 flex h-[76px] w-full items-center justify-between border-b border-[#dce7de] bg-white px-16">
-        <a href="{% url 'landing_page' %}" class="flex shrink-0 items-center gap-2.5">
-            <span class="flex size-[38px] shrink-0 items-center justify-center rounded-xl bg-[#2e7d32]">
-                <img src="{% static 'icons/leaf.svg' %}" alt="" class="size-[22px]">
-            </span>
-            <span class="font-['Plus_Jakarta_Sans'] text-xl font-extrabold text-[#1a2e1c]">KelolaKita</span>
-        </a>
+    <header class="site-header sticky top-0 z-20 w-full border-b border-[#dce7de] bg-white">
+        <div class="flex h-[76px] w-full items-center justify-between gap-3 px-4 sm:px-8 lg:px-16">
+            <a href="{% url 'landing_page' %}" class="flex shrink-0 items-center gap-2.5">
+                <span class="flex size-[38px] shrink-0 items-center justify-center rounded-xl bg-[#2e7d32]">
+                    <img src="{% static 'icons/leaf.svg' %}" alt="" class="size-[22px]">
+                </span>
+                <span class="font-['Plus_Jakarta_Sans'] text-xl font-extrabold text-[#1a2e1c]">KelolaKita</span>
+            </a>
 
-        <nav class="flex items-center gap-[30px]">
-            <a href="{% url 'landing_page' %}"
-               class="flex flex-col items-center gap-[9px] text-sm whitespace-nowrap {% if active_nav == 'beranda' %}font-bold text-[#2e7d32]{% else %}font-medium text-[#557a5b] hover:text-[#2e7d32]{% endif %}">
-                Beranda
-                <span class="h-[3px] w-6 rounded-full bg-[#2e7d32] {% if active_nav != 'beranda' %}invisible{% endif %}"></span>
-            </a>
-            <a href="#"
-               class="flex flex-col items-center gap-[9px] text-sm whitespace-nowrap {% if active_nav == 'pengajuan' %}font-bold text-[#2e7d32]{% else %}font-medium text-[#557a5b] hover:text-[#2e7d32]{% endif %}">
-                Pengajuan
-                <span class="h-[3px] w-6 rounded-full bg-[#2e7d32] {% if active_nav != 'pengajuan' %}invisible{% endif %}"></span>
-            </a>
-            <a href="{% url 'show_location' %}"
-               class="flex flex-col items-center gap-[9px] text-sm whitespace-nowrap {% if active_nav == 'peta' %}font-bold text-[#2e7d32]{% else %}font-medium text-[#557a5b] hover:text-[#2e7d32]{% endif %}">
-                Peta Setoran
-                <span class="h-[3px] w-6 rounded-full bg-[#2e7d32] {% if active_nav != 'peta' %}invisible{% endif %}"></span>
-            </a>
-            <a href="{% url 'show_schedule' %}"
-               class="flex flex-col items-center gap-[9px] text-sm whitespace-nowrap {% if active_nav == 'jadwal' %}font-bold text-[#2e7d32]{% else %}font-medium text-[#557a5b] hover:text-[#2e7d32]{% endif %}">
-                Jadwal
-                <span class="h-[3px] w-6 rounded-full bg-[#2e7d32] {% if active_nav != 'jadwal' %}invisible{% endif %}"></span>
-            </a>
-            <a href="#"
-               class="flex flex-col items-center gap-[9px] text-sm whitespace-nowrap {% if active_nav == 'edukasi' %}font-bold text-[#2e7d32]{% else %}font-medium text-[#557a5b] hover:text-[#2e7d32]{% endif %}">
-                Edukasi
-                <span class="h-[3px] w-6 rounded-full bg-[#2e7d32] {% if active_nav != 'edukasi' %}invisible{% endif %}"></span>
-            </a>
-        </nav>
+            <nav class="hidden items-center gap-[30px] lg:flex">
+                {% include "_nav_links.html" %}
+            </nav>
 
-        <div class="flex shrink-0 items-center gap-3">
-            <span class="flex items-center gap-[7px] rounded-full bg-[#fff4d6] px-3 py-2">
-                <img src="{% static 'icons/sparkles.svg' %}" alt="" class="size-4">
-                <span class="text-[13px] font-bold whitespace-nowrap text-[#1a2e1c]">1.240 poin</span>
-            </span>
-            <img src="{% static 'img/schedule/avatar-placeholder.png' %}" alt="Avatar pengguna"
-                 class="size-[38px] shrink-0 rounded-full object-cover">
+            <div class="flex shrink-0 items-center gap-2 sm:gap-3">
+                <span class="hidden items-center gap-[7px] rounded-full bg-[#fff4d6] px-3 py-2 sm:flex">
+                    <img src="{% static 'icons/sparkles.svg' %}" alt="" class="size-4">
+                    <span class="text-[13px] font-bold whitespace-nowrap text-[#1a2e1c]">1.240 poin</span>
+                </span>
+                <img src="{% static 'img/schedule/avatar-placeholder.png' %}" alt="Avatar pengguna"
+                     class="size-[38px] shrink-0 rounded-full object-cover">
+                <button type="button" id="mobile-nav-toggle" aria-label="Buka menu" aria-expanded="false"
+                        aria-controls="mobile-nav"
+                        class="flex size-9 shrink-0 items-center justify-center rounded-lg border border-[#dce7de] text-[#1a2e1c] lg:hidden">
+                    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" class="size-5">
+                        <path d="M3 5h14M3 10h14M3 15h14" />
+                    </svg>
+                </button>
+            </div>
         </div>
+
+        <nav id="mobile-nav" class="hidden flex-col gap-1 border-t border-[#dce7de] bg-white px-4 py-2 lg:hidden">
+            {% include "_nav_links.html" with mobile=True %}
+        </nav>
     </header>
+
+    <script>
+        (function () {
+            const toggle = document.getElementById('mobile-nav-toggle');
+            const nav = document.getElementById('mobile-nav');
+            if (!toggle || !nav) return;
+            toggle.addEventListener('click', () => {
+                const isOpen = nav.classList.toggle('flex');
+                nav.classList.toggle('hidden', !isOpen);
+                toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            });
+        })();
+    </script>
 
     {% if messages %}
     <div class="mx-auto flex w-full max-w-[1440px] flex-col gap-2 px-16 pt-4">
