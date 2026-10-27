@@ -1,13 +1,39 @@
 {% extends 'base.html' %}
+{% load static %}
+
 {% block title %}{{ article.title }} — KelolaKita{% endblock title %}
+{% block meta_description %}{{ article.summary }}{% endblock meta_description %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/education.css' %}">
+{% endblock extra_css %}
+
 {% block content %}
-<main class="mx-auto w-full max-w-[800px] px-6 py-12">
-    <p><a href="{% url 'article_list' %}" class="text-sm font-bold text-[#2e7d32]">← Kembali ke artikel</a></p>
-    <article class="mt-5">
-        <p class="text-xs font-bold text-[#2e7d32]">{{ article.get_category_display }} · {{ article.published_at|date:"j M Y" }}</p>
-        <h1 class="mt-2 font-['Plus_Jakarta_Sans'] text-3xl font-extrabold text-[#1a2e1c]">{{ article.title }}</h1>
-        <p class="mt-3 text-lg text-[#557a5b]">{{ article.summary }}</p>
-        <div class="mt-6 text-[#17261b]">{{ article.body|linebreaks }}</div>
-    </article>
+<main id="main">
+    <div class="container">
+        <div class="article-page">
+            <a class="back-link" href="{% url 'education_home' %}">
+                <span aria-hidden="true">←</span> Kembali ke edukasi
+            </a>
+
+            <article>
+                <header class="article-head">
+                    <p class="meta">
+                        {{ article.get_category_display }} · {{ article.published_at|date:"j F Y" }} ·
+                        {{ article.read_minutes }} menit baca
+                    </p>
+                    <h1>{{ article.title }}</h1>
+                    <p class="article-lead">{{ article.summary }}</p>
+                </header>
+
+                <figure class="article-cover">
+                    <img src="{% static article.cover.src %}" alt="{{ article.cover.alt }}"
+                        fetchpriority="high" decoding="async">
+                </figure>
+
+                <div class="prose">{{ article.body|linebreaks }}</div>
+            </article>
+        </div>
+    </div>
 </main>
 {% endblock content %}

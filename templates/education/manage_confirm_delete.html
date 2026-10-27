@@ -1,12 +1,28 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Hapus {{ entity_label }} — KelolaKita{% endblock title %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/education.css' %}">
+{% endblock extra_css %}
+
 {% block content %}
-<main>
-    <h1>Hapus data</h1>
-    <p>Yakin ingin menghapus <strong>{{ object }}</strong>? Tindakan ini tidak bisa dibatalkan.</p>
-    <form method="post">
-        {% csrf_token %}
-        <button type="submit">Ya, hapus</button>
-        <a href="{% url 'education_manage' %}">Batal</a>
-    </form>
+<main id="main">
+    <div class="container">
+        <div class="manage-page">
+            <div class="delete-card">
+                <h1>Hapus {{ entity_label }}?</h1>
+                <p>
+                    <strong>{{ object }}</strong> akan dihapus permanen. Tindakan ini tidak bisa dibatalkan.
+                </p>
+                <form method="post" class="form-actions">
+                    {% csrf_token %}
+                    <a class="btn btn--ghost" href="{% url 'education_manage' %}">Batal</a>
+                    <button class="btn btn--danger" type="submit">Ya, hapus</button>
+                </form>
+            </div>
+        </div>
+    </div>
 </main>
 {% endblock content %}

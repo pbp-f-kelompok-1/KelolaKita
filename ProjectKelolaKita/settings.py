@@ -153,6 +153,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 
 TAILWIND_APP_NAME = 'theme'
+# v4.3.0 standalone binary exits abnormally during build; v4.3.3 is verified.
+TAILWIND_STANDALONE_BINARY_VERSION = "v4.3.3"
 
 if DEBUG:
     INSTALLED_APPS += ["django_browser_reload"]

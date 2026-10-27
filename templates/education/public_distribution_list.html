@@ -1,51 +1,69 @@
 {% extends 'base.html' %}
+{% load static %}
+
 {% block title %}Penyaluran — KelolaKita{% endblock title %}
+{% block meta_description %}Catatan barang yang sudah tersalurkan ke panti asuhan dan komunitas melalui KelolaKita.{% endblock meta_description %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/education.css' %}">
+{% endblock extra_css %}
+
 {% block content %}
-<main class="mx-auto w-full max-w-[900px] px-6 py-12">
-    <p><a href="{% url 'education_home' %}" class="text-sm font-bold text-[#2e7d32]">← Kembali ke Edukasi</a></p>
-    <h1 class="mt-4 font-['Plus_Jakarta_Sans'] text-3xl font-extrabold text-[#1a2e1c]">Penyaluran</h1>
-    <p class="mt-2 text-[#557a5b]">Catatan barang yang sudah tersalurkan ke panti asuhan dan komunitas. Hanya catatan berstatus tersalurkan yang ditampilkan.</p>
+<main id="main">
+    <div class="container">
+        <div class="edu-main">
+            <a class="back-link" href="{% url 'education_home' %}">
+                <span aria-hidden="true">←</span> Kembali ke edukasi
+            </a>
 
-    <section class="mt-8 grid gap-4 sm:grid-cols-3" aria-label="Ringkasan penyaluran">
-        <div class="rounded-xl border border-[#dce7de] bg-white p-4">
-            <p class="text-2xl font-extrabold text-[#1a2e1c]">{{ stats.total_records }}</p>
-            <p class="text-xs font-semibold text-[#557a5b]">Catatan tersalurkan</p>
-        </div>
-        <div class="rounded-xl border border-[#dce7de] bg-white p-4">
-            <p class="text-2xl font-extrabold text-[#1a2e1c]">{{ stats.total_quantity|default:"0" }}</p>
-            <p class="text-xs font-semibold text-[#557a5b]">Total kuantitas tercatat</p>
-        </div>
-        <div class="rounded-xl border border-[#dce7de] bg-white p-4">
-            <p class="text-2xl font-extrabold text-[#1a2e1c]">{{ stats.total_destinations }}</p>
-            <p class="text-xs font-semibold text-[#557a5b]">Tujuan unik</p>
-        </div>
-    </section>
-
-    <section class="mt-10" aria-labelledby="daftar-penyaluran">
-        <h2 id="daftar-penyaluran" class="font-['Plus_Jakarta_Sans'] text-xl font-extrabold text-[#1a2e1c]">Daftar penyaluran</h2>
-        {% if distributions %}
-        <ul class="mt-4 divide-y divide-[#dce7de] border-y border-[#dce7de]">
-            {% for distribution in distributions %}
-            <li class="flex flex-wrap items-baseline justify-between gap-3 py-4">
+            <div class="section-head">
                 <div>
-                    <p class="font-bold text-[#1a2e1c]">{{ distribution.item_name }}</p>
-                    <p class="mt-1 text-sm text-[#557a5b]">
-                        {{ distribution.destination.name }} · {{ distribution.destination.get_category_display }}
-                    </p>
-                    <p class="mt-1 text-xs text-[#557a5b]">Jumlah tercatat: {{ distribution.quantity }}</p>
+                    <h1 class="section-title">Penyaluran</h1>
+                    <p class="section-sub">Catatan barang yang sudah tersalurkan ke panti asuhan dan komunitas. Hanya catatan berstatus tersalurkan yang ditampilkan.</p>
                 </div>
-                <time class="text-sm font-semibold text-[#2e7d32]" datetime="{{ distribution.distributed_at|date:'c' }}">{{ distribution.distributed_at|date:"j M Y" }}</time>
-            </li>
-            {% endfor %}
-        </ul>
-        {% else %}
-        <p class="mt-4 text-sm text-[#557a5b]">Belum ada catatan penyaluran yang tersalurkan.</p>
-        {% endif %}
-    </section>
+            </div>
 
-    <nav class="mt-8 flex gap-5 text-sm font-bold text-[#2e7d32]">
-        <a href="{% url 'article_list' %}">Artikel edukasi</a>
-        <a href="{% url 'event_list' %}">Agenda kegiatan</a>
-    </nav>
+            <section class="partner-grid" aria-label="Ringkasan penyaluran">
+                <article class="partner-card">
+                    <p class="meta">Catatan tersalurkan</p>
+                    <p class="section-title">{{ stats.total_records }}</p>
+                </article>
+                <article class="partner-card">
+                    <p class="meta">Total kuantitas tercatat</p>
+                    <p class="section-title">{{ stats.total_quantity|default:"0" }}</p>
+                </article>
+                <article class="partner-card">
+                    <p class="meta">Tujuan unik</p>
+                    <p class="section-title">{{ stats.total_destinations }}</p>
+                </article>
+            </section>
+
+            <section class="edu-section" aria-labelledby="daftar-penyaluran">
+                <div class="section-head">
+                    <h2 class="section-title" id="daftar-penyaluran">Daftar penyaluran</h2>
+                </div>
+                {% if distributions %}
+                <div class="ledger">
+                    {% for distribution in distributions %}
+                    <div class="ledger__row">
+                        <span>{{ distribution.item_name }} · Jumlah tercatat: {{ distribution.quantity }}</span>
+                        <span class="meta">
+                            {{ distribution.destination.name }} · {{ distribution.destination.get_category_display }} ·
+                            {{ distribution.distributed_at|date:"j M Y" }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-box">
+                    <p class="empty-box__title">Belum ada catatan penyaluran</p>
+                    <p class="empty-box__text">Catatan akan muncul setelah barang benar-benar tersalurkan.</p>
+                </div>
+                {% endif %}
+            </section>
+
+            <p class="mt-8"><a class="text-link" href="{% url 'article_list' %}">Artikel edukasi <span aria-hidden="true">→</span></a></p>
+        </div>
+    </div>
 </main>
 {% endblock content %}

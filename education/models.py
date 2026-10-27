@@ -12,6 +12,29 @@ class ArticleQuerySet(models.QuerySet):
         return self.filter(is_published=True, published_at__lte=timezone.now())
 
 
+ARTICLE_COVERS = {
+    "mulai-reduce-dari-belanja-mingguan-keluarga": {
+        "src": "images/education/articles/belanja-pasar-reusable.jpg",
+        "alt": "Perempuan membawa tas kain berisi sayuran di pasar swalayan",
+    },
+    "7-jenis-plastik-dan-ke-mana-harus-membawanya": {
+        "src": "images/education/articles/plastik-rumah-tangga.jpg",
+        "alt": "Karung-karung berisi botol plastik bekas untuk didaur ulang",
+    },
+    "cek-cepat-barang-layak-pakai-atau-perlu-diperbaiki": {
+        "src": "images/education/articles/barang-layak-pakai.jpg",
+        "alt": "Rak pakaian bekas layak pakai di toko thrift",
+    },
+}
+
+ARTICLE_COVERS_BY_CATEGORY = {
+    "panduan": ARTICLE_COVERS["7-jenis-plastik-dan-ke-mana-harus-membawanya"],
+    "reuse": ARTICLE_COVERS["cek-cepat-barang-layak-pakai-atau-perlu-diperbaiki"],
+    "reduce": ARTICLE_COVERS["mulai-reduce-dari-belanja-mingguan-keluarga"],
+    "kebiasaan": ARTICLE_COVERS["mulai-reduce-dari-belanja-mingguan-keluarga"],
+}
+
+
 class Article(models.Model):
     class Category(models.TextChoices):
         panduan = "panduan", "Panduan"
@@ -51,6 +74,17 @@ class Article(models.Model):
                 number += 1
             self.slug = slug
         super().save(*args, **kwargs)
+
+    @property
+    def read_minutes(self):
+        return max(1, round(len(self.body.split()) / 200))
+
+    @property
+    def cover(self):
+        # short: cover is curated statically; upgrade to ImageField when editors need uploads.
+        return ARTICLE_COVERS.get(self.slug) or ARTICLE_COVERS_BY_CATEGORY.get(
+            self.category, ARTICLE_COVERS_BY_CATEGORY["panduan"]
+        )
 
 
 class Event(models.Model):

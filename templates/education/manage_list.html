@@ -1,49 +1,208 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Kelola edukasi — KelolaKita{% endblock title %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/education.css' %}">
+{% endblock extra_css %}
+
 {% block content %}
-<main>
-    <h1>Kelola Edukasi &amp; Komunitas</h1>
-    <p><a href="{% url 'landing_page' %}">Kembali ke beranda</a></p>
-    <section>
-        <h2>Artikel</h2>
-        <p><a href="{% url 'article_create' %}">Tambah artikel</a></p>
-        <ul>
-            {% for article in articles %}
-            <li>
-                {{ article.title }} —
-                {% if article.is_published %}Terbit{% else %}Draf{% endif %} —
-                <a href="{% url 'article_update' article.pk %}">Ubah</a>
-                <a href="{% url 'article_delete' article.pk %}">Hapus</a>
-            </li>
-            {% empty %}<li>Belum ada artikel.</li>{% endfor %}
-        </ul>
-    </section>
-    <section>
-        <h2>Agenda</h2>
-        <p><a href="{% url 'event_create' %}">Tambah agenda</a></p>
-        <ul>
-            {% for event in events %}
-            <li>
-                {{ event.title }} — {{ event.start_at|date:"j M Y H:i" }} —
-                {% if event.is_published %}Terbit{% else %}Draf{% endif %} —
-                <a href="{% url 'event_update' event.pk %}">Ubah</a>
-                <a href="{% url 'event_delete' event.pk %}">Hapus</a>
-            </li>
-            {% empty %}<li>Belum ada agenda.</li>{% endfor %}
-        </ul>
-    </section>
-    <section>
-        <h2>Penyaluran</h2>
-        <p><a href="{% url 'distribution_create' %}">Tambah catatan penyaluran</a></p>
-        <ul>
-            {% for distribution in distributions %}
-            <li>
-                {{ distribution.item_name }} → {{ distribution.destination.name }} —
-                {{ distribution.get_status_display }} —
-                <a href="{% url 'distribution_update' distribution.pk %}">Ubah</a>
-                <a href="{% url 'distribution_delete' distribution.pk %}">Hapus</a>
-            </li>
-            {% empty %}<li>Belum ada catatan penyaluran.</li>{% endfor %}
-        </ul>
-    </section>
+<main id="main">
+    <div class="container">
+        <div class="manage-page">
+            <div class="manage-head">
+                <div>
+                    <h1>Kelola edukasi, agenda, dan penyaluran</h1>
+                    <p>Konten yang diterbitkan di sini langsung tampil pada halaman Edukasi &amp; Komunitas.</p>
+                </div>
+                <div class="manage-actions">
+                    <a class="btn btn--ghost btn--sm" href="{% url 'education_home' %}">Lihat halaman publik</a>
+                </div>
+            </div>
+
+            <section class="manage-section" aria-labelledby="kelola-artikel">
+                <div class="manage-section__head">
+                    <div>
+                        <h2 id="kelola-artikel">Artikel</h2>
+                        <p>Panduan dan kampanye edukasi.</p>
+                    </div>
+                    <a class="btn btn--primary btn--sm" href="{% url 'article_create' %}">Tambah artikel</a>
+                </div>
+                <div class="table-scroll">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Judul</th>
+                                <th scope="col">Kategori</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Diperbarui</th>
+                                <th scope="col">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for article in articles %}
+                            <tr>
+                                <td>
+                                    <span class="data-table__title">{{ article.title }}</span>
+                                    <span class="data-table__sub">/edukasi/artikel/{{ article.slug }}/</span>
+                                </td>
+                                <td>{{ article.get_category_display }}</td>
+                                <td>
+                                    {% if not article.is_published %}
+                                    <span class="tag tag--draft">Draf</span>
+                                    {% elif article.published_at > now %}
+                                    <span class="tag tag--plan">Terjadwal</span>
+                                    {% else %}
+                                    <span class="tag tag--live">Terbit</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ article.updated_at|date:"j M Y H.i" }}</td>
+                                <td>
+                                    <div class="row-actions">
+                                        <a class="link-action" href="{% url 'article_update' article.pk %}">Ubah</a>
+                                        <a class="link-action link-action--danger"
+                                            href="{% url 'article_delete' article.pk %}">Hapus</a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5">
+                                    <div class="empty-box">
+                                        <p class="empty-box__title">Belum ada artikel</p>
+                                        <p class="empty-box__text">Mulai dengan panduan pertama untuk halaman edukasi.</p>
+                                        <a class="btn btn--ghost btn--sm" href="{% url 'article_create' %}">Tambah artikel</a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="manage-section" aria-labelledby="kelola-agenda">
+                <div class="manage-section__head">
+                    <div>
+                        <h2 id="kelola-agenda">Agenda komunitas</h2>
+                        <p>Agenda mendatang tampil otomatis di halaman publik.</p>
+                    </div>
+                    <a class="btn btn--primary btn--sm" href="{% url 'event_create' %}">Tambah agenda</a>
+                </div>
+                <div class="table-scroll">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Agenda</th>
+                                <th scope="col">Mulai</th>
+                                <th scope="col">Lokasi</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for event in events %}
+                            <tr>
+                                <td><span class="data-table__title">{{ event.title }}</span></td>
+                                <td>{{ event.start_at|date:"j M Y H.i" }}</td>
+                                <td>{{ event.location.name }}</td>
+                                <td>
+                                    {% if not event.is_published %}
+                                    <span class="tag tag--draft">Draf</span>
+                                    {% elif event.start_at < now %}
+                                    <span class="tag tag--draft">Selesai</span>
+                                    {% else %}
+                                    <span class="tag tag--live">Terbit</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="row-actions">
+                                        <a class="link-action" href="{% url 'event_update' event.pk %}">Ubah</a>
+                                        <a class="link-action link-action--danger"
+                                            href="{% url 'event_delete' event.pk %}">Hapus</a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5">
+                                    <div class="empty-box">
+                                        <p class="empty-box__title">Belum ada agenda</p>
+                                        <p class="empty-box__text">Tambahkan kegiatan komunitas yang akan datang.</p>
+                                        <a class="btn btn--ghost btn--sm" href="{% url 'event_create' %}">Tambah agenda</a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="manage-section" aria-labelledby="kelola-penyaluran">
+                <div class="manage-section__head">
+                    <div>
+                        <h2 id="kelola-penyaluran">Catatan penyaluran</h2>
+                        <p>Barang Reuse yang diarahkan ke panti asuhan atau komunitas.</p>
+                    </div>
+                    <a class="btn btn--primary btn--sm" href="{% url 'distribution_create' %}">Tambah catatan</a>
+                </div>
+                <div class="table-scroll">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Barang</th>
+                                <th scope="col">Tujuan</th>
+                                <th scope="col">Jumlah</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Tanggal</th>
+                                <th scope="col">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for distribution in distributions %}
+                            <tr>
+                                <td><span class="data-table__title">{{ distribution.item_name }}</span></td>
+                                <td>{{ distribution.destination.name }}</td>
+                                <td>Jumlah tercatat: {{ distribution.quantity }}</td>
+                                <td>
+                                    {% if distribution.status == "delivered" %}
+                                    <span class="tag tag--live">{{ distribution.get_status_display }}</span>
+                                    {% elif distribution.status == "planned" %}
+                                    <span class="tag tag--plan">{{ distribution.get_status_display }}</span>
+                                    {% else %}
+                                    <span class="tag tag--cancel">{{ distribution.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ distribution.distributed_at|date:"j M Y"|default:"—" }}</td>
+                                <td>
+                                    <div class="row-actions">
+                                        <a class="link-action"
+                                            href="{% url 'distribution_update' distribution.pk %}">Ubah</a>
+                                        <a class="link-action link-action--danger"
+                                            href="{% url 'distribution_delete' distribution.pk %}">Hapus</a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6">
+                                    <div class="empty-box">
+                                        <p class="empty-box__title">Belum ada catatan penyaluran</p>
+                                        <p class="empty-box__text">
+                                            Catat barang yang disalurkan ke panti asuhan atau komunitas.
+                                        </p>
+                                        <a class="btn btn--ghost btn--sm" href="{% url 'distribution_create' %}">Tambah catatan</a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </div>
 </main>
 {% endblock content %}

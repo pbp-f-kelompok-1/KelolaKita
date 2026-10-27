@@ -1,20 +1,62 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ form_title }} — KelolaKita{% endblock title %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/education.css' %}">
+{% endblock extra_css %}
+
 {% block content %}
-<main>
-    <h1>{{ form_title }}</h1>
-    <p><a href="{% url 'education_manage' %}">Kembali ke pengelolaan</a></p>
-    <form method="post" novalidate>
-        {% csrf_token %}
-        {{ form.non_field_errors }}
-        {% for field in form %}
-        <p>
-            {{ field.label_tag }}
-            {{ field }}
-            {{ field.errors }}
-        </p>
-        {% endfor %}
-        <button type="submit">Simpan</button>
-        <a href="{% url 'education_manage' %}">Batal</a>
-    </form>
+<main id="main">
+    <div class="container">
+        <div class="manage-page">
+            <div class="manage-head">
+                <div>
+                    <h1>{{ form_title }}</h1>
+                    <p>Isi data dengan lengkap. Kolom bertanda * wajib diisi.</p>
+                </div>
+                <div class="manage-actions">
+                    <a class="btn btn--ghost btn--sm" href="{% url 'education_manage' %}">Kembali ke pengelolaan</a>
+                </div>
+            </div>
+
+            <div class="manage-form-card">
+                <form method="post" class="manage-form" novalidate>
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                    <div class="form-errors" role="alert">
+                        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+                    </div>
+                    {% endif %}
+
+                    {% for field in form %}
+                        {% if field.field.widget.input_type == "checkbox" %}
+                        <div class="form-field form-field--check">
+                            {{ field }}
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {% for error in field.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="form-field">
+                            <label for="{{ field.id_for_label }}">
+                                {{ field.label }}{% if field.field.required %} <span aria-hidden="true">*</span>{% endif %}
+                            </label>
+                            {{ field }}
+                            {% if field.help_text %}<p class="form-help">{{ field.help_text }}</p>{% endif %}
+                            {% for error in field.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+
+                    <div class="form-actions">
+                        <a class="btn btn--ghost" href="{% url 'education_manage' %}">Batal</a>
+                        <button class="btn btn--primary" type="submit">Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </main>
 {% endblock content %}

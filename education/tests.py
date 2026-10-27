@@ -2,6 +2,7 @@ from datetime import date, datetime, timedelta, timezone as dt_timezone
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
+from django.contrib.staticfiles import finders
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.db.models.deletion import ProtectedError
@@ -10,7 +11,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from education.forms import ArticleForm, DistributionForm, EventForm
-from education.models import Article, Distribution, Event
+from education.models import ARTICLE_COVERS, Article, Distribution, Event
 from Location.models import Location
 
 
@@ -108,6 +109,49 @@ class ArticleModelTests(TestCase):
         make_article(title="Artikel Terjadwal", published_at=timezone.now() + timedelta(days=1))
 
         self.assertEqual(list(Article.objects.published()), [published])
+
+
+class PublicAssetTests(TestCase):
+    def test_editorial_css_and_js_are_served(self):
+        response = self.client.get(reverse("education_home"))
+
+        self.assertContains(response, "/static/css/education.css")
+        self.assertContains(response, "/static/js/education.js")
+        for path in [
+            "css/theme.css",
+            "css/education.css",
+            "js/education.js",
+        ]:
+            with self.subTest(path=path):
+                self.assertIsNotNone(finders.find(path))
+
+
+class ArticlePresentationTests(TestCase):
+    def test_read_minutes_has_a_minimum_of_one(self):
+        article = make_article(body="satu dua")
+
+        self.assertEqual(article.read_minutes, 1)
+
+    def test_read_minutes_counts_words(self):
+        article = make_article(body="kata " * 400)
+
+        self.assertEqual(article.read_minutes, 2)
+
+    def test_cover_uses_known_slug_then_category_fallback(self):
+        featured = make_article(title="Mulai Reduce dari Belanja Mingguan Keluarga")
+        fallback = make_article(title="Artikel Reuse Baru", category=Article.Category.reuse)
+
+        self.assertEqual(
+            featured.cover["src"], "images/education/articles/belanja-pasar-reusable.jpg"
+        )
+        self.assertEqual(
+            fallback.cover["src"], "images/education/articles/barang-layak-pakai.jpg"
+        )
+
+    def test_all_configured_cover_assets_exist(self):
+        for cover in ARTICLE_COVERS.values():
+            with self.subTest(src=cover["src"]):
+                self.assertIsNotNone(finders.find(cover["src"]))
 
 
 class EventModelTests(TestCase):
@@ -432,6 +476,31 @@ class PublicPagesTests(TestCase):
         self.assertContains(response, event.title)
         self.assertContains(response, reverse("article_detail", args=[article.slug]))
         self.assertContains(response, reverse("event_detail", args=[event.pk]))
+
+    def test_home_lists_only_active_reuse_partners(self):
+        panti = make_location(name="Panti Tampil")
+        komunitas = make_location(
+            name="Komunitas Tampil", category=Location.Category.komunitas
+        )
+        make_location(name="Bank Tersembunyi", category=Location.Category.bank_sampah)
+        make_location(name="Panti Nonaktif", is_active=False)
+
+        response = self.client.get(reverse("education_home"))
+
+        self.assertContains(response, panti.name)
+        self.assertContains(response, komunitas.name)
+        self.assertNotContains(response, "Bank Tersembunyi")
+        self.assertNotContains(response, "Panti Nonaktif")
+
+    def test_home_handles_empty_optional_sections(self):
+        self.location.is_active = False
+        self.location.save(update_fields=["is_active"])
+
+        response = self.client.get(reverse("education_home"))
+
+        self.assertContains(response, "Belum ada panduan yang terbit")
+        self.assertContains(response, "Belum ada mitra penyaluran aktif")
+        self.assertContains(response, "Belum ada agenda mendatang")
 
     def test_home_and_lists_render_empty_states(self):
         for name in ["education_home", "article_list", "event_list"]:

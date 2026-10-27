@@ -40,9 +40,22 @@ class PublicEducationContextMixin:
 
 
 def public_home(request):
+    articles = Article.objects.published()
+    featured = articles.first()
     context = {
-        "articles": Article.objects.published()[:3],
-        "events": published_events().filter(start_at__gte=timezone.now())[:3],
+        "featured": featured,
+        "articles": articles.exclude(pk=featured.pk) if featured else articles,
+        "events": published_events().filter(start_at__gte=timezone.now()),
+        "partners": Location.objects.filter(
+            is_active=True,
+            category__in=[
+                Location.Category.panti_asuhan,
+                Location.Category.komunitas,
+            ],
+        ).order_by("name"),
+        "distributions": public_distributions().order_by(
+            "-distributed_at", "-created_at"
+        )[:5],
         "active_nav": "edukasi",
     }
     return render(request, "education/public_home.html", context)
@@ -120,6 +133,7 @@ class ManageDashboard(StaffRequiredMixin, TemplateView):
         context["articles"] = Article.objects.all()
         context["events"] = Event.objects.select_related("location")
         context["distributions"] = Distribution.objects.select_related("destination")
+        context["now"] = timezone.now()
         return context
 
 
@@ -151,6 +165,11 @@ class ManageDeleteView(StaffRequiredMixin, DeleteView):
     template_name = "education/manage_confirm_delete.html"
     success_url = reverse_lazy("education_manage")
     success_message = "Data berhasil dihapus."
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["entity_label"] = self.model._meta.verbose_name
+        return context
 
     def form_valid(self, form):
         messages.success(self.request, self.success_message)
