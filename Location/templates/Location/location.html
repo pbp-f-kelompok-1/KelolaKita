@@ -14,7 +14,9 @@
             <input type="search" id="search-input" class="search-input"
                 placeholder="Contoh: Tebet, Jakarta Selatan" autocomplete="off">
         </form>
+        {% if request.user.is_authenticated and request.user.is_staff %}
         <a href="{% url 'create_location' %}" class="sort-btn">Tambah lokasi</a>
+        {% endif %}
 
         <ul class="loc-list" id="loc-list">
             {% for loc in location_list %}
@@ -26,8 +28,9 @@
                 <span class="loc-card__type">{{ loc.description }}</span>
                 <span class="loc-card__status">{{ loc.open_hours }}</span>
                 <span class="loc-card__meta">{{ loc.city }}</span>
-                <span>{{ loc.category }}</span>
+                <span>{{ loc.get_category_display }}</span>
 
+                {% if request.user.is_authenticated and request.user.is_staff %}
                 <button type="button" class="button-danger"
                         popovertarget="delete-location-{{ loc.id }}">Hapus</button>
 
@@ -44,7 +47,10 @@
                         </form>
                     </div>
                 </div>
+                {% endif %}
             </li>
+            {% empty %}
+            <li class="empty-note">Belum ada lokasi aktif.</li>
             {% endfor %}
         </ul>
         <p class="empty-note" id="empty-note" hidden>Tidak ada lokasi yang cocok. Coba kata kunci lain.</p>
@@ -59,10 +65,7 @@
                 <span class="badge-open" id="dc-hours"></span>
             </div>
             <p id="dc-address"></p>
-            <div class="detail-card__actions">
-                <a class="btn btn--ghost" id="dc-detail" href="#">Lihat detail</a>
-                <button class="btn btn--primary" id="dc-pick" type="button">Pilih lokasi</button>
-            </div>
+            <a class="btn btn--ghost" id="dc-detail" href="#">Lihat detail</a>
         </div>
     </section>
 
@@ -84,14 +87,13 @@
 
     const NIL_UUID = '00000000-0000-0000-0000-000000000000';
     const detailUrlTpl = "{% url 'location_detail' '00000000-0000-0000-0000-000000000000' %}";
-    
+
     const dc = {
         card:    document.getElementById('detail-card'),
         name:    document.getElementById('dc-name'),
         hours:   document.getElementById('dc-hours'),
         address: document.getElementById('dc-address'),
         detail:  document.getElementById('dc-detail'),
-        pick:    document.getElementById('dc-pick'),
     };
 
     const pinIcon = L.divIcon({
@@ -154,9 +156,24 @@
 
     map.on('click', clearSelection);
 
-    dc.pick.addEventListener('click', () => {
-        if (selectedId === null) return;
-        console.log('Lokasi dipilih:', byId[selectedId].name);
+    document.getElementById('search-input').addEventListener('input', event => {
+        const query = event.target.value.toLowerCase().trim();
+        let visibleCount = 0;
+        const visibleIds = new Set();
+        document.querySelectorAll('.loc-card').forEach(card => {
+            const match = card.textContent.toLowerCase().includes(query);
+            card.hidden = !match;
+            if (match) {
+                visibleCount += 1;
+                visibleIds.add(card.dataset.id);
+            }
+        });
+        Object.entries(markers).forEach(([id, marker]) => {
+            if (visibleIds.has(id) && !map.hasLayer(marker)) marker.addTo(map);
+            if (!visibleIds.has(id) && map.hasLayer(marker)) map.removeLayer(marker);
+        });
+        if (selectedId && !visibleIds.has(selectedId)) clearSelection();
+        document.getElementById('empty-note').hidden = visibleCount > 0;
     });
 
     let userMarker = null;

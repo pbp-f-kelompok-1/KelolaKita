@@ -170,3 +170,46 @@ class LocationManagementAccessTests(TestCase):
             self.client.get(reverse("location_detail", args=[self.location.pk])).status_code,
             200,
         )
+
+
+class LocationPublicUITests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user("ui-staff", password="x", is_staff=True)
+        self.user = User.objects.create_user("ui-user", password="x")
+        self.location = make_location()
+
+    def test_location_page_hides_staff_actions_from_public_and_non_staff(self):
+        for login in [None, self.user]:
+            if login:
+                self.client.force_login(login)
+            response = self.client.get(reverse("show_location"))
+            self.assertNotContains(response, "Tambah lokasi")
+            self.assertNotContains(response, "Hapus")
+
+        self.assertNotContains(self.client.get(reverse("show_location")), "panti_asuhan")
+
+    def test_location_page_shows_staff_actions_to_staff(self):
+        self.client.force_login(self.staff)
+
+        response = self.client.get(reverse("show_location"))
+
+        self.assertContains(response, "Tambah lokasi")
+        self.assertContains(response, "Hapus")
+        self.assertContains(response, "Panti Asuhan")
+
+    def test_location_page_shows_empty_state(self):
+        self.location.delete()
+
+        response = self.client.get(reverse("show_location"))
+
+        self.assertContains(response, "Belum ada lokasi aktif.")
+
+    def test_base_header_has_no_dummy_points_or_avatar(self):
+        response = self.client.get(reverse("show_location"))
+
+        self.assertNotContains(response, "1.240 poin")
+        self.assertNotContains(response, "Avatar pengguna")
+        self.assertNotContains(response, "Pengajuan")
+
+    def test_schedule_page_remains_public(self):
+        self.assertEqual(self.client.get(reverse("show_schedule")).status_code, 200)
