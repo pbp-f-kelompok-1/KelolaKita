@@ -122,3 +122,46 @@ class PenjadwalanModelTests(TestCase):
         ))
         booking.barang.set([item])
         self.assertIn("Kardus", str(booking))
+
+
+class ShowScheduleGetTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="budi", password="pass12345")
+        self.ready_item = Pemeriksaan.objects.create(
+            pengguna=self.user,
+            nama_barang="Botol plastik",
+            jenis_barang="Plastik",
+            kondisi_barang="Baik",
+            kategori_penanganan="recycle",
+        )
+        Pemeriksaan.objects.create(
+            pengguna=self.user,
+            nama_barang="Baju bekas",
+            jenis_barang="Tekstil",
+            kondisi_barang="Sobek",
+            kategori_penanganan="menunggu",
+        )
+
+    def test_get_status_ok_and_uses_correct_template(self):
+        response = self.client.get(reverse("show_schedule"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "Schedule/schedule.html")
+
+    def test_only_approved_unscheduled_items_are_listed(self):
+        response = self.client.get(reverse("show_schedule"))
+        items = list(response.context["items"])
+        self.assertEqual(items, [self.ready_item])
+
+    def test_item_disappears_once_scheduled(self):
+        booking = Penjadwalan.objects.create(
+            metode=Penjadwalan.Metode.kurir,
+            tanggal=datetime.date.today() + datetime.timedelta(days=1),
+            sesi=Penjadwalan.Sesi.pagi,
+            nama_penerima="Budi",
+            nomor_hp="08123456789",
+            alamat_penjemputan="Jl. Melati No. 5",
+        )
+        booking.barang.set([self.ready_item])
+
+        response = self.client.get(reverse("show_schedule"))
+        self.assertNotIn(self.ready_item, list(response.context["items"]))
