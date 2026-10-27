@@ -1,8 +1,27 @@
+from functools import wraps
+
+from django.contrib import messages
+from django.contrib.auth.views import redirect_to_login
+from django.core.exceptions import PermissionDenied
+from django.db.models import ProtectedError
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.views.decorators.http import require_http_methods
 from Location.models import Location
 from Location.forms import LocationForm
-from django.contrib import messages
-from django.db.models import ProtectedError
+
+
+def staff_required(view_func):
+    @wraps(view_func)
+    def wrapped(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect_to_login(request.get_full_path(), reverse("admin:login"))
+        if not (request.user.is_active and request.user.is_staff):
+            raise PermissionDenied
+        return view_func(request, *args, **kwargs)
+
+    return wrapped
+
 
 
 def landing_page(request):
@@ -27,6 +46,8 @@ def show_location(request):
     }
     return render(request, "Location/location.html", context)
 
+@staff_required
+@require_http_methods(["GET", "POST"])
 def create_location(request) :
     form = LocationForm(request.POST or None)
 
@@ -37,6 +58,8 @@ def create_location(request) :
 
     return render(request, "Location/location_form.html", {"name": "KelolaKita", "form": form, "active_nav": "peta"})
 
+@staff_required
+@require_http_methods(["GET", "POST"])
 def delete_location(request, location_id) :
     location = get_object_or_404(Location, pk=location_id)
 

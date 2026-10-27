@@ -392,6 +392,8 @@ class CrudTests(TestCase):
 
 class LocationRegressionTests(TestCase):
     def test_location_used_by_event_cannot_be_deleted(self):
+        staff = User.objects.create_user("location-staff", password="x", is_staff=True)
+        self.client.force_login(staff)
         location = make_location()
         event = make_event(location)
         distribution = make_distribution(location)
