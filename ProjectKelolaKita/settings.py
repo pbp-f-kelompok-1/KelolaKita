@@ -46,7 +46,7 @@ INSTALLED_APPS = [
     'tailwind',
     'theme',
     'main',
-    'accounts',
+    'accounts.apps.AccountsConfig',
 ]
 
 MIDDLEWARE = [
@@ -157,4 +157,9 @@ if DEBUG:
     MIDDLEWARE += [
         "django_browser_reload.middleware.BrowserReloadMiddleware",
     ]
+
+# For accounts
+LOGIN_URL = "accounts:login"
+LOGIN_REDIRECT_URL = "landing_page"
+LOGOUT_REDIRECT_URL = "landing_page"
 
