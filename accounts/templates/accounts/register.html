@@ -1,0 +1,68 @@
+{% extends 'accounts/auth_base.html' %}
+
+{% block title %}Daftar{% endblock title %}
+
+{% block auth_content %}
+    <div class="mb-7">
+        <h1 class="font-['Plus_Jakarta_Sans'] text-[28px] font-extrabold leading-tight tracking-tight sm:text-[32px]">Buat akun</h1>
+        <p class="mt-2 text-sm leading-6 text-[#557a5b]">Bergabunglah untuk berbagi barang dan membantu komunitas.</p>
+    </div>
+
+    <nav class="mb-7 grid grid-cols-2 rounded-xl bg-[#f4f6f5] p-1" aria-label="Halaman akun">
+        <a href="{% url 'accounts:login' %}" class="rounded-lg px-3 py-2.5 text-center text-sm font-semibold text-[#557a5b] transition hover:text-[#2e7d32] focus-visible:outline-2 focus-visible:outline-[#2e7d32]">Masuk</a>
+        <span aria-current="page" class="rounded-lg bg-white px-3 py-2.5 text-center text-sm font-bold text-[#2e7d32] shadow-sm">Daftar</span>
+    </nav>
+
+    {% if form.non_field_errors %}
+        <div role="alert" class="mb-5 rounded-xl border border-[#efc6c1] bg-[#fff1ef] px-4 py-3 text-sm leading-6 text-[#9f2d23]">
+            {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+    {% endif %}
+
+    <form method="post" class="space-y-4">
+        {% csrf_token %}
+
+        <div>
+            <label for="{{ form.username.id_for_label }}" class="mb-2 block text-sm font-semibold">Nama pengguna</label>
+            {{ form.username }}
+            {% for error in form.username.errors %}<p class="mt-1.5 text-sm text-[#a33128]">{{ error }}</p>{% endfor %}
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+            <div class="min-w-0">
+                <label for="{{ form.first_name.id_for_label }}" class="mb-2 block text-sm font-semibold">Nama depan</label>
+                {{ form.first_name }}
+                {% for error in form.first_name.errors %}<p class="mt-1.5 text-sm text-[#a33128]">{{ error }}</p>{% endfor %}
+            </div>
+            <div class="min-w-0">
+                <label for="{{ form.last_name.id_for_label }}" class="mb-2 block text-sm font-semibold">Nama belakang</label>
+                {{ form.last_name }}
+                {% for error in form.last_name.errors %}<p class="mt-1.5 text-sm text-[#a33128]">{{ error }}</p>{% endfor %}
+            </div>
+        </div>
+
+        <div>
+            <label for="{{ form.email.id_for_label }}" class="mb-2 block text-sm font-semibold">Alamat email</label>
+            {{ form.email }}
+            {% for error in form.email.errors %}<p class="mt-1.5 text-sm text-[#a33128]">{{ error }}</p>{% endfor %}
+        </div>
+
+        <div>
+            <label for="{{ form.password1.id_for_label }}" class="mb-2 block text-sm font-semibold">Kata sandi</label>
+            {{ form.password1 }}
+            {% if form.password1.help_text %}<div id="{{ form.password1.auto_id }}_helptext" class="mt-2 text-xs leading-5 text-[#557a5b] [&_ul]:list-disc [&_ul]:space-y-0.5 [&_ul]:pl-5">{{ form.password1.help_text|safe }}</div>{% endif %}
+            {% for error in form.password1.errors %}<p class="mt-1.5 text-sm text-[#a33128]">{{ error }}</p>{% endfor %}
+        </div>
+
+        <div>
+            <label for="{{ form.password2.id_for_label }}" class="mb-2 block text-sm font-semibold">Konfirmasi kata sandi</label>
+            {{ form.password2 }}
+            {% if form.password2.help_text %}<p id="{{ form.password2.auto_id }}_helptext" class="mt-2 text-xs leading-5 text-[#557a5b]">{{ form.password2.help_text }}</p>{% endif %}
+            {% for error in form.password2.errors %}<p class="mt-1.5 text-sm text-[#a33128]">{{ error }}</p>{% endfor %}
+        </div>
+
+        <button type="submit" class="w-full rounded-xl bg-[#2e7d32] px-5 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#256b29] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2e7d32] active:bg-[#1f5a23] disabled:cursor-not-allowed disabled:opacity-50">Daftar ke KelolaKita</button>
+    </form>
+
+    <p class="mt-7 text-center text-sm text-[#557a5b]">Sudah punya akun? <a href="{% url 'accounts:login' %}" class="font-bold text-[#2e7d32] underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2e7d32]">Masuk sekarang</a></p>
+{% endblock auth_content %}
