@@ -86,6 +86,35 @@
                     </label>
                     {% endfor %}
                 </div>
+
+                <div id="method-detail-kurir"
+                     class="{% if selected_method == 'kurir' %}flex{% else %}hidden{% endif %} flex-col gap-1.5">
+                    <label for="id_alamat_penjemputan" class="text-[13px] font-bold text-[#1a2e1c]">Alamat penjemputan</label>
+                    <input type="text" name="alamat_penjemputan" id="id_alamat_penjemputan"
+                           {% if selected_method == 'kurir' %}required{% endif %}
+                           placeholder="Jalan, nomor rumah, RT/RW, kota"
+                           class="h-11 w-full rounded-lg border border-[#dce7de] bg-white px-3.5 text-sm text-[#1a2e1c] focus:border-[#2e7d32] focus:outline-2 focus:outline-[#2e7d32]">
+                </div>
+
+                <div id="method-detail-titik"
+                     class="{% if selected_method == 'titik' %}flex{% else %}hidden{% endif %} flex-col gap-1.5">
+                    <label for="id_lokasi_mitra" class="text-[13px] font-bold text-[#1a2e1c]">Lokasi mitra</label>
+                    {% if locations %}
+                    <select name="lokasi_mitra" id="id_lokasi_mitra"
+                            {% if selected_method == 'titik' %}required{% endif %}
+                            class="h-11 w-full rounded-lg border border-[#dce7de] bg-white px-3.5 text-sm text-[#1a2e1c] focus:border-[#2e7d32] focus:outline-2 focus:outline-[#2e7d32]">
+                        <option value="" disabled selected>Pilih titik setoran</option>
+                        {% for loc in locations %}
+                        <option value="{{ loc.id }}">{{ loc.name }} &middot; {{ loc.city }}</option>
+                        {% endfor %}
+                    </select>
+                    {% else %}
+                    <p class="rounded-lg bg-[#f4f6f5] px-3.5 py-3 text-sm text-[#557a5b]">
+                        Belum ada lokasi mitra aktif. Lihat
+                        <a href="{% url 'show_location' %}" class="font-bold text-[#2e7d32] underline">Peta Setoran</a>.
+                    </p>
+                    {% endif %}
+                </div>
             </section>
 
             <section class="flex flex-col gap-3.5">
@@ -134,17 +163,26 @@
 
             <section class="flex flex-col gap-4 sm:flex-row">
                 <div class="flex flex-1 flex-col gap-1.5">
-                    <label for="id_contact" class="text-[13px] font-bold text-[#1a2e1c]">Kontak penerima</label>
-                    <input type="text" name="contact" id="id_contact" required
-                           placeholder="{% if contact_placeholder_name %}cth. {{ contact_placeholder_name }} · 08xx-xxxx-xxxx{% else %}Nama · nomor HP{% endif %}"
+                    <label for="id_nama_penerima" class="text-[13px] font-bold text-[#1a2e1c]">Nama penerima</label>
+                    <input type="text" name="nama_penerima" id="id_nama_penerima" required
+                           placeholder="{% if contact_placeholder_name %}cth. {{ contact_placeholder_name }}{% else %}Nama lengkap{% endif %}"
                            class="h-11 w-full rounded-lg border border-[#dce7de] bg-white px-3.5 text-sm text-[#1a2e1c] focus:border-[#2e7d32] focus:outline-2 focus:outline-[#2e7d32]">
                 </div>
                 <div class="flex flex-1 flex-col gap-1.5">
-                    <label for="id_notes" class="text-[13px] font-bold text-[#1a2e1c]">Catatan kurir</label>
-                    <input type="text" name="notes" id="id_notes"
-                           placeholder="Catatan untuk kurir (opsional)"
+                    <label for="id_nomor_hp" class="text-[13px] font-bold text-[#1a2e1c]">Nomor HP</label>
+                    <input type="tel" name="nomor_hp" id="id_nomor_hp" required
+                           inputmode="tel" pattern="(\+62|0)8[0-9]{7,11}"
+                           title="Contoh: 08123456789 atau +628123456789"
+                           placeholder="08xxxxxxxxxx"
                            class="h-11 w-full rounded-lg border border-[#dce7de] bg-white px-3.5 text-sm text-[#1a2e1c] focus:border-[#2e7d32] focus:outline-2 focus:outline-[#2e7d32]">
                 </div>
+            </section>
+
+            <section class="flex flex-col gap-1.5">
+                <label for="id_notes" class="text-[13px] font-bold text-[#1a2e1c]">Catatan kurir</label>
+                <input type="text" name="notes" id="id_notes"
+                       placeholder="Catatan untuk kurir (opsional)"
+                       class="h-11 w-full rounded-lg border border-[#dce7de] bg-white px-3.5 text-sm text-[#1a2e1c] focus:border-[#2e7d32] focus:outline-2 focus:outline-[#2e7d32]">
             </section>
 
             <section class="flex items-center gap-2.5 rounded-lg bg-[#eaf2fb] p-3">
@@ -202,6 +240,10 @@
                     <dd id="summary-method" class="w-[220px] text-right font-bold text-[#1a2e1c]">{{ methods.0.summary_label }}</dd>
                 </div>
                 <div class="flex items-start justify-between gap-3">
+                    <dt class="text-[#557a5b]">Lokasi</dt>
+                    <dd id="summary-lokasi" class="w-[220px] text-right font-bold text-[#1a2e1c]">—</dd>
+                </div>
+                <div class="flex items-start justify-between gap-3">
                     <dt class="text-[#557a5b]">Tanggal</dt>
                     <dd id="summary-date" class="w-[220px] text-right font-bold text-[#1a2e1c]">{{ dates.0.full_label }}</dd>
                 </div>
@@ -242,9 +284,46 @@
     const summaryItemJenis = document.getElementById('summary-item-jenis');
     const summaryItemKondisi = document.getElementById('summary-item-kondisi');
     const summaryItemBadge = document.getElementById('summary-item-badge');
-    const contactInput = document.getElementById('id_contact');
+    const summaryLokasi = document.getElementById('summary-lokasi');
+    const namaInput = document.getElementById('id_nama_penerima');
+    const methodDetailKurir = document.getElementById('method-detail-kurir');
+    const methodDetailTitik = document.getElementById('method-detail-titik');
+    const alamatInput = document.getElementById('id_alamat_penjemputan');
+    const lokasiSelect = document.getElementById('id_lokasi_mitra');
     const infoTitle = document.getElementById('info-title');
     const infoBody = document.getElementById('info-body');
+
+    function currentLokasiLabel() {
+        if (!methodDetailTitik.classList.contains('hidden')) {
+            if (lokasiSelect && lokasiSelect.value) {
+                return lokasiSelect.selectedOptions[0].textContent.trim();
+            }
+            return '—';
+        }
+        return (alamatInput && alamatInput.value.trim()) || '—';
+    }
+
+    function updateMethodDetailVisibility(methodValue) {
+        const isKurir = methodValue === 'kurir';
+        methodDetailKurir.classList.toggle('hidden', !isKurir);
+        methodDetailKurir.classList.toggle('flex', isKurir);
+        methodDetailTitik.classList.toggle('hidden', isKurir);
+        methodDetailTitik.classList.toggle('flex', !isKurir);
+        if (alamatInput) alamatInput.required = isKurir;
+        if (lokasiSelect) lokasiSelect.required = !isKurir;
+        if (summaryLokasi) summaryLokasi.textContent = currentLokasiLabel();
+    }
+
+    if (alamatInput) {
+        alamatInput.addEventListener('input', () => {
+            if (summaryLokasi) summaryLokasi.textContent = currentLokasiLabel();
+        });
+    }
+    if (lokasiSelect) {
+        lokasiSelect.addEventListener('change', () => {
+            if (summaryLokasi) summaryLokasi.textContent = currentLokasiLabel();
+        });
+    }
 
     const CATEGORY_STYLES = {
         recycle: { bg: '#e3f2fd', fg: '#1565c0' },
@@ -280,6 +359,7 @@
             summaryMethod.textContent = input.dataset.summaryLabel;
             infoTitle.textContent = input.dataset.infoTitle;
             infoBody.textContent = input.dataset.infoBody;
+            updateMethodDetailVisibility(input.value);
         } else if (input.name === 'date') {
             summaryDate.textContent = input.dataset.fullLabel;
             updateSessionAvailability();
@@ -296,15 +376,14 @@
             summaryItemBadge.style.color = style.fg;
             summaryItemBadge.textContent = (input.dataset.jenis || '?').charAt(0).toUpperCase();
 
-            if (contactInput && !contactInput.value.trim()) {
-                contactInput.placeholder = input.dataset.owner
-                    ? `cth. ${input.dataset.owner} · 08xx-xxxx-xxxx`
-                    : 'Nama · nomor HP';
+            if (namaInput && !namaInput.value.trim()) {
+                namaInput.placeholder = input.dataset.owner ? `cth. ${input.dataset.owner}` : 'Nama lengkap';
             }
         }
     });
 
     updateSessionAvailability();
+    updateMethodDetailVisibility(form.querySelector('input[name="method"]:checked')?.value);
 
     // Date pager: show only the active page of 6 date cards (30 days total).
     const dateLabels = Array.from(document.querySelectorAll('#date-track label.date-choice'));

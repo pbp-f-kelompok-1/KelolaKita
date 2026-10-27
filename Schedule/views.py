@@ -1,10 +1,12 @@
 import datetime
 
 from django.contrib import messages
+from django.core.exceptions import ValidationError
 from django.db.models import Count
 from django.shortcuts import redirect, render
 
-from Schedule.models import Pemeriksaan, Penjadwalan
+from Location.models import Location
+from Schedule.models import Pemeriksaan, Penjadwalan, phone_validator
 
 
 DAY_ABBR_ID = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"]
@@ -103,6 +105,10 @@ def _owner_display_name(user):
     return user.get_full_name() or user.username
 
 
+def _active_locations():
+    return Location.objects.filter(is_active=True).order_by("name")
+
+
 def show_schedule(request):
     """Halaman penjadwalan penyetoran/penjemputan barang (modul Penyetoran & Penjemputan)."""
     dates = _upcoming_dates()
@@ -114,7 +120,10 @@ def show_schedule(request):
         method = request.POST.get("method")
         date_iso = request.POST.get("date")
         session = request.POST.get("session")
-        contact = request.POST.get("contact", "").strip()
+        nama_penerima = request.POST.get("nama_penerima", "").strip()
+        nomor_hp = request.POST.get("nomor_hp", "").strip()
+        alamat_penjemputan = request.POST.get("alamat_penjemputan", "").strip()
+        lokasi_mitra_id = request.POST.get("lokasi_mitra")
         notes = request.POST.get("notes", "").strip()
         barang_id = request.POST.get("barang")
 
@@ -123,8 +132,26 @@ def show_schedule(request):
         valid_session = session in SESSION_QUOTAS
         barang = _approved_items().filter(pk=barang_id).first() if barang_id else None
 
-        if not (valid_method and valid_date and valid_session and contact and barang):
-            messages.error(request, "Lengkapi barang, metode, tanggal, sesi, dan kontak penerima terlebih dahulu.")
+        try:
+            phone_validator(nomor_hp)
+            valid_phone = True
+        except ValidationError:
+            valid_phone = False
+
+        lokasi_mitra = None
+        if method == "titik":
+            lokasi_mitra = _active_locations().filter(pk=lokasi_mitra_id).first() if lokasi_mitra_id else None
+            location_ok = lokasi_mitra is not None
+        else:
+            location_ok = bool(alamat_penjemputan)
+
+        if not (valid_method and valid_date and valid_session and barang
+                and nama_penerima and valid_phone and location_ok):
+            messages.error(
+                request,
+                "Lengkapi barang, metode, tanggal, sesi, nama & nomor HP penerima, "
+                "serta alamat/lokasi penjemputan terlebih dahulu.",
+            )
             return redirect("show_schedule")
 
         remaining = SESSION_QUOTAS[session] - Penjadwalan.objects.filter(tanggal=date_iso, sesi=session).count()
@@ -137,7 +164,10 @@ def show_schedule(request):
             metode=method,
             tanggal=date_iso,
             sesi=session,
-            contact=contact,
+            nama_penerima=nama_penerima,
+            nomor_hp=nomor_hp,
+            alamat_penjemputan=alamat_penjemputan if method == "kurir" else "",
+            lokasi_mitra=lokasi_mitra,
             notes=notes,
         )
         messages.success(request, "Jadwal penyetoran berhasil dikonfirmasi.")
@@ -156,5 +186,6 @@ def show_schedule(request):
         "selected_item_id": items[0].pk if items else None,
         "availability": _availability_for_dates(dates),
         "contact_placeholder_name": _owner_display_name(items[0].pengguna) if items else "",
+        "locations": _active_locations(),
     }
     return render(request, "Schedule/schedule.html", context)
