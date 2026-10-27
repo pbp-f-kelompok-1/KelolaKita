@@ -46,7 +46,10 @@
                     {% endfor %}
                 </div>
                 {% else %}
-                <p class="text-sm text-[#557a5b]">Belum ada barang yang disetujui untuk dijadwalkan.</p>
+                <p class="rounded-lg bg-[#f4f6f5] px-3.5 py-3 text-sm text-[#557a5b]">
+                    Belum ada barang yang disetujui untuk dijadwalkan. Ajukan dan tunggu barangmu
+                    diperiksa terlebih dahulu sebelum bisa mengatur jadwal penyerahan.
+                </p>
                 {% endif %}
             </section>
 
@@ -196,13 +199,19 @@
 
             <div class="h-px w-full bg-[#dce7de]"></div>
 
-            <button type="submit"
-                    class="flex h-11 w-full cursor-pointer items-center justify-center rounded-lg bg-[#2e7d32] px-[18px] text-sm font-bold text-white transition hover:bg-[#1f5a23] active:scale-[0.98]">
+            <button type="submit" {% if not items %}disabled{% endif %}
+                    class="flex h-11 w-full items-center justify-center rounded-lg bg-[#2e7d32] px-[18px] text-sm font-bold text-white transition hover:bg-[#1f5a23] active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[#a9bdac] disabled:hover:bg-[#a9bdac] disabled:active:scale-100">
                 Konfirmasi jadwal
             </button>
+            {% if items %}
             <p class="text-center text-[11px] leading-relaxed text-[#557a5b]">
                 Bisa diubah hingga 12 jam sebelum sesi tanpa biaya.
             </p>
+            {% else %}
+            <p class="text-center text-[11px] leading-relaxed text-[#b42318]">
+                Belum ada barang untuk dijadwalkan.
+            </p>
+            {% endif %}
         </aside>
         {{ availability|json_script:"availability-data" }}
     </form>
