@@ -88,7 +88,12 @@ def _availability_for_dates(dates):
 
 
 def _approved_items():
-    return Pemeriksaan.objects.exclude(kategori_penanganan="menunggu").order_by("-created_at")
+    return (
+        Pemeriksaan.objects
+        .exclude(kategori_penanganan="menunggu")
+        .exclude(penjadwalan_set__isnull=False)
+        .order_by("-created_at")
+    )
 
 
 def show_schedule(request):
