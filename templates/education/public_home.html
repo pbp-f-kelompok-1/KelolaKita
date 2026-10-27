@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block title %}Edukasi & Komunitas — KelolaKita{% endblock title %}
+{% block content %}
+<main class="mx-auto w-full max-w-[1100px] px-6 py-12">
+    <h1 class="font-['Plus_Jakarta_Sans'] text-3xl font-extrabold text-[#1a2e1c]">Edukasi &amp; Komunitas</h1>
+    <p class="mt-2 text-[#557a5b]">Panduan, agenda, dan cerita untuk mengelola barang dan sampah dengan lebih terarah.</p>
+    <nav class="mt-5 flex gap-5 text-sm font-bold text-[#2e7d32]">
+        <a href="{% url 'article_list' %}">Semua artikel</a>
+        <a href="{% url 'event_list' %}">Agenda kegiatan</a>
+    </nav>
+
+    <section class="mt-10">
+        <div class="flex items-end justify-between gap-4">
+            <h2 class="font-['Plus_Jakarta_Sans'] text-xl font-extrabold text-[#1a2e1c]">Artikel terbaru</h2>
+            <a href="{% url 'article_list' %}" class="text-sm font-bold text-[#2e7d32]">Lihat semua</a>
+        </div>
+        {% if articles %}
+        <div class="mt-4 grid gap-5 md:grid-cols-3">
+            {% for article in articles %}
+            <article class="rounded-xl border border-[#dce7de] bg-white p-5">
+                <p class="text-xs font-bold text-[#2e7d32]">{{ article.get_category_display }}</p>
+                <h3 class="mt-2 font-bold text-[#1a2e1c]">
+                    <a href="{% url 'article_detail' article.slug %}" class="hover:underline">{{ article.title }}</a>
+                </h3>
+                <p class="mt-2 text-sm text-[#557a5b]">{{ article.summary }}</p>
+                <p class="mt-3 text-xs text-[#557a5b]">{{ article.published_at|date:"j M Y" }}</p>
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="mt-4 text-sm text-[#557a5b]">Belum ada artikel yang diterbitkan.</p>
+        {% endif %}
+    </section>
+
+    <section class="mt-12">
+        <div class="flex items-end justify-between gap-4">
+            <h2 class="font-['Plus_Jakarta_Sans'] text-xl font-extrabold text-[#1a2e1c]">Agenda mendatang</h2>
+            <a href="{% url 'event_list' %}" class="text-sm font-bold text-[#2e7d32]">Lihat semua</a>
+        </div>
+        {% if events %}
+        <ul class="mt-4 divide-y divide-[#dce7de] border-y border-[#dce7de]">
+            {% for event in events %}
+            <li class="flex flex-wrap items-baseline justify-between gap-2 py-4">
+                <div>
+                    <a href="{% url 'event_detail' event.pk %}" class="font-bold text-[#1a2e1c] hover:underline">{{ event.title }}</a>
+                    <p class="mt-1 text-sm text-[#557a5b]">{{ event.location.name }}</p>
+                </div>
+                <time class="text-sm font-semibold text-[#2e7d32]" datetime="{{ event.start_at|date:'c' }}">{{ event.start_at|date:"j M Y, H:i" }}</time>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="mt-4 text-sm text-[#557a5b]">Belum ada agenda mendatang.</p>
+        {% endif %}
+    </section>
+</main>
+{% endblock content %}

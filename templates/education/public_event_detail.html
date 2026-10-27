@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}{{ event.title }} — KelolaKita{% endblock title %}
+{% block content %}
+<main class="mx-auto w-full max-w-[800px] px-6 py-12">
+    <p><a href="{% url 'event_list' %}" class="text-sm font-bold text-[#2e7d32]">← Kembali ke agenda</a></p>
+    <article class="mt-5">
+        <h1 class="font-['Plus_Jakarta_Sans'] text-3xl font-extrabold text-[#1a2e1c]">{{ event.title }}</h1>
+        <dl class="mt-5 space-y-2 text-[#17261b]">
+            <div><dt class="inline font-bold">Waktu: </dt><dd class="inline">{{ event.start_at|date:"j M Y, H:i" }}{% if event.end_at %}–{{ event.end_at|date:"H:i" }}{% endif %}</dd></div>
+            <div><dt class="inline font-bold">Lokasi: </dt><dd class="inline">{{ event.location.name }}</dd></div>
+        </dl>
+        {% if event.description %}<div class="mt-6 text-[#17261b]">{{ event.description|linebreaks }}</div>{% endif %}
+    </article>
+</main>
+{% endblock content %}

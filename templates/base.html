@@ -51,7 +51,7 @@
                 Jadwal
                 <span class="h-[3px] w-6 rounded-full bg-[#2e7d32] {% if active_nav != 'jadwal' %}invisible{% endif %}"></span>
             </a>
-            <a href="#"
+            <a href="{% url 'education_home' %}"
                class="flex flex-col items-center gap-[9px] text-sm whitespace-nowrap {% if active_nav == 'edukasi' %}font-bold text-[#2e7d32]{% else %}font-medium text-[#557a5b] hover:text-[#2e7d32]{% endif %}">
                 Edukasi
                 <span class="h-[3px] w-6 rounded-full bg-[#2e7d32] {% if active_nav != 'edukasi' %}invisible{% endif %}"></span>

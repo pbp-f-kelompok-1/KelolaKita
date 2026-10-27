@@ -412,3 +412,104 @@ class UrlTests(TestCase):
         ]:
             with self.subTest(name=name):
                 self.assertTrue(reverse(name, args=[1]) if name.endswith(("update", "delete")) else reverse(name))
+
+
+class PublicPagesTests(TestCase):
+    def setUp(self):
+        self.location = make_location()
+
+    def test_home_shows_published_content_and_links(self):
+        article = make_article(title="Artikel Publik")
+        event = make_event(self.location, title="Agenda Publik")
+
+        response = self.client.get(reverse("education_home"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, article.title)
+        self.assertContains(response, event.title)
+        self.assertContains(response, reverse("article_detail", args=[article.slug]))
+        self.assertContains(response, reverse("event_detail", args=[event.pk]))
+
+    def test_home_and_lists_render_empty_states(self):
+        for name in ["education_home", "article_list", "event_list"]:
+            response = self.client.get(reverse(name))
+            self.assertEqual(response.status_code, 200)
+        self.assertContains(self.client.get(reverse("article_list")), "Belum ada artikel")
+        self.assertContains(self.client.get(reverse("event_list")), "Belum ada agenda")
+
+    def test_article_list_hides_draft_and_future_articles(self):
+        published = make_article(title="Artikel Terbit")
+        make_article(title="Artikel Draf", is_published=False)
+        make_article(title="Artikel Terjadwal", published_at=timezone.now() + timedelta(days=1))
+
+        response = self.client.get(reverse("article_list"))
+
+        self.assertContains(response, published.title)
+        self.assertNotContains(response, "Artikel Draf")
+        self.assertNotContains(response, "Artikel Terjadwal")
+
+    def test_article_detail_only_serves_published_articles(self):
+        article = make_article(title="Artikel Detail")
+        draft = make_article(title="Artikel Draf", is_published=False)
+        future = make_article(title="Artikel Terjadwal", published_at=timezone.now() + timedelta(days=1))
+
+        self.assertEqual(
+            self.client.get(reverse("article_detail", args=[article.slug])).status_code, 200
+        )
+        self.assertContains(
+            self.client.get(reverse("article_detail", args=[article.slug])), article.body
+        )
+        self.assertEqual(
+            self.client.get(reverse("article_detail", args=[draft.slug])).status_code, 404
+        )
+        self.assertEqual(
+            self.client.get(reverse("article_detail", args=[future.slug])).status_code, 404
+        )
+        self.assertEqual(self.client.get(reverse("article_detail", args=["tidak-ada"])).status_code, 404)
+
+    def test_event_list_is_upcoming_and_handles_inactive_location(self):
+        later = make_event(
+            self.location, title="Agenda Lebih Lambat", start_at=timezone.now() + timedelta(days=5)
+        )
+        earlier = make_event(
+            self.location, title="Agenda Lebih Awal", start_at=timezone.now() + timedelta(days=2)
+        )
+        make_event(self.location, title="Agenda Lampau", start_at=timezone.now() - timedelta(days=2))
+        inactive = make_location(name="Lokasi Nonaktif", is_active=False)
+        inactive_event = make_event(
+            inactive, title="Agenda Lokasi Nonaktif", start_at=timezone.now() + timedelta(days=4)
+        )
+
+        response = self.client.get(reverse("event_list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Agenda Lampau")
+        self.assertContains(response, "Agenda Lokasi Nonaktif")
+        self.assertContains(response, "Lokasi Nonaktif")
+        self.assertEqual(list(response.context["events"]), [earlier, inactive_event, later])
+
+    def test_event_detail_only_serves_published_events(self):
+        event = make_event(self.location, title="Agenda Detail")
+        draft = make_event(self.location, title="Agenda Draf", is_published=False)
+
+        response = self.client.get(reverse("event_detail", args=[event.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, event.title)
+        self.assertContains(response, self.location.name)
+        self.assertEqual(self.client.get(reverse("event_detail", args=[draft.pk])).status_code, 404)
+        self.assertEqual(self.client.get(reverse("event_detail", args=[999999])).status_code, 404)
+
+    def test_event_detail_handles_inactive_location(self):
+        inactive = make_location(name="Lokasi Nonaktif", is_active=False)
+        event = make_event(inactive, title="Agenda Lokasi Nonaktif")
+
+        response = self.client.get(reverse("event_detail", args=[event.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Lokasi Nonaktif")
+
+    def test_public_urls_resolve_without_login(self):
+        self.assertEqual(self.client.get(reverse("education_home")).status_code, 200)
+        self.assertEqual(self.client.get(reverse("article_list")).status_code, 200)
+        self.assertEqual(self.client.get(reverse("event_list")).status_code, 200)
+        self.assertEqual(self.client.get(reverse("education_manage")).status_code, 302)

@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}Artikel Edukasi — KelolaKita{% endblock title %}
+{% block content %}
+<main class="mx-auto w-full max-w-[900px] px-6 py-12">
+    <p><a href="{% url 'education_home' %}" class="text-sm font-bold text-[#2e7d32]">← Kembali ke Edukasi</a></p>
+    <h1 class="mt-4 font-['Plus_Jakarta_Sans'] text-3xl font-extrabold text-[#1a2e1c]">Artikel Edukasi</h1>
+    <p class="mt-2 text-[#557a5b]">Panduan praktis untuk keputusan sehari-hari.</p>
+
+    {% if articles %}
+    <ul class="mt-8 divide-y divide-[#dce7de] border-y border-[#dce7de]">
+        {% for article in articles %}
+        <li class="py-5">
+            <p class="text-xs font-bold text-[#2e7d32]">{{ article.get_category_display }}</p>
+            <h2 class="mt-1 text-lg font-bold text-[#1a2e1c]">
+                <a href="{% url 'article_detail' article.slug %}" class="hover:underline">{{ article.title }}</a>
+            </h2>
+            <p class="mt-1 text-sm text-[#557a5b]">{{ article.summary }}</p>
+            <p class="mt-2 text-xs text-[#557a5b]">{{ article.published_at|date:"j M Y" }}</p>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="mt-8 text-sm text-[#557a5b]">Belum ada artikel yang diterbitkan.</p>
+    {% endif %}
+
+    <p class="mt-8"><a href="{% url 'event_list' %}" class="text-sm font-bold text-[#2e7d32]">Lihat agenda kegiatan →</a></p>
+</main>
+{% endblock content %}

@@ -1,11 +1,68 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import PermissionDenied
+from django.shortcuts import render
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, DeleteView, TemplateView, UpdateView
+from django.utils import timezone
+from django.views.generic import CreateView, DeleteView, DetailView, ListView, TemplateView, UpdateView
 
 from education.forms import ArticleForm, DistributionForm, EventForm
 from education.models import Article, Distribution, Event
+
+
+def published_events():
+    return Event.objects.filter(is_published=True).select_related("location")
+
+
+class PublicEducationContextMixin:
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["active_nav"] = "edukasi"
+        return context
+
+
+def public_home(request):
+    context = {
+        "articles": Article.objects.published()[:3],
+        "events": published_events().filter(start_at__gte=timezone.now())[:3],
+        "active_nav": "edukasi",
+    }
+    return render(request, "education/public_home.html", context)
+
+
+class ArticleListView(PublicEducationContextMixin, ListView):
+    template_name = "education/public_article_list.html"
+    context_object_name = "articles"
+
+    def get_queryset(self):
+        return Article.objects.published()
+
+
+class ArticleDetailView(PublicEducationContextMixin, DetailView):
+    model = Article
+    template_name = "education/public_article_detail.html"
+    context_object_name = "article"
+
+    def get_queryset(self):
+        return Article.objects.published()
+
+
+class EventListView(PublicEducationContextMixin, ListView):
+    template_name = "education/public_event_list.html"
+    context_object_name = "events"
+
+    def get_queryset(self):
+        return published_events().filter(start_at__gte=timezone.now())
+
+
+class EventDetailView(PublicEducationContextMixin, DetailView):
+    model = Event
+    template_name = "education/public_event_detail.html"
+    context_object_name = "event"
+
+    def get_queryset(self):
+        return published_events()
+
 
 
 class StaffRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):

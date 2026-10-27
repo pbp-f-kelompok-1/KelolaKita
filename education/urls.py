@@ -3,6 +3,11 @@ from django.urls import path
 from education import views
 
 urlpatterns = [
+    path("", views.public_home, name="education_home"),
+    path("artikel/", views.ArticleListView.as_view(), name="article_list"),
+    path("artikel/<slug:slug>/", views.ArticleDetailView.as_view(), name="article_detail"),
+    path("agenda/", views.EventListView.as_view(), name="event_list"),
+    path("agenda/<int:pk>/", views.EventDetailView.as_view(), name="event_detail"),
     path("kelola/", views.ManageDashboard.as_view(), name="education_manage"),
     path("kelola/artikel/tambah/", views.ArticleCreateView.as_view(), name="article_create"),
     path("kelola/artikel/<int:pk>/ubah/", views.ArticleUpdateView.as_view(), name="article_update"),
