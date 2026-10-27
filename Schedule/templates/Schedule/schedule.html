@@ -32,9 +32,16 @@
                                data-nama="{{ item.nama_barang }}"
                                data-jenis="{{ item.jenis_barang }}"
                                data-kondisi="{{ item.kondisi_barang }}"
-                               data-kategori="{{ item.get_kategori_penanganan_display }}">
-                        <img src="{% static 'img/schedule/item-placeholder.jpg' %}" alt=""
-                             class="size-11 shrink-0 rounded-lg object-cover">
+                               data-kategori="{{ item.get_kategori_penanganan_display }}"
+                               data-kategori-slug="{{ item.kategori_penanganan }}"
+                               data-owner="{{ item.pengguna.get_full_name|default:item.pengguna.username }}">
+                        <span aria-hidden="true"
+                              class="flex size-11 shrink-0 items-center justify-center rounded-lg text-base font-extrabold
+                                     {% if item.kategori_penanganan == 'recycle' %}bg-[#e3f2fd] text-[#1565c0]
+                                     {% elif item.kategori_penanganan == 'reduce' %}bg-[#fff3e0] text-[#ef6c00]
+                                     {% else %}bg-[#e8f5e9] text-[#2e7d32]{% endif %}">
+                            {{ item.jenis_barang|first|upper }}
+                        </span>
                         <span class="flex flex-col gap-0.5">
                             <span class="text-sm font-extrabold text-[#1a2e1c]">{{ item.nama_barang }}</span>
                             <span class="text-xs text-[#557a5b]">{{ item.jenis_barang }}</span>
@@ -129,13 +136,13 @@
                 <div class="flex flex-1 flex-col gap-1.5">
                     <label for="id_contact" class="text-[13px] font-bold text-[#1a2e1c]">Kontak penerima</label>
                     <input type="text" name="contact" id="id_contact" required
-                           value="{{ contact_default }}"
+                           placeholder="{% if contact_placeholder_name %}cth. {{ contact_placeholder_name }} · 08xx-xxxx-xxxx{% else %}Nama · nomor HP{% endif %}"
                            class="h-11 w-full rounded-lg border border-[#dce7de] bg-white px-3.5 text-sm text-[#1a2e1c] focus:border-[#2e7d32] focus:outline-2 focus:outline-[#2e7d32]">
                 </div>
                 <div class="flex flex-1 flex-col gap-1.5">
                     <label for="id_notes" class="text-[13px] font-bold text-[#1a2e1c]">Catatan kurir</label>
                     <input type="text" name="notes" id="id_notes"
-                           value="{{ notes_default }}"
+                           placeholder="Catatan untuk kurir (opsional)"
                            class="h-11 w-full rounded-lg border border-[#dce7de] bg-white px-3.5 text-sm text-[#1a2e1c] focus:border-[#2e7d32] focus:outline-2 focus:outline-[#2e7d32]">
                 </div>
             </section>
@@ -159,8 +166,15 @@
                 <span class="rounded-full bg-[#f4f6f5] px-2.5 py-1.5 text-xs font-bold text-[#557a5b]">Draf</span>
             </div>
 
-            <img src="{% static 'img/schedule/item-placeholder.jpg' %}" alt=""
-                 class="h-[150px] w-full rounded-xl object-cover">
+            <div id="summary-item-badge" aria-hidden="true"
+                 class="flex h-[150px] w-full items-center justify-center rounded-xl text-5xl font-extrabold
+                        {% if items %}
+                            {% if items.0.kategori_penanganan == 'recycle' %}bg-[#e3f2fd] text-[#1565c0]
+                            {% elif items.0.kategori_penanganan == 'reduce' %}bg-[#fff3e0] text-[#ef6c00]
+                            {% else %}bg-[#e8f5e9] text-[#2e7d32]{% endif %}
+                        {% else %}bg-[#f4f6f5] text-[#a9bdac]{% endif %}">
+                {% if items %}{{ items.0.jenis_barang|first|upper }}{% else %}?{% endif %}
+            </div>
 
             <div class="flex flex-col gap-1.5">
                 <p id="summary-item-name" class="text-[15px] font-extrabold text-[#1a2e1c]">
@@ -227,8 +241,16 @@
     const summaryItemKategori = document.getElementById('summary-item-kategori');
     const summaryItemJenis = document.getElementById('summary-item-jenis');
     const summaryItemKondisi = document.getElementById('summary-item-kondisi');
+    const summaryItemBadge = document.getElementById('summary-item-badge');
+    const contactInput = document.getElementById('id_contact');
     const infoTitle = document.getElementById('info-title');
     const infoBody = document.getElementById('info-body');
+
+    const CATEGORY_STYLES = {
+        recycle: { bg: '#e3f2fd', fg: '#1565c0' },
+        reduce: { bg: '#fff3e0', fg: '#ef6c00' },
+        reuse: { bg: '#e8f5e9', fg: '#2e7d32' },
+    };
 
     const availability = JSON.parse(document.getElementById('availability-data').textContent);
     const sessionInputs = Array.from(form.querySelectorAll('input[name="session"]'));
@@ -268,6 +290,17 @@
             summaryItemKategori.textContent = input.dataset.kategori;
             summaryItemJenis.textContent = input.dataset.jenis;
             summaryItemKondisi.textContent = input.dataset.kondisi;
+
+            const style = CATEGORY_STYLES[input.dataset.kategoriSlug] || CATEGORY_STYLES.reuse;
+            summaryItemBadge.style.backgroundColor = style.bg;
+            summaryItemBadge.style.color = style.fg;
+            summaryItemBadge.textContent = (input.dataset.jenis || '?').charAt(0).toUpperCase();
+
+            if (contactInput && !contactInput.value.trim()) {
+                contactInput.placeholder = input.dataset.owner
+                    ? `cth. ${input.dataset.owner} · 08xx-xxxx-xxxx`
+                    : 'Nama · nomor HP';
+            }
         }
     });
 

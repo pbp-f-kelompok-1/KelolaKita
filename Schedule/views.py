@@ -92,8 +92,15 @@ def _approved_items():
         Pemeriksaan.objects
         .exclude(kategori_penanganan="menunggu")
         .exclude(penjadwalan_set__isnull=False)
+        .select_related("pengguna")
         .order_by("-created_at")
     )
+
+
+def _owner_display_name(user):
+    if not user:
+        return ""
+    return user.get_full_name() or user.username
 
 
 def show_schedule(request):
@@ -148,7 +155,6 @@ def show_schedule(request):
         "selected_session": PICKUP_SESSIONS[0]["value"],
         "selected_item_id": items[0].pk if items else None,
         "availability": _availability_for_dates(dates),
-        "contact_default": "Nabila · +62 812 3456 7890",
-        "notes_default": "Hubungi saat tiba di gerbang.",
+        "contact_placeholder_name": _owner_display_name(items[0].pengguna) if items else "",
     }
     return render(request, "Schedule/schedule.html", context)
