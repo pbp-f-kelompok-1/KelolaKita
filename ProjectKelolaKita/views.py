@@ -13,7 +13,10 @@ def show_location(request):
         {
             'id': str(loc.id),
             'name': loc.name,
+            'description': loc.description,
             'address': loc.address,
+            'city': loc.city,
+            'open_hours': loc.open_hours,
             'latitude': float(loc.latitude),
             'longitude': float(loc.longitude),
         }
@@ -34,8 +37,12 @@ def create_location(request) :
         messages.success(request, "Lokasi berhasil ditambahkan")
         return redirect("show_location")
 
-    return render(request, "Location/location_form.html", {"name": "KelolaKita", "form": form, "active_nav": "peta"})
-
+    return render(request, "Location/location_form.html", {
+        "name": "KelolaKita",
+        "form": form,
+        "is_edit": False,
+        "active_nav": "peta",
+    })
 def delete_location(request, location_id) :
     location = get_object_or_404(Location, pk=location_id)
 
@@ -49,3 +56,19 @@ def delete_location(request, location_id) :
 def location_detail(request, pk):
     loc = get_object_or_404(Location, pk=pk, is_active=True)
     return render(request, 'Location/location_detail.html', {'loc': loc, 'active_nav': 'peta'})
+
+def update_location(request, location_id):
+    location = get_object_or_404(Location, pk=location_id)
+    form = LocationForm(request.POST or None, instance=location)
+
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Lokasi berhasil diperbarui")
+        return redirect("show_location")
+
+    return render(request, "Location/location_form.html", {
+        "form": form,
+        "is_edit": True,
+        "location": location,
+        "active_nav": "peta",
+    })

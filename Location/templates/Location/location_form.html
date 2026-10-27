@@ -2,7 +2,6 @@
 
 {% block content %}
 <style>
-    /* Pembatas peta agar ukuran tidak merusak layout */
     #map {
         height: 320px !important;
         width: 100% !important;
@@ -10,17 +9,7 @@
         z-index: 1 !important;
         border-radius: 0.5rem;
     }
-    
-    .form-card {
-        max-width: 48rem;
-        margin: 2rem auto;
-        padding: 1.5rem;
-        background-color: #ffffff;
-        border-radius: 0.75rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    }
 
-    /* Style untuk merapikan radio button category dari Django */
     #id_category {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -38,68 +27,104 @@
     .custom-green-pin {
         width: 24px;
         height: 24px;
-        background-color: #15803d; /* Warna hijau */
-        border: 3px solid #ffffff;  /* Bingkai putih */
-        border-radius: 50%;         /* Lingkaran sempurna */
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3); /* Bayangan lembut */
+        background-color: #15803d;
+        border: 3px solid #ffffff;
+        border-radius: 50%;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
         box-sizing: border-box;
     }
+    .btn-save {
+        padding: 12px 32px;
+        border: 0;
+        border-radius: 8px;
+        background: #15803d;
+        color: #fff;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .btn-save:hover { background: #166534; }
+
+    .btn-search {
+        padding: 10px 20px;
+        border: 0;
+        border-radius: 8px;
+        background: #15803d;
+        color: #fff;
+        font-weight: 500;
+        cursor: pointer;
+    }
+    .btn-search:hover { background: #166534; }
 </style>
 
-<main class="form-card max-w-3xl mx-auto p-6 bg-white rounded-xl shadow-md my-8">
-    <h1 class="text-2xl font-bold text-gray-800 mb-2">Tambah Lokasi Setoran Baru</h1>
-    <p class="text-gray-600 text-sm mb-6">Cari lokasi menggunakan pencarian atau klik langsung titik lokasi pada peta.</p>
+<main class="mx-auto my-8 max-w-3xl rounded-xl bg-white p-6 shadow-md">
+    <h1 class="mb-2 text-2xl font-bold text-gray-800">
+        {% if is_edit %}Update Lokasi Setoran{% else %}Tambah Lokasi Setoran Baru{% endif %}
+    </h1>
+    <p class="mb-6 text-sm text-gray-600">
+        {% if is_edit %}
+            Ubah bagian yang perlu diperbarui saja. Kolom lain tetap seperti semula.
+        {% else %}
+            Cari lokasi menggunakan pencarian atau klik langsung titik lokasi pada peta.
+        {% endif %}
+    </p>
 
     <div class="mb-4">
-        <label for="form-search-input" class="block text-sm font-medium text-gray-700 mb-1">Cari Nama Tempat / Alamat</label>
-        <div class="flex gap-2" style="display: flex; gap: 0.5rem;">
-            <input 
-                type="search" 
-                id="form-search-input" 
-                class="w-full rounded-[10px] border border-line bg-white px-3.5 py-3 text-[0.9rem] text-ink focus:border-brand focus:outline-2 focus:outline-brand" 
+        <label for="form-search-input" class="mb-1 block text-sm font-medium text-gray-700">Cari Nama Tempat / Alamat</label>
+        <div class="flex gap-2">
+            <input
+                type="search"
+                id="form-search-input"
+                class="w-full rounded-[10px] border border-[#dfe5e0] bg-white px-3.5 py-3 text-[0.9rem] text-[#17261b] focus:border-[#2e7d32] focus:outline-2 focus:outline-[#2e7d32]"
                 placeholder="Contoh: Cibinong, Depok, atau Fasilkom UI"
                 autocomplete="off"
             >
-            <button 
-                type="button" 
-                id="btn-search-loc" 
-                class="px-5 py-2.5 bg-green-700 text-white font-medium rounded-lg hover:bg-green-800 transition"
-                style="padding: 0.625rem 1.25rem; background-color: #15803d; color: white; border-radius: 0.5rem; border: none; cursor: pointer;"
+            <button
+                type="button"
+                id="btn-search-loc"
+                class="cursor-pointer rounded-lg bg-[#15803d] px-5 py-2.5 font-medium text-white transition hover:bg-[#166534]"
             >
                 Cari
             </button>
         </div>
-        <p id="search-status" class="text-xs text-gray-500 mt-1" role="status" aria-live="polite"></p>
+        <p id="search-status" class="mt-1 text-xs text-gray-500" role="status" aria-live="polite"></p>
     </div>
 
     <div class="mb-6">
         <div id="map"></div>
     </div>
 
-    <form method="post" action="{% url 'create_location' %}" class="space-y-4">
+    <form method="post" action="" class="space-y-4">
         {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="rounded-[10px] border border-[#f1c0bb] bg-[#fdecea] px-3.5 py-3 text-sm font-semibold text-[#b42318]">
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
 
         {% for field in form %}
             <div class="mb-4">
-                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                <label for="{{ field.id_for_label }}" class="mb-1 block text-sm font-medium text-gray-700">
                     {{ field.label }}
                 </label>
 
                 {{ field }}
 
                 {% if field.errors %}
-                    <p class="text-red-500 text-xs mt-1">{{ field.errors.0 }}</p>
+                    <p class="mt-1 text-xs text-red-500">{{ field.errors.0 }}</p>
                 {% endif %}
             </div>
         {% endfor %}
 
-        <div class="pt-4">
-            <button 
-                type="submit" 
-                class="w-full py-3 bg-green-700 text-white font-semibold rounded-lg hover:bg-green-800 transition shadow-md"
-                style="width: 100%; padding: 0.75rem; background-color: #15803d; color: white; font-weight: 600; border-radius: 0.5rem; border: none; cursor: pointer;"
-            >
-                Simpan Lokasi
+        <div class="flex items-center justify-end gap-3 pt-4">
+            <a href="{% url 'show_location' %}"
+            class="rounded-lg border border-[#dfe5e0] bg-white px-5 py-3 text-sm font-semibold text-[#2e7d32] transition hover:bg-[#e8f5e9]">
+                Batal
+            </a>
+            <button type="submit" class="btn-save">
+                {% if is_edit %}Simpan Perubahan{% else %}Simpan Lokasi{% endif %}
             </button>
         </div>
     </form>
@@ -113,11 +138,16 @@
         attribution: '&copy; OpenStreetMap'
     }).addTo(map);
 
-    setTimeout(() => {
-        map.invalidateSize();
-    }, 200);
+    setTimeout(() => { map.invalidateSize(); }, 200);
 
     let marker = null;
+
+    const greenCircleIcon = L.divIcon({
+        className: 'custom-green-pin-container',
+        html: '<div class="custom-green-pin"></div>',
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
+    });
 
     function setLocationData(lat, lng, addressText = null, cityText = null, stateText = null) {
         const latInput = document.getElementById('id_latitude');
@@ -136,9 +166,9 @@
         if (marker) {
             marker.setLatLng([lat, lng]);
         } else {
-            marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+            marker = L.marker([lat, lng], { icon: greenCircleIcon, draggable: true }).addTo(map);
 
-            marker.on('dragend', function (e) {
+            marker.on('dragend', function () {
                 const pos = marker.getLatLng();
                 fetchAddressFromCoords(pos.lat, pos.lng);
             });
@@ -149,10 +179,10 @@
 
     async function fetchAddressFromCoords(lat, lng) {
         const addressInput = document.getElementById('id_address');
+        const previousAddress = addressInput ? addressInput.value : '';
         if (addressInput) addressInput.value = "Mengambil alamat...";
 
         try {
-            // Memanggil API Geocode backend Anda
             const params = new URLSearchParams({ q: `${lat}, ${lng}` });
             const geocodeUrl = "{% url 'Location:geocode_location' %}";
 
@@ -172,10 +202,12 @@
 
                 setLocationData(lat, lng, place.display_name, cityName, provinceName);
             } else {
+                if (addressInput) addressInput.value = previousAddress;
                 setLocationData(lat, lng);
             }
         } catch (error) {
             console.error('Error Reverse Geocoding:', error);
+            if (addressInput) addressInput.value = previousAddress;
             setLocationData(lat, lng);
         }
     }
@@ -228,7 +260,7 @@
             }
 
             setLocationData(lat, lon, place.display_name, cityName, provinceName);
-            searchStatus.textContent = ''; 
+            searchStatus.textContent = '';
 
         } catch (error) {
             console.error('Error Geocoding:', error);
@@ -249,42 +281,11 @@
         searchStatus.textContent = '';
     });
 
-    const greenCircleIcon = L.divIcon({
-        className: 'custom-green-pin-container', 
-        html: '<div class="custom-green-pin"></div>',
-        iconSize: [24, 24],
-        iconAnchor: [12, 12] 
-    });
-
-    function setLocationData(lat, lng, addressText = null, cityText = null, stateText = null) {
-        const latInput = document.getElementById('id_latitude');
-        const lngInput = document.getElementById('id_longitude');
-        const addressInput = document.getElementById('id_address');
-        const cityInput = document.getElementById('id_city');
-        const provinceInput = document.getElementById('id_province');
-
-        if (latInput) latInput.value = parseFloat(lat).toFixed(6);
-        if (lngInput) lngInput.value = parseFloat(lng).toFixed(6);
-
-        if (addressText && addressInput) addressInput.value = addressText;
-        if (cityText && cityInput) cityInput.value = cityText;
-        if (stateText && provinceInput) provinceInput.value = stateText;
-
-        if (marker) {
-            marker.setLatLng([lat, lng]);
-        } else {
-            marker = L.marker([lat, lng], { 
-                icon: greenCircleIcon, 
-                draggable: true 
-            }).addTo(map);
-
-            marker.on('dragend', function (e) {
-                const pos = marker.getLatLng();
-                fetchAddressFromCoords(pos.lat, pos.lng);
-            });
-        }
-
-        map.flyTo([lat, lng], 16, { duration: 0.8 });
-    }
+    {% if is_edit %}
+    setLocationData(
+        {{ location.latitude|stringformat:"f" }},
+        {{ location.longitude|stringformat:"f" }}
+    );
+    {% endif %}
 </script>
 {% endblock content %}

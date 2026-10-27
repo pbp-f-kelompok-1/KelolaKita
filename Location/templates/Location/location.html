@@ -45,9 +45,17 @@
                 <span class="chip-choice relative flex cursor-pointer items-center gap-1.5 rounded-full border border-[#dfe5e0] bg-white px-3.5 py-1.5 text-xs font-semibold text-[#5f6f64] transition-colors hover:border-[#2e7d32]">
                    {{ loc.get_category_display }}
                 </span>
+                <div class="mt-1.5 flex items-center gap-2">
+                    <a href="{% url 'update_location' loc.id %}"
+                    class="button-edit inline-flex cursor-pointer items-center rounded-lg border border-[#cfe3d1] bg-white px-2.5 py-1 text-xs font-bold text-[#2e7d32] no-underline transition-colors hover:bg-[#e8f5e9]">
+                        Update
+                    </a>
 
-                <button type="button" class="button-danger"
-                        popovertarget="delete-location-{{ loc.id }}">Hapus</button>
+                    <button type="button" popovertarget="delete-location-{{ loc.id }}"
+                            class="button-danger cursor-pointer rounded-lg border border-[#f1c0bb] bg-white px-2.5 py-1 text-xs font-bold text-[#b42318] transition-colors hover:bg-[#fdecea]">
+                        Hapus
+                    </button>
+                </div>
 
                 <div id="delete-location-{{ loc.id }}" class="delete-modal" popover="auto">
                     <h2>Hapus lokasi?</h2>
@@ -304,6 +312,12 @@
             console.error('Location search error:', error);
             searchStatus.textContent = error.message || 'Pencarian gagal. Coba lagi nanti.';
         }
+    });
+
+    document.getElementById('loc-list').addEventListener('click', e => {
+        if (e.target.closest('.button-danger, .button-edit, .delete-modal')) return;
+        const card = e.target.closest('.loc-card');
+        if (card) selectLocation(card.dataset.id);
     });
 </script>
 {% endblock content %}
