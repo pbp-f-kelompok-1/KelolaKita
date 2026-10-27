@@ -54,3 +54,71 @@ class PemeriksaanModelTests(TestCase):
             kondisi_barang="Sobek",
         )
         self.assertEqual(item.kategori_penanganan, "menunggu")
+
+
+class PenjadwalanModelTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="budi", password="pass12345")
+        self.location = Location.objects.create(
+            name="Bank Sampah Sejahtera",
+            description="desc",
+            address="Jl. Mawar",
+            contact_person="08123456789",
+            open_hours="08.00-16.00",
+            province="DKI Jakarta",
+            city="Jakarta",
+            latitude=Decimal("-6.2000"),
+            longitude=Decimal("106.8000"),
+        )
+
+    def _base_kwargs(self, **overrides):
+        kwargs = dict(
+            metode=Penjadwalan.Metode.kurir,
+            tanggal=datetime.date.today() + datetime.timedelta(days=1),
+            sesi=Penjadwalan.Sesi.pagi,
+            nama_penerima="Budi",
+            nomor_hp="08123456789",
+        )
+        kwargs.update(overrides)
+        return kwargs
+
+    def test_clean_raises_when_kurir_without_alamat(self):
+        booking = Penjadwalan(**self._base_kwargs(metode=Penjadwalan.Metode.kurir, alamat_penjemputan=""))
+        with self.assertRaises(ValidationError) as ctx:
+            booking.clean()
+        self.assertIn("alamat_penjemputan", ctx.exception.message_dict)
+
+    def test_clean_passes_when_kurir_with_alamat(self):
+        booking = Penjadwalan(**self._base_kwargs(
+            metode=Penjadwalan.Metode.kurir,
+            alamat_penjemputan="Jl. Melati No. 5",
+        ))
+        booking.clean()
+
+    def test_clean_raises_when_titik_without_lokasi(self):
+        booking = Penjadwalan(**self._base_kwargs(metode=Penjadwalan.Metode.titik))
+        with self.assertRaises(ValidationError) as ctx:
+            booking.clean()
+        self.assertIn("lokasi_mitra", ctx.exception.message_dict)
+
+    def test_clean_passes_when_titik_with_lokasi(self):
+        booking = Penjadwalan(**self._base_kwargs(
+            metode=Penjadwalan.Metode.titik,
+            lokasi_mitra=self.location,
+        ))
+        booking.clean()
+
+    def test_str_includes_barang_names(self):
+        item = Pemeriksaan.objects.create(
+            pengguna=self.user,
+            nama_barang="Kardus",
+            jenis_barang="Kertas",
+            kondisi_barang="Baik",
+            kategori_penanganan="recycle",
+        )
+        booking = Penjadwalan.objects.create(**self._base_kwargs(
+            metode=Penjadwalan.Metode.kurir,
+            alamat_penjemputan="Jl. Melati No. 5",
+        ))
+        booking.barang.set([item])
+        self.assertIn("Kardus", str(booking))
