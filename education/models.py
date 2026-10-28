@@ -110,8 +110,13 @@ class Article(models.Model):
         )
 
     @property
+    def image_available(self):
+        return bool(self.image) and self.image.storage.exists(self.image.name)
+
+    @property
     def cover(self):
-        if self.image:
+        # shortcut: exists() dicek setiap akses cover (satu stat per artikel), upgrade ke cache atau kolom flag bila artikel banyak.
+        if self.image_available:
             return {"src": self.image.url, "alt": f"Gambar artikel {self.title}"}
         return {
             "src": static(ARTICLE_IMAGE_PLACEHOLDER),

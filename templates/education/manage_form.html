@@ -4,7 +4,7 @@
 {% block title %}{{ form_title }} — KelolaKita{% endblock title %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/education.css' %}">
+<link rel="stylesheet" href="{% static 'css/education.css' %}?v=20261029-2">
 {% endblock extra_css %}
 
 {% block content %}
@@ -44,9 +44,13 @@
                                 {{ field.label }}{% if field.field.required %} <span aria-hidden="true">*</span><span class="sr-only"> wajib</span>{% endif %}
                             </label>
                             {% if field.name == "image" and form.instance.image %}
-                            <div class="article-image-preview">
-                                <img src="{{ form.instance.image.url }}" alt="Pratinjau gambar artikel {{ form.instance.title }}">
-                            </div>
+                                {% if form.instance.image_available %}
+                                <div class="article-image-preview">
+                                    <img src="{{ form.instance.image.url }}" alt="Pratinjau gambar artikel {{ form.instance.title }}" loading="lazy">
+                                </div>
+                                {% else %}
+                                <p class="image-missing">Berkas gambar tidak ditemukan di penyimpanan. Unggah ulang gambar untuk menampilkannya.</p>
+                                {% endif %}
                             {% endif %}
                             {{ field }}
                             {% if field.help_text %}<p class="form-help">{{ field.help_text }}</p>{% endif %}

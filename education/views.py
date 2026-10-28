@@ -1,9 +1,12 @@
+import mimetypes
+from pathlib import PurePosixPath
 from zoneinfo import ZoneInfo
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Sum
+from django.http import FileResponse, Http404
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.utils import timezone
@@ -14,6 +17,8 @@ from education.models import Article, Distribution, Event
 from Location.models import Location
 
 BUSINESS_TIMEZONE = ZoneInfo("Asia/Jakarta")
+ARTICLE_IMAGE_PREFIX = "education/articles/"
+ARTICLE_IMAGE_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
 
 
 def published_events():
@@ -37,6 +42,57 @@ class PublicEducationContextMixin:
         context = super().get_context_data(**kwargs)
         context["active_nav"] = "edukasi"
         return context
+
+
+def article_image(request, path):
+    """Serve only images that are registered as article covers.
+
+    Public requests are limited to published articles; staff may preview drafts.
+    """
+    if (
+        not path
+        or path.startswith("/")
+        or "\\" in path
+        or "\x00" in path
+        or ".." in PurePosixPath(path).parts
+    ):
+        raise Http404
+
+    image_name = f"{ARTICLE_IMAGE_PREFIX}{path}"
+    articles = Article.objects.filter(image=image_name)
+    article = articles.first()
+    if article is None:
+        raise Http404
+
+    is_staff = (
+        request.user.is_authenticated
+        and request.user.is_active
+        and request.user.is_staff
+    )
+    is_public = articles.published().exists()
+    if not is_public and not is_staff:
+        raise Http404
+
+    if not article.image_available:
+        raise Http404
+
+    content_type, _ = mimetypes.guess_type(article.image.name)
+    if content_type not in ARTICLE_IMAGE_CONTENT_TYPES:
+        raise Http404
+
+    try:
+        image_file = article.image.open("rb")
+    except OSError:
+        raise Http404
+
+    # shortcut: Django/gunicorn streams each image (no CDN/Web server); move to
+    # persistent object storage if media volume or traffic grows.
+    response = FileResponse(image_file, content_type=content_type)
+    response["X-Content-Type-Options"] = "nosniff"
+    response["Cache-Control"] = (
+        "public, max-age=3600" if is_public else "private, no-store"
+    )
+    return response
 
 
 def public_home(request):

@@ -2,6 +2,7 @@ import shutil
 import tempfile
 from datetime import date, datetime, timedelta, timezone as dt_timezone
 from io import BytesIO
+from pathlib import Path
 from unittest.mock import patch
 
 from PIL import Image
@@ -452,6 +453,88 @@ class ArticleImageTests(TestCase):
             response, f"alt=\"Ilustrasi artikel {article.title}\""
         )
 
+    def test_uploaded_image_is_served_from_media_url(self):
+        article = make_article(image=make_image_upload())
+
+        response = self.client.get(article.image.url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "image/jpeg")
+        self.assertEqual(response["X-Content-Type-Options"], "nosniff")
+
+    def test_draft_and_scheduled_images_require_staff(self):
+        published = make_article(image=make_image_upload("published.jpg"))
+        draft = make_article(
+            title="Artikel Draf",
+            image=make_image_upload("draft.jpg"),
+            is_published=False,
+        )
+        scheduled = make_article(
+            title="Artikel Terjadwal",
+            image=make_image_upload("scheduled.jpg"),
+            published_at=timezone.now() + timedelta(days=1),
+        )
+
+        self.assertEqual(self.client.get(published.image.url).status_code, 200)
+        for article in (draft, scheduled):
+            self.assertEqual(self.client.get(article.image.url).status_code, 404)
+
+        staff = User.objects.create_user("media-staff", password="x", is_staff=True)
+        self.client.force_login(staff)
+        for article in (draft, scheduled):
+            self.assertEqual(self.client.get(article.image.url).status_code, 200)
+
+    def test_unregistered_media_file_is_not_served(self):
+        media_path = (
+            Path(self.media_root)
+            / "education"
+            / "articles"
+            / "2026"
+            / "10"
+            / "unlinked.jpg"
+        )
+        media_path.parent.mkdir(parents=True, exist_ok=True)
+        media_path.write_bytes(b"not an article image")
+
+        response = self.client.get("/media/education/articles/2026/10/unlinked.jpg")
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_deleted_article_image_is_not_served(self):
+        article = make_article(image=make_image_upload())
+        image_url = article.image.url
+        article.delete()
+
+        self.assertEqual(self.client.get(image_url).status_code, 404)
+
+    def test_article_image_route_rejects_traversal(self):
+        response = self.client.get("/media/education/articles/../settings.py")
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_missing_image_file_falls_back_to_placeholder(self):
+        article = make_article(image="education/articles/2026/10/hilang.jpg")
+
+        self.assertFalse(article.image_available)
+        self.assertEqual(
+            article.cover["src"],
+            "/static/images/education/articles/article-placeholder.svg",
+        )
+        self.assertEqual(
+            self.client.get("/media/education/articles/2026/10/hilang.jpg").status_code,
+            404,
+        )
+
+    def test_edit_form_flags_missing_image_file(self):
+        staff = User.objects.create_user("missing-staff", password="x", is_staff=True)
+        self.client.force_login(staff)
+        article = make_article(image="education/articles/2026/10/hilang.jpg")
+
+        response = self.client.get(reverse("article_update", args=[article.pk]))
+
+        self.assertContains(response, "Berkas gambar tidak ditemukan")
+        self.assertNotContains(response, "Pratinjau gambar artikel")
+
     def test_invalid_upload_does_not_create_article(self):
         staff = User.objects.create_user("invalid-staff", password="x", is_staff=True)
         self.client.force_login(staff)
@@ -689,6 +772,54 @@ class ManagementAccessTests(TestCase):
         self.assertEqual(self.client.get(reverse("education_manage")).status_code, 200)
         for name in ["article_create", "event_create", "distribution_create"]:
             self.assertEqual(self.client.get(reverse(name)).status_code, 200)
+
+
+class ManageDashboardTests(TestCase):
+    def setUp(self):
+        self.media_root = tempfile.mkdtemp()
+        self.media_override = override_settings(MEDIA_ROOT=self.media_root)
+        self.media_override.enable()
+        self.addCleanup(shutil.rmtree, self.media_root, True)
+        self.addCleanup(self.media_override.disable)
+        staff = User.objects.create_user("dashboard-staff", password="x", is_staff=True)
+        self.client.force_login(staff)
+        self.location = make_location()
+
+    def test_empty_dashboard_renders_empty_states(self):
+        response = self.client.get(reverse("education_manage"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Belum ada artikel")
+        self.assertContains(response, "Belum ada agenda")
+        self.assertContains(response, "Belum ada catatan penyaluran")
+
+    def test_articles_show_cover_thumbnails_status_and_actions(self):
+        article = make_article(title="Artikel Bergambar", image=make_image_upload())
+        draft = make_article(title="Artikel Draf", is_published=False)
+        missing = make_article(title="Artikel Hilang", image="education/articles/2026/10/hilang.jpg")
+
+        response = self.client.get(reverse("education_manage"))
+
+        self.assertContains(response, f'src="{article.image.url}"')
+        self.assertContains(response, "/static/images/education/articles/article-placeholder.svg")
+        self.assertContains(response, "Terbit")
+        self.assertContains(response, "Draf")
+        self.assertContains(response, "Berkas gambar tidak ditemukan")
+        for item in [article, draft, missing]:
+            self.assertContains(response, reverse("article_update", args=[item.pk]))
+            self.assertContains(response, reverse("article_delete", args=[item.pk]))
+
+    def test_agenda_and_distribution_rows_show_real_records(self):
+        event = make_event(self.location, title="Agenda Komunitas Nyata")
+        distribution = make_distribution(self.location, item_name="Tote bag katun", quantity=7)
+
+        response = self.client.get(reverse("education_manage"))
+
+        self.assertContains(response, event.title)
+        self.assertContains(response, distribution.item_name)
+        self.assertContains(response, "Tersalurkan")
+        self.assertContains(response, reverse("event_update", args=[event.pk]))
+        self.assertContains(response, reverse("distribution_delete", args=[distribution.pk]))
 
 
 class CrudTests(TestCase):

@@ -18,8 +18,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from ProjectKelolaKita.views import landing_page, show_location, create_location, delete_location, location_detail, update_location
-from django.conf.urls.static import static
-from ProjectKelolaKita.views import landing_page, show_location, create_location, delete_location, location_detail
+from education.views import ARTICLE_IMAGE_PREFIX, article_image
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -39,4 +38,13 @@ if settings.DEBUG:
     urlpatterns += [
         path("__reload__/", include("django_browser_reload.urls")),
     ]
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# PWS serves static via WhiteNoise, not uploaded media. Keep the media URL shape but
+# only serve files registered as Article images and only when the article is public.
+urlpatterns += [
+    path(
+        f"{settings.MEDIA_URL.strip('/')}/{ARTICLE_IMAGE_PREFIX}<path:path>",
+        article_image,
+        name="article_image",
+    )
+]
