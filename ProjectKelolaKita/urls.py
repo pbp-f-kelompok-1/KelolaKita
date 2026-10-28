@@ -23,6 +23,8 @@ from ProjectKelolaKita.views import landing_page, show_location, create_location
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', landing_page, name='landing_page'),
+    path('', include('Location.urls')),
+    path('schedule/', include('Schedule.urls')),
     path('locations/', show_location, name="show_location"),
     path('locations/add/', create_location, name="create_location"),
     path("locations/<uuid:location_id>/delete/",delete_location,name="delete_location"),
