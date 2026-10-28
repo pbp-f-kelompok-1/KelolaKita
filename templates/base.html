@@ -36,7 +36,7 @@
                 Beranda
                 <span class="h-[3px] w-6 rounded-full bg-[#2e7d32] {% if active_nav != 'beranda' %}invisible{% endif %}"></span>
             </a>
-            <a href="#"
+            <a href="{% url 'penanganan:daftar_pengajuan' %}"
                class="flex flex-col items-center gap-[9px] text-sm whitespace-nowrap {% if active_nav == 'pengajuan' %}font-bold text-[#2e7d32]{% else %}font-medium text-[#557a5b] hover:text-[#2e7d32]{% endif %}">
                 Pengajuan
                 <span class="h-[3px] w-6 rounded-full bg-[#2e7d32] {% if active_nav != 'pengajuan' %}invisible{% endif %}"></span>
