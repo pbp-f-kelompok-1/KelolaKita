@@ -43,14 +43,14 @@ def tambah_pengajuan(request):
     return render(request, "penanganan/pengajuan_form.html")
 
 # Melihat hasil pemeriksaan dan kategori penanganan
-@login_required(login_url="/login/")
+#@login_required(login_url="/login/")
 def daftar_pengajuan(request):
     # Jika Pengelola, tampilkan semua data pengajuan untuk diperiksa
-    if is_pengelola(request.user):
-        daftar_pemeriksaan = Pemeriksaan.objects.all().order_by('-created_at')
+    daftar_pemeriksaan = Pemeriksaan.objects.all().order_by('-created_at')
+    #if is_pengelola(request.user):
     # Jika Pengguna biasa, hanya tampilkan riwayat barang miliknya sendiri
-    else:
-        daftar_pemeriksaan = Pemeriksaan.objects.filter(pengguna=request.user).order_by('-created_at')
+#    else:
+ #       daftar_pemeriksaan = Pemeriksaan.objects.filter(pengguna=request.user).order_by('-created_at')
         
     context = {
         "daftar_pemeriksaan": daftar_pemeriksaan
