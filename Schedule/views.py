@@ -1,15 +1,13 @@
 import datetime
-import re
-from decimal import Decimal, InvalidOperation
 
 from django.contrib import messages
-from django.core.exceptions import ValidationError
 from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from Location.models import Location
-from Schedule.models import Pemeriksaan, Penjadwalan, phone_validator
+from Schedule.models import Pemeriksaan, Penjadwalan
+from Schedule.ScheduleForm import PenjadwalanForm
 
 
 DAY_ABBR_ID = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"]
@@ -117,17 +115,6 @@ def _active_locations():
     return Location.objects.filter(is_active=True).order_by("name")
 
 
-def _normalize_phone(raw):
-    return re.sub(r"[\s-]", "", raw.strip())
-
-
-def _safe_decimal(value):
-    try:
-        return Decimal(value) if value else None
-    except (InvalidOperation, ValueError):
-        return None
-
-
 def _session_datetime(tanggal, sesi, edge="start"):
     start, end = SESSION_WINDOWS[sesi]
     clock = start if edge == "start" else end
@@ -135,97 +122,52 @@ def _session_datetime(tanggal, sesi, edge="start"):
 
 
 def show_schedule(request):
-    """Halaman penjadwalan penyetoran/penjemputan barang (modul Penyetoran & Penjemputan)."""
+    """Halaman penjadwalan penyetoran/penjemputan barang (modul Penyetoran & Penjemputan).
+
+    Validasi & penyimpanan dilakukan lewat `PenjadwalanForm` (lihat
+    `Schedule/ScheduleForm.py`). Satu-satunya aturan bisnis yang tetap
+    ditegakkan manual di sini, bukan di form, adalah re-check sisa kuota
+    sesi tepat sebelum `.save()`, untuk meminimalkan race condition saat
+    dua pengguna submit sesi yang sama hampir bersamaan.
+    """
     dates = _upcoming_dates()
     today = datetime.date.today()
     current_month_label = f"{MONTH_FULL_ID[today.month - 1]} {today.year}"
 
-    selected_method = PICKUP_METHODS[0]["value"]
-    selected_date = dates[0]["iso"]
-    selected_session = PICKUP_SESSIONS[0]["value"]
-    selected_item_ids = []
-    selected_lokasi_id = ""
-    nama_penerima_value = ""
-    nomor_hp_value = ""
-    alamat_penjemputan_value = ""
-    alamat_latitude_value = ""
-    alamat_longitude_value = ""
-    notes_value = ""
+    items = _approved_items()
+    locations = _active_locations()
+    form_kwargs = {
+        "approved_items": items,
+        "valid_dates": [d["iso"] for d in dates],
+        "active_locations": locations,
+    }
 
     if request.method == "POST":
-        method = request.POST.get("method", "")
-        date_iso = request.POST.get("date", "")
-        session = request.POST.get("session", "")
-        nama_penerima = request.POST.get("nama_penerima", "").strip()
-        nomor_hp = _normalize_phone(request.POST.get("nomor_hp", ""))
-        alamat_penjemputan = request.POST.get("alamat_penjemputan", "").strip()
-        alamat_latitude = request.POST.get("alamat_latitude", "").strip()
-        alamat_longitude = request.POST.get("alamat_longitude", "").strip()
-        lokasi_mitra_id = request.POST.get("lokasi_mitra", "")
-        notes = request.POST.get("notes", "").strip()
-        barang_ids = request.POST.getlist("barang")
-
-        # Echo submitted values back so a validation error doesn't reset the form.
-        selected_method = method or selected_method
-        selected_date = date_iso or selected_date
-        selected_session = session or selected_session
-        selected_item_ids = barang_ids
-        selected_lokasi_id = lokasi_mitra_id
-        nama_penerima_value = nama_penerima
-        nomor_hp_value = nomor_hp
-        alamat_penjemputan_value = alamat_penjemputan
-        alamat_latitude_value = alamat_latitude
-        alamat_longitude_value = alamat_longitude
-        notes_value = notes
-
-        valid_method = any(m["value"] == method for m in PICKUP_METHODS)
-        valid_date = any(d["iso"] == date_iso for d in dates)
-        valid_session = session in SESSION_QUOTAS
-        barang_qs = _approved_items().filter(pk__in=barang_ids) if barang_ids else Pemeriksaan.objects.none()
-        valid_barang = bool(barang_ids) and barang_qs.count() == len(set(barang_ids))
-
-        try:
-            phone_validator(nomor_hp)
-            valid_phone = True
-        except ValidationError:
-            valid_phone = False
-
-        lokasi_mitra = None
-        if method == "titik":
-            lokasi_mitra = _active_locations().filter(pk=lokasi_mitra_id).first() if lokasi_mitra_id else None
-            location_ok = lokasi_mitra is not None
+        form = PenjadwalanForm(request.POST, **form_kwargs)
+        if form.is_valid():
+            tanggal = form.cleaned_data["tanggal"]
+            sesi = form.cleaned_data["sesi"]
+            remaining = SESSION_QUOTAS[sesi] - Penjadwalan.objects.filter(tanggal=tanggal, sesi=sesi).count()
+            if remaining <= 0:
+                messages.error(request, "Sesi yang dipilih sudah penuh, silakan pilih sesi lain.")
+            else:
+                form.save()
+                messages.success(request, "Jadwal penyetoran berhasil dikonfirmasi.")
+                return redirect("show_schedule")
         else:
-            location_ok = bool(alamat_penjemputan)
-
-        if not (valid_method and valid_date and valid_session and valid_barang
-                and nama_penerima and valid_phone and location_ok):
             messages.error(
                 request,
                 "Lengkapi barang, metode, tanggal, sesi, nama & nomor HP penerima, "
                 "serta alamat/lokasi penjemputan terlebih dahulu.",
             )
-        else:
-            remaining = SESSION_QUOTAS[session] - Penjadwalan.objects.filter(tanggal=date_iso, sesi=session).count()
-            if remaining <= 0:
-                messages.error(request, "Sesi yang dipilih sudah penuh, silakan pilih sesi lain.")
-            else:
-                penjadwalan = Penjadwalan.objects.create(
-                    metode=method,
-                    tanggal=date_iso,
-                    sesi=session,
-                    nama_penerima=nama_penerima,
-                    nomor_hp=nomor_hp,
-                    alamat_penjemputan=alamat_penjemputan if method == "kurir" else "",
-                    alamat_latitude=_safe_decimal(alamat_latitude) if method == "kurir" else None,
-                    alamat_longitude=_safe_decimal(alamat_longitude) if method == "kurir" else None,
-                    lokasi_mitra=lokasi_mitra,
-                    notes=notes,
-                )
-                penjadwalan.barang.set(barang_qs)
-                messages.success(request, "Jadwal penyetoran berhasil dikonfirmasi.")
-                return redirect("show_schedule")
+    else:
+        initial = {
+            "metode": PICKUP_METHODS[0]["value"],
+            "tanggal": dates[0]["iso"],
+            "sesi": PICKUP_SESSIONS[0]["value"],
+        }
+        form = PenjadwalanForm(initial=initial, **form_kwargs)
 
-    items = _approved_items()
     first_item = items.first()
 
     context = {
@@ -235,20 +177,20 @@ def show_schedule(request):
         "methods": PICKUP_METHODS,
         "sessions": PICKUP_SESSIONS,
         "items": items,
-        "selected_method": selected_method,
-        "selected_date": selected_date,
-        "selected_session": selected_session,
-        "selected_item_ids": selected_item_ids,
-        "selected_lokasi_id": selected_lokasi_id,
+        "selected_method": form["metode"].value() or PICKUP_METHODS[0]["value"],
+        "selected_date": form["tanggal"].value() or dates[0]["iso"],
+        "selected_session": form["sesi"].value() or PICKUP_SESSIONS[0]["value"],
+        "selected_item_ids": form["barang"].value() or [],
+        "selected_lokasi_id": form["lokasi_mitra"].value() or "",
         "availability": _availability_for_dates(dates),
         "contact_placeholder_name": _owner_display_name(first_item.pengguna) if first_item else "",
-        "locations": _active_locations(),
-        "nama_penerima_value": nama_penerima_value,
-        "nomor_hp_value": nomor_hp_value,
-        "alamat_penjemputan_value": alamat_penjemputan_value,
-        "alamat_latitude_value": alamat_latitude_value,
-        "alamat_longitude_value": alamat_longitude_value,
-        "notes_value": notes_value,
+        "locations": locations,
+        "nama_penerima_value": form["nama_penerima"].value() or "",
+        "nomor_hp_value": form["nomor_hp"].value() or "",
+        "alamat_penjemputan_value": form["alamat_penjemputan"].value() or "",
+        "alamat_latitude_value": form["alamat_latitude"].value() or "",
+        "alamat_longitude_value": form["alamat_longitude"].value() or "",
+        "notes_value": form["notes"].value() or "",
     }
     return render(request, "Schedule/schedule.html", context)
 

@@ -74,7 +74,7 @@
                 <div class="flex flex-col gap-3 sm:flex-row">
                     {% for method in methods %}
                     <label class="method-card group relative flex flex-1 cursor-pointer flex-col gap-2.5 rounded-xl border border-[#dce7de] bg-white p-4 transition-colors has-[:checked]:border-[#2e7d32] has-[:checked]:bg-[#e8f5e9]">
-                        <input type="radio" name="method" value="{{ method.value }}" class="sr-only"
+                        <input type="radio" name="metode" value="{{ method.value }}" class="sr-only"
                                {% if method.value == selected_method %}checked{% endif %}
                                data-info-title="{{ method.info_title }}"
                                data-info-body="{{ method.info_body }}"
@@ -159,7 +159,7 @@
                     {% for date in dates %}
                     <label class="date-choice group flex h-[74px] cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border border-[#dce7de] bg-white has-[:checked]:border-[#2e7d32] has-[:checked]:bg-[#2e7d32]"
                            data-page="{{ date.page }}">
-                        <input type="radio" name="date" value="{{ date.iso }}" class="sr-only"
+                        <input type="radio" name="tanggal" value="{{ date.iso }}" class="sr-only"
                                {% if date.iso == selected_date %}checked{% endif %}
                                data-full-label="{{ date.full_label }}">
                         <span class="text-[11px] text-[#557a5b] group-has-[:checked]:text-[#e8f5e9]">{{ date.day_abbr }}</span>
@@ -174,7 +174,7 @@
                 <div class="flex flex-col gap-3 sm:flex-row">
                     {% for session in sessions %}
                     <label class="session-card flex flex-1 cursor-pointer items-center gap-3 rounded-xl border border-[#dce7de] p-4 has-[:checked]:border-[#2e7d32] has-[:checked]:bg-[#e8f5e9] has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-40 has-[:disabled]:pointer-events-none">
-                        <input type="radio" name="session" value="{{ session.value }}" class="sr-only"
+                        <input type="radio" name="sesi" value="{{ session.value }}" class="sr-only"
                                {% if session.value == selected_session %}checked{% endif %}
                                data-summary-label="{{ session.name }} &middot; {{ session.time }}">
                         <img src="{% static session.icon %}" alt="" class="size-6 shrink-0">
@@ -477,10 +477,10 @@
 
     // --- 3. Sesi: ketersediaan slot ---
     const availability = JSON.parse(document.getElementById('availability-data').textContent);
-    const sessionInputs = Array.from(form.querySelectorAll('input[name="session"]'));
+    const sessionInputs = Array.from(form.querySelectorAll('input[name="sesi"]'));
 
     function updateSessionAvailability() {
-        const selectedDate = form.querySelector('input[name="date"]:checked');
+        const selectedDate = form.querySelector('input[name="tanggal"]:checked');
         if (!selectedDate) return;
         const remainingBySession = availability[selectedDate.value] || {};
         sessionInputs.forEach((input) => {
@@ -508,15 +508,15 @@
 
     form.addEventListener('change', (event) => {
         const input = event.target;
-        if (input.name === 'method') {
+        if (input.name === 'metode') {
             summaryMethod.textContent = input.dataset.summaryLabel;
             infoTitle.textContent = input.dataset.infoTitle;
             infoBody.textContent = input.dataset.infoBody;
             updateMethodDetailVisibility(input.value);
-        } else if (input.name === 'date') {
+        } else if (input.name === 'tanggal') {
             summaryDate.textContent = input.dataset.fullLabel;
             updateSessionAvailability();
-        } else if (input.name === 'session') {
+        } else if (input.name === 'sesi') {
             summarySession.textContent = input.dataset.summaryLabel;
         } else if (input.name === 'barang') {
             updateItemSummary();
@@ -525,7 +525,7 @@
 
     updateItemSummary();
     updateSessionAvailability();
-    updateMethodDetailVisibility(form.querySelector('input[name="method"]:checked')?.value);
+    updateMethodDetailVisibility(form.querySelector('input[name="metode"]:checked')?.value);
 
     // Date pager: show only the active page of 6 date cards (30 days total).
     const dateLabels = Array.from(document.querySelectorAll('#date-track label.date-choice'));
