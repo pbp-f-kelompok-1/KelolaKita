@@ -106,18 +106,8 @@
                                placeholder="Jalan, nomor rumah, RT/RW, kota"
                                class="h-11 w-full rounded-lg border border-[#dce7de] bg-white px-3.5 text-sm text-[#1a2e1c] focus:border-[#2e7d32] focus:outline-2 focus:outline-[#2e7d32]">
                     </div>
-                    <div class="flex flex-col gap-2">
-                        <div class="flex items-center justify-between">
-                            <span class="text-[11px] text-[#557a5b]">Tandai titik penjemputan di peta (opsional)</span>
-                            <button type="button" id="locate-me-btn"
-                                    class="text-[11px] font-bold text-[#2e7d32] underline-offset-2 hover:underline">
-                                Gunakan lokasi saya
-                            </button>
-                        </div>
-                        <div id="pickup-map" class="h-[180px] w-full overflow-hidden rounded-xl border border-[#dce7de]"></div>
-                        <input type="hidden" name="alamat_latitude" id="id_alamat_latitude" value="{{ alamat_latitude_value }}">
-                        <input type="hidden" name="alamat_longitude" id="id_alamat_longitude" value="{{ alamat_longitude_value }}">
-                    </div>
+                    <input type="hidden" name="alamat_latitude" id="id_alamat_latitude" value="{{ alamat_latitude_value }}">
+                    <input type="hidden" name="alamat_longitude" id="id_alamat_longitude" value="{{ alamat_longitude_value }}">
                 </div>
 
                 <div id="method-detail-titik"
@@ -392,10 +382,6 @@
         if (alamatInput) alamatInput.required = isKurir;
         if (lokasiSelect) lokasiSelect.required = !isKurir;
         if (summaryLokasi) summaryLokasi.textContent = currentLokasiLabel();
-        if (isKurir) {
-            initPickupMap();
-            if (pickupMap) setTimeout(() => pickupMap.invalidateSize(), 0);
-        }
     }
 
     if (alamatInput) {
@@ -406,56 +392,6 @@
     if (lokasiSelect) {
         lokasiSelect.addEventListener('change', () => {
             if (summaryLokasi) summaryLokasi.textContent = currentLokasiLabel();
-        });
-    }
-
-    // --- Peta penjemputan (opsional) ---
-    let pickupMap = null;
-    let pickupMarker = null;
-    const latInput = document.getElementById('id_alamat_latitude');
-    const lngInput = document.getElementById('id_alamat_longitude');
-    const locateBtn = document.getElementById('locate-me-btn');
-    const DEFAULT_CENTER = [-6.4025, 106.7942];
-
-    function placePin(lat, lng, recenter) {
-        latInput.value = lat.toFixed(6);
-        lngInput.value = lng.toFixed(6);
-        if (!pickupMarker) {
-            pickupMarker = L.marker([lat, lng]).addTo(pickupMap);
-        } else {
-            pickupMarker.setLatLng([lat, lng]);
-        }
-        if (recenter) pickupMap.setView([lat, lng], 15);
-    }
-
-    function initPickupMap() {
-        if (pickupMap || !document.getElementById('pickup-map') || typeof L === 'undefined') return;
-        pickupMap = L.map('pickup-map').setView(DEFAULT_CENTER, 12);
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-        }).addTo(pickupMap);
-
-        const existingLat = parseFloat(latInput.value);
-        const existingLng = parseFloat(lngInput.value);
-        if (!Number.isNaN(existingLat) && !Number.isNaN(existingLng)) {
-            placePin(existingLat, existingLng, true);
-        }
-
-        pickupMap.on('click', (e) => {
-            placePin(e.latlng.lat, e.latlng.lng, false);
-        });
-
-        setTimeout(() => pickupMap.invalidateSize(), 0);
-    }
-
-    if (locateBtn) {
-        locateBtn.addEventListener('click', () => {
-            if (!navigator.geolocation) return;
-            navigator.geolocation.getCurrentPosition((pos) => {
-                const { latitude, longitude } = pos.coords;
-                placePin(latitude, longitude, true);
-            });
         });
     }
 
