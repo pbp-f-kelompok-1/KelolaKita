@@ -83,3 +83,16 @@ def delete_location(request, location_id) :
 def location_detail(request, pk):
     loc = get_object_or_404(Location, pk=pk, is_active=True)
     return render(request, 'Location/location_detail.html', {'loc': loc, 'active_nav': 'peta'})
+
+@staff_required
+@require_http_methods(["GET", "POST"])
+def update_location(request, location_id):
+    location = get_object_or_404(Location, pk=location_id)
+    form = LocationForm(request.POST or None, instance=location)
+
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Lokasi berhasil diperbarui")
+        return redirect("show_location")
+
+    return render(request, "Location/location_form.html", {"name": "KelolaKita", "form": form, "active_nav": "peta"})
