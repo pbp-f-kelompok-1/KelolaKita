@@ -198,9 +198,9 @@ class ShowSchedulePostTests(TestCase):
 
     def _valid_kurir_payload(self, **overrides):
         payload = {
-            "method": "kurir",
-            "date": _date_offset(3),
-            "session": "pagi",
+            "metode": "kurir",
+            "tanggal": _date_offset(3),
+            "sesi": "pagi",
             "nama_penerima": "Budi",
             "nomor_hp": "08123456789",
             "alamat_penjemputan": "Jl. Melati No. 5",
@@ -221,7 +221,7 @@ class ShowSchedulePostTests(TestCase):
 
     def test_valid_titik_submission_creates_booking(self):
         payload = self._valid_kurir_payload(
-            method="titik",
+            metode="titik",
             lokasi_mitra=str(self.location.pk),
             alamat_penjemputan="",
         )
@@ -258,7 +258,7 @@ class ShowSchedulePostTests(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_titik_without_lokasi_is_rejected(self):
-        payload = self._valid_kurir_payload(method="titik", alamat_penjemputan="")
+        payload = self._valid_kurir_payload(metode="titik", alamat_penjemputan="")
         response = self.client.post(reverse("show_schedule"), payload)
         self.assertEqual(Penjadwalan.objects.count(), 0)
 
@@ -278,7 +278,7 @@ class ShowSchedulePostTests(TestCase):
             lokasi_mitra=self.location,
         )
 
-        payload = self._valid_kurir_payload(date=date_iso, session="siang")
+        payload = self._valid_kurir_payload(tanggal=date_iso, sesi="siang")
         response = self.client.post(reverse("show_schedule"), payload)
 
         self.assertEqual(Penjadwalan.objects.count(), 1)
