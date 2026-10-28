@@ -119,6 +119,11 @@ class StaffRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     def test_func(self):
         return self.request.user.is_staff
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["active_nav"] = "edukasi"
+        return context
+
     def handle_no_permission(self):
         if self.request.user.is_authenticated:
             raise PermissionDenied

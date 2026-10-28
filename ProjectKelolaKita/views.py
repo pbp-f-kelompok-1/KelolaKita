@@ -3,12 +3,15 @@ from functools import wraps
 from django.contrib import messages
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
-from django.db.models import ProtectedError
+from django.db.models import ProtectedError, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
+from education.models import Article
+from education.views import public_distributions
 from Location.models import Location
 from Location.forms import LocationForm
+from Schedule.models import Pemeriksaan
 
 
 def staff_required(view_func):
@@ -25,7 +28,27 @@ def staff_required(view_func):
 
 
 def landing_page(request):
-    return render(request, "index.html")
+    """Beranda publik dengan angka yang dihitung dari data nyata.
+
+    - distributed_items: total kuantitas penyaluran tersalurkan yang sudah
+      lewat tanggal, memakai filter yang sama dengan halaman penyaluran publik.
+    - participants: user non-staf yang punya minimal satu Pemeriksaan.
+    - Tidak ada kartu emisi karena model tidak menyimpan berat atau faktor emisi.
+    """
+    context = {
+        "active_nav": "beranda",
+        "stats": {
+            "distributed_items": public_distributions().aggregate(
+                total=Sum("quantity")
+            )["total"] or 0,
+            "active_locations": Location.objects.filter(is_active=True).count(),
+            "participants": Pemeriksaan.objects.filter(
+                pengguna__is_staff=False
+            ).values("pengguna").distinct().count(),
+            "published_articles": Article.objects.published().count(),
+        }
+    }
+    return render(request, "index.html", context)
 
 def show_location(request):
     location_list = Location.objects.filter(is_active=True)

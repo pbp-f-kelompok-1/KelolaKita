@@ -170,19 +170,60 @@ img {
 }
 
 .nav-mobile__toggle {
-    padding: 8px 14px;
+    display: inline-grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
     border: 1px solid var(--kk-line);
     border-radius: 10px;
     background: #fff;
     color: var(--kk-brand-dark);
-    font-size: 0.85rem;
-    font-weight: 700;
     cursor: pointer;
     list-style: none;
 }
 
+.nav-mobile__toggle:hover {
+    border-color: var(--kk-brand-border);
+    background: var(--kk-brand-soft);
+}
+
 .nav-mobile__toggle::-webkit-details-marker {
     display: none;
+}
+
+.nav-mobile__toggle::marker {
+    content: "";
+}
+
+.nav-mobile__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.nav-mobile__icon {
+    display: block;
+    width: 22px;
+    height: 22px;
+}
+
+.nav-mobile__icon--close {
+    display: none;
+}
+
+.nav-mobile[open] .nav-mobile__icon--open {
+    display: none;
+}
+
+.nav-mobile[open] .nav-mobile__icon--close {
+    display: block;
 }
 
 .nav-mobile__panel {
@@ -200,6 +241,9 @@ img {
 }
 
 .nav-mobile__panel a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
     padding: 10px 12px;
     border-radius: 8px;
     color: var(--kk-text);
@@ -210,6 +254,12 @@ img {
 
 .nav-mobile__panel a:hover {
     background: var(--kk-brand-soft);
+}
+
+.nav-mobile__panel a.is-active {
+    background: var(--kk-brand-soft);
+    color: var(--kk-brand-dark);
+    font-weight: 800;
 }
 
 @media (max-width: 760px) {
