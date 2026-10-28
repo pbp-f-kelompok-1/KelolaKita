@@ -17,18 +17,19 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
+from ProjectKelolaKita.views import landing_page, show_location, create_location, delete_location, location_detail, update_location
 from django.conf.urls.static import static
 from ProjectKelolaKita.views import landing_page, show_location, create_location, delete_location, location_detail
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', landing_page, name='landing_page'),
-    path('', include('Location.urls')),
-    path('schedule/', include('Schedule.urls')),
+    path('locations/api/', include('Location.urls', namespace='Location')),    
     path('locations/', show_location, name="show_location"),
     path('locations/add/', create_location, name="create_location"),
     path("locations/<uuid:location_id>/delete/",delete_location,name="delete_location"),
     path('location/<uuid:pk>/', location_detail, name='location_detail'),
+    path('locations/<uuid:location_id>/update/', update_location, name="update_location"),
     path('jadwal/', include('Schedule.urls')),
     path('edukasi/', include('education.urls')),
 ]

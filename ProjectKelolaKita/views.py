@@ -33,7 +33,10 @@ def show_location(request):
         {
             'id': str(loc.id),
             'name': loc.name,
+            'description': loc.description,
             'address': loc.address,
+            'city': loc.city,
+            'open_hours': loc.open_hours,
             'latitude': float(loc.latitude),
             'longitude': float(loc.longitude),
         }
