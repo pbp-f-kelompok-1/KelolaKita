@@ -428,20 +428,6 @@
         if (recenter) pickupMap.setView([lat, lng], 15);
     }
 
-    async function reverseGeocode(lat, lng) {
-        try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
-            if (!res.ok) return;
-            const data = await res.json();
-            if (data && data.display_name && alamatInput) {
-                alamatInput.value = data.display_name;
-                if (summaryLokasi) summaryLokasi.textContent = currentLokasiLabel();
-            }
-        } catch (err) {
-            // Reverse geocoding is only a convenience; the address field stays manually editable.
-        }
-    }
-
     function initPickupMap() {
         if (pickupMap || !document.getElementById('pickup-map') || typeof L === 'undefined') return;
         pickupMap = L.map('pickup-map').setView(DEFAULT_CENTER, 12);
@@ -458,7 +444,6 @@
 
         pickupMap.on('click', (e) => {
             placePin(e.latlng.lat, e.latlng.lng, false);
-            reverseGeocode(e.latlng.lat, e.latlng.lng);
         });
 
         setTimeout(() => pickupMap.invalidateSize(), 0);
@@ -470,7 +455,6 @@
             navigator.geolocation.getCurrentPosition((pos) => {
                 const { latitude, longitude } = pos.coords;
                 placePin(latitude, longitude, true);
-                reverseGeocode(latitude, longitude);
             });
         });
     }
