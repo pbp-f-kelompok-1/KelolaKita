@@ -8,7 +8,7 @@ def is_pengelola(user):
     return user.groups.filter(name='Pengelola').exists()
 
 # Membuat data pemeriksaan
-@login_required(login_url="/login/")
+#@login_required(login_url="/login/")
 def tambah_pengajuan(request):
     if request.method == "POST":
         # Mengambil input
