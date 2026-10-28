@@ -6,50 +6,66 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{% block title %}KelolaKita{% endblock title %}</title>
-    <link rel="stylesheet" href="/static/css/globals.css">
-    {% tailwind_css %}
+    <title>{% block title %}KelolaKita — Kelola barang dan sampah lebih terarah{% endblock title %}</title>
+    <meta name="description"
+        content="{% block meta_description %}KelolaKita membantu barang dan sampah rumah tangga diarahkan ke penanganan yang tepat: daur ulang, guna ulang, atau pengurangan sampah.{% endblock meta_description %}">
     {% block meta %} {% endblock meta %}
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&family=Plus+Jakarta+Sans:wght@800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    {% tailwind_css %}
+    <link rel="stylesheet" href="{% static 'css/globals.css' %}">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/theme.css' %}">
+    {% block extra_css %}{% endblock extra_css %}
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 
-<body class="bg-[#f4f6f5] font-['Inter']">
-    <header class="site-header sticky top-0 z-20 w-full border-b border-[#dce7de] bg-white">
-        <div class="flex h-[76px] w-full items-center justify-between gap-3 px-4 sm:px-8 lg:px-16">
-            <a href="{% url 'landing_page' %}" class="flex shrink-0 items-center gap-2.5">
-                <span class="flex size-[38px] shrink-0 items-center justify-center rounded-xl bg-[#2e7d32]">
-                    <img src="{% static 'icons/leaf.svg' %}" alt="" class="size-[22px]">
+<body>
+    <a class="skip-link" href="#content">Lewati ke konten</a>
+
+    <header class="site-header">
+        <div class="container header__inner">
+            <a class="brand" href="{% url 'landing_page' %}">
+                <span class="brand__mark" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M20 4C10.5 4 4 9.5 4 16.5V20h3.5C14.5 20 20 13.5 20 4Z" fill="currentColor" />
+                        <path d="M4 20 14 10" stroke="#2e7d32" stroke-width="1.6" stroke-linecap="round" />
+                    </svg>
                 </span>
-                <span class="font-['Plus_Jakarta_Sans'] text-xl font-extrabold text-[#1a2e1c]">KelolaKita</span>
+                <span class="brand__name">KelolaKita</span>
             </a>
 
-            <nav class="hidden items-center gap-[30px] lg:flex">
-                {% include "_nav_links.html" %}
+            {% with path=request.path %}
+            <nav class="nav" aria-label="Navigasi utama">
+                <a class="nav__link{% if path == '/' %} is-active{% endif %}" href="{% url 'landing_page' %}"
+                    {% if path == '/' %}aria-current="page"{% endif %}>Beranda</a>
+                <a class="nav__link{% if '/location' in path %} is-active{% endif %}"
+                    href="{% url 'show_location' %}"
+                    {% if '/location' in path %}aria-current="page"{% endif %}>Peta Setoran</a>
+                <a class="nav__link{% if '/jadwal' in path %} is-active{% endif %}"
+                    href="{% url 'show_schedule' %}"
+                    {% if '/jadwal' in path %}aria-current="page"{% endif %}>Jadwal</a>
+                <a class="nav__link{% if '/edukasi/' in path %} is-active{% endif %}"
+                    href="{% url 'education_home' %}"
+                    {% if '/edukasi/' in path %}aria-current="page"{% endif %}>Edukasi</a>
             </nav>
 
-            <div class="flex shrink-0 items-center gap-2 sm:gap-3">
-                <span class="flex size-[38px] shrink-0 items-center justify-center rounded-full bg-[#f4f6f5] text-[#557a5b]"
-                      title="Belum masuk akun" aria-hidden="true">
-                    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="size-[18px]">
-                        <path d="M10 10a3.333 3.333 0 1 0 0-6.667A3.333 3.333 0 0 0 10 10Zm0 1.667c-3.683 0-6.667 1.866-6.667 4.166v.834h13.334v-.834c0-2.3-2.984-4.166-6.667-4.166Z" />
-                    </svg>
-                </span>
-                <button type="button" id="mobile-nav-toggle" aria-label="Buka menu" aria-expanded="false"
-                        aria-controls="mobile-nav"
-                        class="flex size-9 shrink-0 items-center justify-center rounded-lg border border-[#dce7de] text-[#1a2e1c] lg:hidden">
-                    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" class="size-5">
-                        <path d="M3 5h14M3 10h14M3 15h14" />
-                    </svg>
-                </button>
-            </div>
+            <details class="nav-mobile">
+                <summary class="nav-mobile__toggle">Menu</summary>
+                <nav class="nav-mobile__panel" aria-label="Navigasi utama seluler">
+                    <a href="{% url 'landing_page' %}">Beranda</a>
+                    <a href="{% url 'show_location' %}">Peta Setoran</a>
+                    <a href="{% url 'show_schedule' %}">Jadwal</a>
+                    <a href="{% url 'education_home' %}">Edukasi</a>
+                </nav>
+            </details>
+            {% endwith %}
         </div>
 
         <nav id="mobile-nav" class="hidden flex-col gap-1 border-t border-[#dce7de] bg-white px-4 py-2 lg:hidden">
@@ -71,30 +87,35 @@
     </script>
 
     {% if messages %}
-    <div class="mx-auto flex w-full max-w-[1440px] flex-col gap-2 px-16 pt-4">
+    <div class="container flash-wrap" role="status" aria-live="polite">
         {% for message in messages %}
-        <div class="rounded-[10px] border px-4 py-3 text-sm font-semibold {% if message.tags == 'success' %}border-[#81c784] bg-[#e8f5e9] text-[#1f5a23]{% else %}border-[#f1c0bb] bg-[#fdecea] text-[#b42318]{% endif %}">
-            {{ message }}
-        </div>
+        <p class="flash flash--{{ message.tags|default:'info' }}">{{ message }}</p>
         {% endfor %}
     </div>
     {% endif %}
 
-    {% block content %} {% endblock content %}
+    <div id="content">
+        {% block content %} {% endblock content %}
+    </div>
 
-    <footer class="site-footer flex w-full flex-wrap items-center justify-between gap-6 bg-[#1a2e1c] px-16 py-8">
-        <div class="flex flex-col gap-2">
-            <p class="font-['Plus_Jakarta_Sans'] text-lg font-extrabold text-white">KelolaKita</p>
-            <p class="text-[13px] text-[#81c784]">Barang lebih berguna, kota lebih berdaya.</p>
+    <footer class="site-footer">
+        <div class="container footer__inner">
+            <div class="footer__brand">
+                <p class="footer__name">KelolaKita</p>
+                <p class="footer__tagline">Barang lebih berguna, kota lebih berdaya.</p>
+            </div>
+            <nav class="footer__nav" aria-label="Navigasi footer">
+                <a href="{% url 'landing_page' %}">Beranda</a>
+                <a href="{% url 'show_location' %}">Peta Setoran</a>
+                <a href="{% url 'show_schedule' %}">Jadwal</a>
+                <a href="{% url 'education_home' %}">Edukasi</a>
+                <a href="/admin/">Masuk pengelola</a>
+            </nav>
+            <p class="footer__copy">© {% now "Y" %} KelolaKita</p>
         </div>
-        <div class="flex flex-wrap gap-7 text-[13px] text-white">
-            <a href="#" class="hover:text-[#81c784]">Tentang</a>
-            <a href="#" class="hover:text-[#81c784]">Mitra</a>
-            <a href="#" class="hover:text-[#81c784]">Privasi</a>
-            <a href="#" class="hover:text-[#81c784]">Pusat Bantuan</a>
-        </div>
-        <p class="text-xs text-[#81c784]">&copy; {% now "Y" %} KelolaKita</p>
     </footer>
+
+    {% block extra_js %}{% endblock extra_js %}
 </body>
 
 </html>

@@ -30,7 +30,10 @@ SECRET_KEY = 'django-insecure-3il9ucw9*$v6-if$@3iq!1dhpxt=(dn3dhw)%$8bl_7!xx+fqh
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("PRODUCTION", "False").lower() == "false"
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "https://pws.cs.ui.ac.id/rafa.darussalam/kelolakita"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "rafa-darussalam-kelolakita.pws.cs.ui.ac.id"]
+CSRF_TRUSTED_ORIGINS = [
+    "https://rafa-darussalam-kelolakita.pws.cs.ui.ac.id",
+]
 PRODUCTION = os.getenv('PRODUCTION', 'False').lower() == 'true'
 
 
@@ -45,8 +48,10 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'tailwind',
     'theme',
+    'penanganan',
     'Location',
     'Schedule',
+    'education',
 ]
 
 MIDDLEWARE = [
@@ -126,9 +131,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'id'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Jakarta'
 
 USE_I18N = True
 
@@ -143,6 +148,9 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 WHITENOISE_USE_FINDERS = True
 
+MEDIA_URL = "/media/"
+MEDIA_ROOT = Path(os.getenv("MEDIA_ROOT") or (BASE_DIR / "media"))
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
@@ -150,6 +158,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 
 TAILWIND_APP_NAME = 'theme'
+# v4.3.0 standalone binary exits abnormally during build; v4.3.3 is verified.
+TAILWIND_STANDALONE_BINARY_VERSION = "v4.3.3"
 
 if DEBUG:
     INSTALLED_APPS += ["django_browser_reload"]

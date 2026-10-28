@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ article.title }} — KelolaKita{% endblock title %}
+{% block meta_description %}{{ article.summary }}{% endblock meta_description %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/education.css' %}">
+{% endblock extra_css %}
+
+{% block content %}
+<main id="main">
+    <div class="container">
+        <div class="article-page">
+            <a class="back-link" href="{% url 'education_home' %}">
+                <span aria-hidden="true">←</span> Kembali ke edukasi
+            </a>
+
+            <article>
+                <header class="article-head">
+                    <div class="meta article-meta">
+                        <span class="article-meta__category">{{ article.category_label }}</span>
+                        <time class="article-meta__detail" datetime="{{ article.published_at|date:'c' }}">{{ article.published_at|date:"j F Y" }}</time>
+                        <span class="article-meta__detail">{{ article.read_minutes }} menit baca</span>
+                    </div>
+                    <h1>{{ article.title }}</h1>
+                    <p class="article-lead">{{ article.summary }}</p>
+                </header>
+
+                <figure class="article-cover">
+                    <img src="{{ article.cover.src }}" alt="{{ article.cover.alt }}"
+                        fetchpriority="high" decoding="async">
+                </figure>
+
+                <div class="prose">{{ article.body|linebreaks }}</div>
+            </article>
+        </div>
+    </div>
+</main>
+{% endblock content %}
