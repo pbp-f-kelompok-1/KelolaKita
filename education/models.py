@@ -1,43 +1,56 @@
+from pathlib import Path
+
+from PIL import Image, UnidentifiedImageError
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.core.validators import MinValueValidator
+from django.templatetags.static import static
 from django.utils import timezone
 from django.utils.text import slugify
 
 from Location.models import Location
 
-
-class ArticleQuerySet(models.QuerySet):
-    def published(self):
-        return self.filter(is_published=True, published_at__lte=timezone.now())
-
-
-ARTICLE_COVERS = {
-    "mulai-reduce-dari-belanja-mingguan-keluarga": {
-        "src": "images/education/articles/belanja-pasar-reusable.jpg",
-        "alt": "Perempuan membawa tas kain berisi sayuran di pasar swalayan",
-    },
-    "7-jenis-plastik-dan-ke-mana-harus-membawanya": {
-        "src": "images/education/articles/plastik-rumah-tangga.jpg",
-        "alt": "Karung-karung berisi botol plastik bekas untuk didaur ulang",
-    },
-    "cek-cepat-barang-layak-pakai-atau-perlu-diperbaiki": {
-        "src": "images/education/articles/barang-layak-pakai.jpg",
-        "alt": "Rak pakaian layak pakai di toko pakaian bekas",
-    },
-}
-
-ARTICLE_COVERS_BY_CATEGORY = {
-    "panduan": ARTICLE_COVERS["7-jenis-plastik-dan-ke-mana-harus-membawanya"],
-    "reuse": ARTICLE_COVERS["cek-cepat-barang-layak-pakai-atau-perlu-diperbaiki"],
-    "reduce": ARTICLE_COVERS["mulai-reduce-dari-belanja-mingguan-keluarga"],
-    "kebiasaan": ARTICLE_COVERS["mulai-reduce-dari-belanja-mingguan-keluarga"],
-}
+ARTICLE_IMAGE_MAX_BYTES = 5 * 1024 * 1024
+ARTICLE_IMAGE_MIN_WIDTH = 800
+ARTICLE_IMAGE_MIN_HEIGHT = 450
+ARTICLE_IMAGE_FORMATS = {"JPEG", "PNG", "WEBP"}
+ARTICLE_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
+ARTICLE_IMAGE_PLACEHOLDER = "images/education/articles/article-placeholder.svg"
 
 ARTICLE_CATEGORY_LABELS = {
     "reuse": "Guna ulang",
     "reduce": "Pengurangan sampah",
 }
+
+
+def validate_article_image(image):
+    if image.size > ARTICLE_IMAGE_MAX_BYTES:
+        raise ValidationError("Ukuran file gambar maksimal 5 MB.")
+
+    if Path(image.name).suffix.lower() not in ARTICLE_IMAGE_EXTENSIONS:
+        raise ValidationError("Format gambar harus berupa JPG, PNG, atau WebP.")
+
+    try:
+        with Image.open(image) as opened:
+            image_format = opened.format
+            width, height = opened.size
+    except (UnidentifiedImageError, OSError, ValueError, Image.DecompressionBombError):
+        raise ValidationError("File gambar tidak dapat dibaca.")
+    finally:
+        image.seek(0)
+
+    if image_format not in ARTICLE_IMAGE_FORMATS:
+        raise ValidationError("Format gambar harus berupa JPG, PNG, atau WebP.")
+
+    if width < ARTICLE_IMAGE_MIN_WIDTH or height < ARTICLE_IMAGE_MIN_HEIGHT:
+        raise ValidationError(
+            "Gambar harus berukuran minimal 800 × 450 piksel."
+        )
+
+
+class ArticleQuerySet(models.QuerySet):
+    def published(self):
+        return self.filter(is_published=True, published_at__lte=timezone.now())
 
 
 class Article(models.Model):
@@ -52,6 +65,12 @@ class Article(models.Model):
     summary = models.CharField(max_length=300)
     body = models.TextField()
     category = models.CharField(max_length=20, choices=Category.choices, default=Category.panduan)
+    image = models.ImageField(
+        upload_to="education/articles/%Y/%m/",
+        blank=True,
+        null=True,
+        validators=[validate_article_image],
+    )
     is_published = models.BooleanField(default=False)
     published_at = models.DateTimeField(default=timezone.now)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -92,10 +111,12 @@ class Article(models.Model):
 
     @property
     def cover(self):
-        # short: cover is curated statically; upgrade to ImageField when editors need uploads.
-        return ARTICLE_COVERS.get(self.slug) or ARTICLE_COVERS_BY_CATEGORY.get(
-            self.category, ARTICLE_COVERS_BY_CATEGORY["panduan"]
-        )
+        if self.image:
+            return {"src": self.image.url, "alt": f"Gambar artikel {self.title}"}
+        return {
+            "src": static(ARTICLE_IMAGE_PLACEHOLDER),
+            "alt": f"Ilustrasi artikel {self.title}",
+        }
 
 
 class Event(models.Model):

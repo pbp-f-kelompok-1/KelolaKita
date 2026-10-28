@@ -1,18 +1,36 @@
+import shutil
+import tempfile
 from datetime import date, datetime, timedelta, timezone as dt_timezone
+from io import BytesIO
 from unittest.mock import patch
 
+from PIL import Image
 from django.contrib.auth.models import User
 from django.contrib.staticfiles import finders
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError, transaction
 from django.db.models.deletion import ProtectedError
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
 from education.forms import ArticleForm, DistributionForm, EventForm
-from education.models import ARTICLE_COVERS, Article, Distribution, Event
+from education.models import Article, Distribution, Event
 from Location.models import Location
+
+
+def make_image_upload(name="cover.jpg", size=(1200, 675), image_format="JPEG", padding=0):
+    buffer = BytesIO()
+    Image.new("RGB", size, (47, 90, 58)).save(buffer, format=image_format)
+    content = buffer.getvalue() + (b"\0" * padding)
+    content_type = {
+        "JPEG": "image/jpeg",
+        "PNG": "image/png",
+        "WEBP": "image/webp",
+        "GIF": "image/gif",
+    }[image_format]
+    return SimpleUploadedFile(name, content, content_type=content_type)
 
 
 def make_location(**overrides):
@@ -137,21 +155,19 @@ class ArticlePresentationTests(TestCase):
 
         self.assertEqual(article.read_minutes, 2)
 
-    def test_cover_uses_known_slug_then_category_fallback(self):
-        featured = make_article(title="Mulai Reduce dari Belanja Mingguan Keluarga")
-        fallback = make_article(title="Artikel Reuse Baru", category=Article.Category.reuse)
+    def test_article_without_image_uses_local_placeholder(self):
+        article = make_article()
 
         self.assertEqual(
-            featured.cover["src"], "images/education/articles/belanja-pasar-reusable.jpg"
+            article.cover["src"],
+            "/static/images/education/articles/article-placeholder.svg",
         )
-        self.assertEqual(
-            fallback.cover["src"], "images/education/articles/barang-layak-pakai.jpg"
-        )
+        self.assertIn(article.title, article.cover["alt"])
 
-    def test_all_configured_cover_assets_exist(self):
-        for cover in ARTICLE_COVERS.values():
-            with self.subTest(src=cover["src"]):
-                self.assertIsNotNone(finders.find(cover["src"]))
+    def test_article_placeholder_asset_exists(self):
+        self.assertIsNotNone(
+            finders.find("images/education/articles/article-placeholder.svg")
+        )
 
     def test_category_labels_use_public_indonesian_terms(self):
         self.assertEqual(
@@ -160,6 +176,299 @@ class ArticlePresentationTests(TestCase):
         self.assertEqual(
             Article(category=Article.Category.reduce).category_label, "Pengurangan sampah"
         )
+
+
+class ArticleImageTests(TestCase):
+    def setUp(self):
+        self.media_root = tempfile.mkdtemp()
+        self.media_override = override_settings(MEDIA_ROOT=self.media_root)
+        self.media_override.enable()
+        self.addCleanup(shutil.rmtree, self.media_root, True)
+        self.addCleanup(self.media_override.disable)
+
+    def article_data(self, **overrides):
+        data = {
+            "title": "Artikel dengan gambar",
+            "summary": "Ringkasan artikel.",
+            "body": "Isi artikel.",
+            "category": Article.Category.panduan,
+            "is_published": "on",
+            "published_at": "2026-10-26T10:00",
+        }
+        data.update(overrides)
+        return data
+
+    def test_valid_image_formats_are_accepted(self):
+        for image_format, filename in [
+            ("JPEG", "cover.jpg"),
+            ("PNG", "cover.png"),
+            ("WEBP", "cover.webp"),
+        ]:
+            with self.subTest(image_format=image_format):
+                form = ArticleForm(
+                    data=self.article_data(title=f"Artikel {image_format}"),
+                    files={"image": make_image_upload(filename, image_format=image_format)},
+                )
+                self.assertTrue(form.is_valid(), form.errors)
+
+    def test_minimum_dimensions_are_accepted(self):
+        form = ArticleForm(
+            data=self.article_data(),
+            files={"image": make_image_upload(size=(800, 450))},
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+
+    def test_oversized_image_is_rejected(self):
+        form = ArticleForm(
+            data=self.article_data(),
+            files={
+                "image": make_image_upload(
+                    padding=5 * 1024 * 1024
+                )
+            },
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("Ukuran file gambar maksimal 5 MB.", form.errors["image"])
+
+    def test_too_small_image_is_rejected(self):
+        form = ArticleForm(
+            data=self.article_data(),
+            files={"image": make_image_upload(size=(640, 360))},
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn(
+            "Gambar harus berukuran minimal 800 × 450 piksel.", form.errors["image"]
+        )
+
+    def test_non_image_with_image_extension_is_rejected(self):
+        form = ArticleForm(
+            data=self.article_data(),
+            files={
+                "image": SimpleUploadedFile(
+                    "not-an-image.png", b"not an image", content_type="image/png"
+                )
+            },
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("image", form.errors)
+
+    def test_unsupported_image_format_is_rejected(self):
+        form = ArticleForm(
+            data=self.article_data(),
+            files={"image": make_image_upload("cover.gif", image_format="GIF")},
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("Format gambar harus berupa JPG, PNG, atau WebP.", form.errors["image"])
+
+    def test_create_view_saves_image_to_storage(self):
+        staff = User.objects.create_user("image-staff", password="x", is_staff=True)
+        self.client.force_login(staff)
+
+        response = self.client.post(
+            reverse("article_create"),
+            {
+                **self.article_data(title="Artikel dari Upload"),
+                "image": make_image_upload(),
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        article = Article.objects.get(title="Artikel dari Upload")
+        self.assertTrue(article.image.name.startswith("education/articles/"))
+        self.assertTrue(article.image.storage.exists(article.image.name))
+
+    def test_edit_without_new_image_keeps_existing_image(self):
+        article = make_article(image=make_image_upload())
+        original_name = article.image.name
+
+        form = ArticleForm(
+            data=self.article_data(title="Artikel Diubah"),
+            instance=article,
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        form.save()
+        article.refresh_from_db()
+
+        self.assertEqual(article.image.name, original_name)
+
+    def test_edit_with_new_image_replaces_existing_image(self):
+        article = make_article(image=make_image_upload())
+        original_name = article.image.name
+
+        form = ArticleForm(
+            data=self.article_data(title="Artikel Diubah"),
+            files={"image": make_image_upload("replacement.png", image_format="PNG")},
+            instance=article,
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        form.save()
+        article.refresh_from_db()
+
+        self.assertNotEqual(article.image.name, original_name)
+        self.assertTrue(article.image.name.endswith(".png"))
+
+    def test_clear_image_removes_reference_and_uses_placeholder(self):
+        staff = User.objects.create_user("clear-staff", password="x", is_staff=True)
+        self.client.force_login(staff)
+        article = make_article(image=make_image_upload())
+
+        response = self.client.post(
+            reverse("article_update", args=[article.pk]),
+            {
+                **self.article_data(title=article.title),
+                "image-clear": "on",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        article.refresh_from_db()
+        self.assertFalse(article.image)
+        self.assertEqual(
+            article.cover["src"],
+            "/static/images/education/articles/article-placeholder.svg",
+        )
+        self.assertTrue(Article.objects.filter(pk=article.pk).exists())
+
+    def test_replace_image_through_update_view(self):
+        staff = User.objects.create_user("replace-staff", password="x", is_staff=True)
+        self.client.force_login(staff)
+        article = make_article(image=make_image_upload())
+
+        response = self.client.post(
+            reverse("article_update", args=[article.pk]),
+            {
+                **self.article_data(title=article.title),
+                "image": make_image_upload("view-replacement.png", image_format="PNG"),
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        article.refresh_from_db()
+        self.assertTrue(article.image.name.endswith(".png"))
+
+    def test_simultaneous_clear_and_upload_is_rejected_without_data_loss(self):
+        staff = User.objects.create_user("contradiction-staff", password="x", is_staff=True)
+        self.client.force_login(staff)
+        article = make_article(image=make_image_upload())
+        original_name = article.image.name
+
+        response = self.client.post(
+            reverse("article_update", args=[article.pk]),
+            {
+                **self.article_data(title=article.title),
+                "image": make_image_upload("contradiction.png", image_format="PNG"),
+                "image-clear": "on",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        article.refresh_from_db()
+        self.assertEqual(article.image.name, original_name)
+
+    def test_invalid_edit_preserves_existing_image(self):
+        staff = User.objects.create_user("invalid-edit-staff", password="x", is_staff=True)
+        self.client.force_login(staff)
+        article = make_article(image=make_image_upload())
+        original_name = article.image.name
+
+        response = self.client.post(
+            reverse("article_update", args=[article.pk]),
+            {
+                **self.article_data(title=""),
+                "image-clear": "on",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        article.refresh_from_db()
+        self.assertEqual(article.image.name, original_name)
+
+    def test_update_form_renders_django_clear_checkbox(self):
+        staff = User.objects.create_user("widget-staff", password="x", is_staff=True)
+        self.client.force_login(staff)
+        article = make_article(image=make_image_upload())
+
+        response = self.client.get(reverse("article_update", args=[article.pk]))
+
+        self.assertContains(response, 'name="image-clear"')
+        self.assertContains(response, 'id="image-clear_id"')
+
+    def test_upload_form_has_multipart_and_help_text(self):
+        staff = User.objects.create_user("form-staff", password="x", is_staff=True)
+        self.client.force_login(staff)
+
+        response = self.client.get(reverse("article_create"))
+
+        self.assertContains(response, 'enctype="multipart/form-data"')
+        self.assertContains(response, "Gambar artikel")
+        self.assertContains(response, "1.200 × 675")
+
+    def test_edit_form_previews_existing_image(self):
+        staff = User.objects.create_user("preview-staff", password="x", is_staff=True)
+        self.client.force_login(staff)
+        article = make_article(image=make_image_upload())
+
+        response = self.client.get(reverse("article_update", args=[article.pk]))
+
+        self.assertContains(response, article.image.url)
+        self.assertContains(response, "Pratinjau gambar artikel")
+
+    def test_rendered_articles_use_their_own_images(self):
+        first = make_article(title="Artikel Pertama", image=make_image_upload("first.jpg"))
+        second = make_article(
+            title="Artikel Kedua",
+            image=make_image_upload("second.png", image_format="PNG"),
+        )
+
+        for name in ["education_home", "article_list"]:
+            response = self.client.get(reverse(name))
+            self.assertContains(response, first.image.url)
+            self.assertContains(response, second.image.url)
+
+        response = self.client.get(reverse("article_detail", args=[first.slug]))
+        self.assertContains(response, first.image.url)
+        self.assertContains(
+            response, f'alt="Gambar artikel {first.title}"'
+        )
+
+    def test_article_without_image_uses_placeholder_on_public_pages(self):
+        article = make_article(title="Artikel Tanpa Gambar")
+
+        for name in ["education_home", "article_list"]:
+            response = self.client.get(reverse(name))
+            self.assertContains(
+                response, "/static/images/education/articles/article-placeholder.svg"
+            )
+
+        response = self.client.get(reverse("article_detail", args=[article.slug]))
+        self.assertContains(
+            response, f"alt=\"Ilustrasi artikel {article.title}\""
+        )
+
+    def test_invalid_upload_does_not_create_article(self):
+        staff = User.objects.create_user("invalid-staff", password="x", is_staff=True)
+        self.client.force_login(staff)
+
+        response = self.client.post(
+            reverse("article_create"),
+            {
+                **self.article_data(title="Artikel Tidak Valid"),
+                "image": SimpleUploadedFile(
+                    "broken.jpg", b"broken", content_type="image/jpeg"
+                ),
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Article.objects.filter(title="Artikel Tidak Valid").exists())
+        self.assertContains(response, "File gambar tidak dapat dibaca.")
 
 
 class EventModelTests(TestCase):

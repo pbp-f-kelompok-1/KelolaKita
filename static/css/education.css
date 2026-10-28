@@ -173,7 +173,7 @@
 .article-card__media img {
     display: block;
     width: 100%;
-    aspect-ratio: 3 / 2;
+    aspect-ratio: 16 / 9;
     object-fit: cover;
     object-position: center;
 }
@@ -571,7 +571,7 @@
 .article-cover img {
     display: block;
     width: 100%;
-    aspect-ratio: 3 / 2;
+    aspect-ratio: 16 / 9;
     object-fit: cover;
     border-radius: var(--kk-radius);
     background: var(--kk-brand-soft);
@@ -749,6 +749,21 @@
 .tag--cancel {
     background: var(--kk-danger-soft);
     color: var(--kk-danger);
+}
+
+.article-image-preview {
+    overflow: hidden;
+    max-width: 360px;
+    border: 1px solid var(--kk-line);
+    border-radius: var(--kk-radius-sm);
+    background: var(--kk-brand-soft);
+}
+
+.article-image-preview img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
 }
 
 .manage-form-card {

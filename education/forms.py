@@ -2,13 +2,33 @@ from django import forms
 from django.forms import ModelForm
 
 from Location.models import Location
-from education.models import ARTICLE_CATEGORY_LABELS, Article, Distribution, Event
+from education.models import (
+    ARTICLE_CATEGORY_LABELS,
+    Article,
+    Distribution,
+    Event,
+    validate_article_image,
+)
 
 
 class ArticleForm(ModelForm):
+    image = forms.ImageField(
+        label="Gambar artikel",
+        required=False,
+        help_text="Unggah gambar utama yang sesuai dengan isi artikel. Disarankan berukuran 1.200 × 675 piksel (rasio 16:9), dengan ukuran file maksimal 5 MB.",
+        widget=forms.ClearableFileInput(
+            attrs={
+                "accept": "image/jpeg,image/png,image/webp",
+                "class": "field-input",
+            }
+        ),
+        error_messages={"invalid_image": "File gambar tidak dapat dibaca."},
+        validators=[validate_article_image],
+    )
+
     class Meta:
         model = Article
-        fields = ["title", "summary", "body", "category", "is_published", "published_at"]
+        fields = ["title", "summary", "body", "category", "image", "is_published", "published_at"]
         labels = {
             "title": "Judul artikel",
             "summary": "Ringkasan",

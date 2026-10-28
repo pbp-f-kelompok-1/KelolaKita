@@ -31,6 +31,9 @@ SECRET_KEY = 'django-insecure-3il9ucw9*$v6-if$@3iq!1dhpxt=(dn3dhw)%$8bl_7!xx+fqh
 DEBUG = os.getenv("PRODUCTION", "False").lower() == "false"
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "rafa-darussalam-kelolakita.pws.cs.ui.ac.id"]
+CSRF_TRUSTED_ORIGINS = [
+    "https://rafa-darussalam-kelolakita.pws.cs.ui.ac.id",
+]
 PRODUCTION = os.getenv('PRODUCTION', 'False').lower() == 'true'
 
 
@@ -144,6 +147,9 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 WHITENOISE_USE_FINDERS = True
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = Path(os.getenv("MEDIA_ROOT") or (BASE_DIR / "media"))
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

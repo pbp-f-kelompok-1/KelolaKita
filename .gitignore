@@ -3,8 +3,9 @@ env/
 venv/
 .env*
 
-# Django Database & Cache
+# Django Database, Uploads & Cache
 db.sqlite3
+media/
 __pycache__/
 *.pyc
 

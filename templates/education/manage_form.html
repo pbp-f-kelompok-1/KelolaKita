@@ -22,7 +22,7 @@
             </div>
 
             <div class="manage-form-card">
-                <form method="post" class="manage-form" novalidate>
+                <form method="post" enctype="multipart/form-data" class="manage-form" novalidate>
                     {% csrf_token %}
 
                     {% if form.non_field_errors %}
@@ -43,6 +43,11 @@
                             <label for="{{ field.id_for_label }}">
                                 {{ field.label }}{% if field.field.required %} <span aria-hidden="true">*</span><span class="sr-only"> wajib</span>{% endif %}
                             </label>
+                            {% if field.name == "image" and form.instance.image %}
+                            <div class="article-image-preview">
+                                <img src="{{ form.instance.image.url }}" alt="Pratinjau gambar artikel {{ form.instance.title }}">
+                            </div>
+                            {% endif %}
                             {{ field }}
                             {% if field.help_text %}<p class="form-help">{{ field.help_text }}</p>{% endif %}
                             {% for error in field.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
@@ -60,3 +65,20 @@
     </div>
 </main>
 {% endblock content %}
+
+{% block extra_js %}
+<script>
+(() => {
+    const image = document.getElementById("id_image");
+    const clear = document.getElementById("image-clear_id");
+    if (!image || !clear) return;
+
+    image.addEventListener("change", () => {
+        if (image.files.length) clear.checked = false;
+    });
+    clear.addEventListener("change", () => {
+        if (clear.checked) image.value = "";
+    });
+})();
+</script>
+{% endblock extra_js %}

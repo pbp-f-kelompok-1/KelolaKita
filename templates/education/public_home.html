@@ -14,8 +14,8 @@
 
         <section class="edu-hero" aria-labelledby="hero-title">
             {% if featured %}
-            <img class="edu-hero__image" src="{% static featured.cover.src %}" alt="{{ featured.cover.alt }}"
-                width="1600" height="1066" fetchpriority="high" decoding="async">
+            <img class="edu-hero__image" src="{{ featured.cover.src }}" alt="{{ featured.cover.alt }}"
+                width="1200" height="675" fetchpriority="high" decoding="async">
             <div class="edu-hero__shade" aria-hidden="true"></div>
             <div class="edu-hero__body">
                 <div class="edu-hero__meta article-meta article-meta--on-dark">
@@ -61,7 +61,7 @@
                 {% for article in articles %}
                 <article class="article-card">
                     <div class="article-card__media">
-                        <img src="{% static article.cover.src %}" alt="{{ article.cover.alt }}" loading="lazy"
+                        <img src="{{ article.cover.src }}" alt="{{ article.cover.alt }}" loading="lazy"
                             decoding="async">
                     </div>
                     <div class="article-card__body">
