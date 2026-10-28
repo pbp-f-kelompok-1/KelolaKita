@@ -1,7 +1,281 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Beranda — KelolaKita{% endblock title %}
+{% block meta_description %}KelolaKita membantu barang dan sampah rumah tangga menemukan arah yang tepat: daur ulang lewat titik setoran, guna ulang lewat mitra penyaluran, atau pengurangan sampah lewat panduan sehari-hari.{% endblock meta_description %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/home.css' %}">
+{% endblock extra_css %}
+
 {% block content %}
-    <main>
-        Landing Page
-        <a href="{% url 'show_location' %}">Lokasi</a>
-    </main>
+<main id="main" class="home">
+    <section class="home-hero" aria-labelledby="home-title">
+        <div class="container home-hero__grid">
+            <div class="home-hero__copy">
+                <h1 class="home-hero__title" id="home-title">Beri barangmu arah yang lebih baik</h1>
+                <p class="home-hero__lead">
+                    Barang layak pakai dan sampah rumah tangga tidak selalu harus berakhir di tempat pembuangan.
+                    KelolaKita menghubungkannya dengan titik setoran, jadwal penjemputan, dan mitra penyaluran
+                    yang tepat.
+                </p>
+                <div class="home-hero__actions">
+                    <a class="btn btn--primary" href="{% url 'show_schedule' %}">Atur jadwal setor</a>
+                    <a class="btn btn--ghost" href="{% url 'show_location' %}">Lihat titik setoran</a>
+                </div>
+                <ul class="home-trust" aria-label="Yang bisa dilakukan lewat KelolaKita">
+                    <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                            <path d="M20 6 9 17l-5-5" />
+                        </svg>
+                        Titik setoran aktif
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                            <path d="M20 6 9 17l-5-5" />
+                        </svg>
+                        Antar sendiri atau dijemput kurir
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                            <path d="M20 6 9 17l-5-5" />
+                        </svg>
+                        Catatan penyaluran terbuka
+                    </li>
+                </ul>
+            </div>
+
+            <div class="home-hero__media">
+                <img src="{% static 'images/education/articles/hero-pilah-sampah.jpg' %}"
+                    alt="Keluarga memilah sampah plastik, kertas, kaca, dan organik ke dalam wadah terpisah"
+                    width="1200" height="675" fetchpriority="high" decoding="async">
+                <div class="home-hero__note">
+                    <p class="home-hero__note-title">Tiga arah penanganan</p>
+                    <ul class="home-hero__note-list">
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                                <path d="M7 19H4.815a1.83 1.83 0 0 1-1.57-.881 1.785 1.785 0 0 1-.004-1.784L7.196 9.5" />
+                                <path d="M11 19h8.203a1.83 1.83 0 0 0 1.556-.89 1.784 1.784 0 0 0 0-1.775l-1.226-2.12" />
+                                <path d="m14 16-3 3 3 3" />
+                                <path d="M8.293 13.596 7.196 9.5 3.1 10.598" />
+                                <path d="m9.344 5.811 1.093-1.892A1.83 1.83 0 0 1 11.985 3a1.784 1.784 0 0 1 1.546.888l3.943 6.843" />
+                                <path d="m13.378 9.633 4.096 1.098 1.097-4.096" />
+                            </svg>
+                            Recycle
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                                <path d="M19.414 14.414C21 12.828 22 11.5 22 9.5a5.5 5.5 0 0 0-9.591-3.676.6.6 0 0 1-.818.001A5.5 5.5 0 0 0 2 9.5c0 2.3 1.5 4 3 5.5l5.535 5.362a2 2 0 0 0 2.879.052 2.12 2.12 0 0 0-.004-3 2.124 2.124 0 1 0 3-3 2.124 2.124 0 0 0 3.004 0 2 2 0 0 0 0-2.828l-1.881-1.882a2.41 2.41 0 0 0-3.409 0l-1.71 1.71a2 2 0 0 1-2.828 0 2 2 0 0 1 0-2.828l2.823-2.762" />
+                            </svg>
+                            Reuse
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                                <path d="M11 20a10 10 0 0010-10 25.9 25.9 0 00-1.04-7.281 1 1 0 00-1.755-.325C15.833 5.5 13 5.5 9.8 6.1A7 7 0 0011 20" />
+                                <path d="M2 21a5 5 0 012.911-4.544C7.613 15.212 8.351 15.24 11 13" />
+                            </svg>
+                            Reduce
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="container home-stats" aria-labelledby="home-stats-title">
+        <h2 class="home-sr-only" id="home-stats-title">Ringkasan data KelolaKita</h2>
+        <dl class="home-stats__grid">
+            <div class="home-stat">
+                <span class="home-stat__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                        <path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z" />
+                        <path d="M12 22V12" />
+                        <polyline points="3.29 7 12 12 20.71 7" />
+                        <path d="m7.5 4.27 9 5.15" />
+                    </svg>
+                </span>
+                <div class="home-stat__body">
+                    <dt>Barang tersalurkan</dt>
+                    <dd class="home-stat__value">
+                        <span class="home-stat__number">{{ stats.distributed_items }}</span>
+                        <span class="home-stat__unit">barang</span>
+                    </dd>
+                </div>
+            </div>
+            <div class="home-stat">
+                <span class="home-stat__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                        <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
+                        <circle cx="12" cy="10" r="3" />
+                    </svg>
+                </span>
+                <div class="home-stat__body">
+                    <dt>Titik mitra aktif</dt>
+                    <dd class="home-stat__value">
+                        <span class="home-stat__number">{{ stats.active_locations }}</span>
+                        <span class="home-stat__unit">lokasi</span>
+                    </dd>
+                </div>
+            </div>
+            <div class="home-stat">
+                <span class="home-stat__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                        <path d="M18 21a8 8 0 0 0-16 0" />
+                        <circle cx="10" cy="8" r="5" />
+                        <path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3" />
+                    </svg>
+                </span>
+                <div class="home-stat__body">
+                    <dt>Warga berpartisipasi</dt>
+                    <dd class="home-stat__value">
+                        <span class="home-stat__number">{{ stats.participants }}</span>
+                        <span class="home-stat__unit">warga</span>
+                    </dd>
+                </div>
+            </div>
+            <div class="home-stat">
+                <span class="home-stat__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                        <path d="M12 5v16" />
+                        <path d="M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z" />
+                    </svg>
+                </span>
+                <div class="home-stat__body">
+                    <dt>Panduan terbit</dt>
+                    <dd class="home-stat__value">
+                        <span class="home-stat__number">{{ stats.published_articles }}</span>
+                        <span class="home-stat__unit">artikel</span>
+                    </dd>
+                </div>
+            </div>
+        </dl>
+        <p class="home-stats__source">
+            Angka dihitung langsung dari data KelolaKita.
+            <a href="{% url 'distribution_list' %}">Lihat catatan penyaluran</a>.
+        </p>
+    </section>
+
+    <section class="container home-paths" aria-labelledby="home-paths-title">
+        <div class="home-section-head">
+            <p class="home-kicker">Alur penanganan</p>
+            <h2 class="home-section-title" id="home-paths-title">Satu barang, tiga kemungkinan baik</h2>
+            <p class="home-section-sub">
+                Tidak semua barang harus diperlakukan sama. Arahkan setiap barang ke penanganan yang paling
+                sesuai dengan kondisinya.
+            </p>
+        </div>
+
+        <div class="home-paths__grid">
+            <article class="home-path home-path--recycle">
+                <span class="home-path__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                        <path d="M7 19H4.815a1.83 1.83 0 0 1-1.57-.881 1.785 1.785 0 0 1-.004-1.784L7.196 9.5" />
+                        <path d="M11 19h8.203a1.83 1.83 0 0 0 1.556-.89 1.784 1.784 0 0 0 0-1.775l-1.226-2.12" />
+                        <path d="m14 16-3 3 3 3" />
+                        <path d="M8.293 13.596 7.196 9.5 3.1 10.598" />
+                        <path d="m9.344 5.811 1.093-1.892A1.83 1.83 0 0 1 11.985 3a1.784 1.784 0 0 1 1.546.888l3.943 6.843" />
+                        <path d="m13.378 9.633 4.096 1.098 1.097-4.096" />
+                    </svg>
+                </span>
+                <h3 class="home-path__title">Recycle</h3>
+                <p class="home-path__text">
+                    Barang yang masih bisa didaur ulang diarahkan ke bank sampah lewat titik setoran mitra.
+                </p>
+                <ul class="home-path__list">
+                    <li>Pilih titik setoran terdekat</li>
+                    <li>Atur jadwal antar atau penjemputan</li>
+                    <li>Diproses menjadi bahan baru</li>
+                </ul>
+                <a class="home-path__link" href="{% url 'show_location' %}">
+                    Cari titik setoran
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                        <path d="M5 12h14" />
+                        <path d="m12 5 7 7-7 7" />
+                    </svg>
+                </a>
+            </article>
+
+            <article class="home-path home-path--reuse">
+                <span class="home-path__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                        <path d="M19.414 14.414C21 12.828 22 11.5 22 9.5a5.5 5.5 0 0 0-9.591-3.676.6.6 0 0 1-.818.001A5.5 5.5 0 0 0 2 9.5c0 2.3 1.5 4 3 5.5l5.535 5.362a2 2 0 0 0 2.879.052 2.12 2.12 0 0 0-.004-3 2.124 2.124 0 1 0 3-3 2.124 2.124 0 0 0 3.004 0 2 2 0 0 0 0-2.828l-1.881-1.882a2.41 2.41 0 0 0-3.409 0l-1.71 1.71a2 2 0 0 1-2.828 0 2 2 0 0 1 0-2.828l2.823-2.762" />
+                    </svg>
+                </span>
+                <h3 class="home-path__title">Reuse</h3>
+                <p class="home-path__text">
+                    Barang yang masih layak pakai disalurkan ke panti asuhan dan komunitas yang membutuhkan.
+                </p>
+                <ul class="home-path__list">
+                    <li>Barang masih berfungsi</li>
+                    <li>Mitra penyaluran aktif</li>
+                    <li>Riwayat penyaluran terbuka</li>
+                </ul>
+                <a class="home-path__link" href="{% url 'distribution_list' %}">
+                    Lihat catatan penyaluran
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                        <path d="M5 12h14" />
+                        <path d="m12 5 7 7-7 7" />
+                    </svg>
+                </a>
+            </article>
+
+            <article class="home-path home-path--reduce">
+                <span class="home-path__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                        <path d="M11 20a10 10 0 0010-10 25.9 25.9 0 00-1.04-7.281 1 1 0 00-1.755-.325C15.833 5.5 13 5.5 9.8 6.1A7 7 0 0011 20" />
+                        <path d="M2 21a5 5 0 012.911-4.544C7.613 15.212 8.351 15.24 11 13" />
+                    </svg>
+                </span>
+                <h3 class="home-path__title">Reduce</h3>
+                <p class="home-path__text">
+                    Kurangi sampah baru lewat panduan praktis, agenda komunitas, dan pilihan produk guna ulang.
+                </p>
+                <ul class="home-path__list">
+                    <li>Panduan rumah tangga</li>
+                    <li>Agenda komunitas</li>
+                    <li>Katalog produk guna ulang</li>
+                </ul>
+                <a class="home-path__link" href="{% url 'education_home' %}">
+                    Buka halaman edukasi
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                        <path d="M5 12h14" />
+                        <path d="m12 5 7 7-7 7" />
+                    </svg>
+                </a>
+            </article>
+        </div>
+    </section>
+
+    <section class="container" aria-labelledby="home-cta-title">
+        <div class="home-cta">
+            <div class="home-cta__copy">
+                <p class="home-kicker home-kicker--on-dark">Mulai dari satu barang</p>
+                <h2 class="home-cta__title" id="home-cta-title">Siap memberi barangmu arah yang lebih baik?</h2>
+                <p class="home-cta__text">
+                    Cek titik setoran di sekitarmu atau atur jadwal penyerahan saat barang sudah siap.
+                </p>
+            </div>
+            <div class="home-cta__actions">
+                <a class="btn btn--accent" href="{% url 'show_schedule' %}">Atur jadwal setor</a>
+                <a class="btn btn--on-dark" href="{% url 'show_location' %}">Lihat titik setoran</a>
+            </div>
+        </div>
+    </section>
+</main>
 {% endblock content %}

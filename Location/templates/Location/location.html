@@ -27,16 +27,14 @@
                 Cari
             </button>
         </form>
-        {% if request.user.is_authenticated and request.user.is_staff %}
-        <a href="{% url 'create_location' %}" class="sort-btn">Tambah lokasi</a>
-        {% endif %}
-
         <p id="search-status" role="status" aria-live="polite" class="mt-2 min-h-4 text-xs text-[#5f6f64]"></p>
 
+        {% if request.user.is_authenticated and request.user.is_staff %}
         <a href="{% url 'create_location' %}"
            class="mb-3 mt-1 self-start text-sm font-bold text-[#2e7d32] no-underline hover:text-[#1f5a23]">
             + Tambah lokasi
         </a>
+        {% endif %}
 
         <ul class="flex flex-col gap-2.5" id="loc-list">
             {% for loc in location_list %}
@@ -329,6 +327,81 @@
     async function searchArea(query) {
         searchStatus.textContent = 'Mencari area...';
 
-    map.locate({ enableHighAccuracy: true });
-    </script>
+        try {
+            const params = new URLSearchParams({ q: query });
+            const geocodeUrl = "{% url 'Location:geocode_location' %}";
+            const response = await fetch(`${geocodeUrl}?${params.toString()}`, {
+                headers: { "Accept": "application/json" }
+            });
+
+            const contentType = response.headers.get("content-type") || "";
+
+            if (!response.ok || !contentType.includes("application/json")) {
+                throw new Error(`Koneksi server gagal (HTTP ${response.status}).`);
+            }
+
+            const data = await response.json();
+            const place = data.results && data.results[0];
+
+            if (!place) {
+                searchStatus.textContent = 'Lokasi tidak ditemukan.';
+                return;
+            }
+
+            const lat = Number(place.lat);
+            const lon = Number(place.lon);
+            if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+                throw new Error('Koordinat lokasi tidak valid.');
+            }
+
+            const target = L.latLng(lat, lon);
+            map.flyTo(target, 16, { duration: 0.8 });
+
+            if (searchMarker) map.removeLayer(searchMarker);
+
+            const popup = document.createElement('div');
+            popup.textContent = place.display_name;
+
+            searchMarker = L.marker(target, { icon: searchPinIcon })
+                .addTo(map)
+                .bindPopup(popup)
+                .openPopup();
+
+            updateDistances(target);
+            applyFilter('');
+            searchStatus.textContent = 'Menampilkan area hasil pencarian.';
+        } catch (error) {
+            console.error('Location search error:', error);
+            searchStatus.textContent = error.message || 'Pencarian gagal. Coba lagi nanti.';
+        }
+    }
+
+    searchForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        const query = searchInput.value.trim();
+        if (!query) {
+            applyFilter('');
+            searchStatus.textContent = 'Masukkan nama lokasi terlebih dahulu.';
+            return;
+        }
+
+        const matched = applyFilter(query);
+
+        if (matched.length > 0) {
+            searchStatus.textContent = `${matched.length} lokasi terdaftar ditemukan.`;
+            showMatches(matched);
+            return;
+        }
+
+        const now = Date.now();
+        if (now - lastSearchTime < 1000) {
+            searchStatus.textContent = 'Tunggu sebentar sebelum mencari lagi.';
+            return;
+        }
+        lastSearchTime = now;
+
+        searchArea(query);
+    });
+</script>
 {% endblock content %}

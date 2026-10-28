@@ -41,50 +41,52 @@
                 <span class="brand__name">KelolaKita</span>
             </a>
 
-            {% with path=request.path %}
             <nav class="nav" aria-label="Navigasi utama">
-                <a class="nav__link{% if path == '/' %} is-active{% endif %}" href="{% url 'landing_page' %}"
-                    {% if path == '/' %}aria-current="page"{% endif %}>Beranda</a>
-                <a class="nav__link{% if '/location' in path %} is-active{% endif %}"
+                <a class="nav__link{% if active_nav == 'beranda' %} is-active{% endif %}"
+                    href="{% url 'landing_page' %}"
+                    {% if active_nav == 'beranda' %}aria-current="page"{% endif %}>Beranda</a>
+                <a class="nav__link{% if active_nav == 'peta' %} is-active{% endif %}"
                     href="{% url 'show_location' %}"
-                    {% if '/location' in path %}aria-current="page"{% endif %}>Peta Setoran</a>
-                <a class="nav__link{% if '/jadwal' in path %} is-active{% endif %}"
+                    {% if active_nav == 'peta' %}aria-current="page"{% endif %}>Peta Setoran</a>
+                <a class="nav__link{% if active_nav == 'jadwal' %} is-active{% endif %}"
                     href="{% url 'show_schedule' %}"
-                    {% if '/jadwal' in path %}aria-current="page"{% endif %}>Jadwal</a>
-                <a class="nav__link{% if '/edukasi/' in path %} is-active{% endif %}"
+                    {% if active_nav == 'jadwal' %}aria-current="page"{% endif %}>Jadwal</a>
+                <a class="nav__link{% if active_nav == 'edukasi' %} is-active{% endif %}"
                     href="{% url 'education_home' %}"
-                    {% if '/edukasi/' in path %}aria-current="page"{% endif %}>Edukasi</a>
+                    {% if active_nav == 'edukasi' %}aria-current="page"{% endif %}>Edukasi</a>
             </nav>
 
             <details class="nav-mobile">
-                <summary class="nav-mobile__toggle">Menu</summary>
+                <summary class="nav-mobile__toggle">
+                    <span class="nav-mobile__label">Menu navigasi</span>
+                    <svg class="nav-mobile__icon nav-mobile__icon--open" viewBox="0 0 24 24" fill="none"
+                        aria-hidden="true" focusable="false">
+                        <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" />
+                    </svg>
+                    <svg class="nav-mobile__icon nav-mobile__icon--close" viewBox="0 0 24 24" fill="none"
+                        aria-hidden="true" focusable="false">
+                        <path d="m6 6 12 12M18 6 6 18" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" />
+                    </svg>
+                </summary>
                 <nav class="nav-mobile__panel" aria-label="Navigasi utama seluler">
-                    <a href="{% url 'landing_page' %}">Beranda</a>
-                    <a href="{% url 'show_location' %}">Peta Setoran</a>
-                    <a href="{% url 'show_schedule' %}">Jadwal</a>
-                    <a href="{% url 'education_home' %}">Edukasi</a>
+                    <a class="nav-mobile__panel-link{% if active_nav == 'beranda' %} is-active{% endif %}"
+                        href="{% url 'landing_page' %}"
+                        {% if active_nav == 'beranda' %}aria-current="page"{% endif %}>Beranda</a>
+                    <a class="nav-mobile__panel-link{% if active_nav == 'peta' %} is-active{% endif %}"
+                        href="{% url 'show_location' %}"
+                        {% if active_nav == 'peta' %}aria-current="page"{% endif %}>Peta Setoran</a>
+                    <a class="nav-mobile__panel-link{% if active_nav == 'jadwal' %} is-active{% endif %}"
+                        href="{% url 'show_schedule' %}"
+                        {% if active_nav == 'jadwal' %}aria-current="page"{% endif %}>Jadwal</a>
+                    <a class="nav-mobile__panel-link{% if active_nav == 'edukasi' %} is-active{% endif %}"
+                        href="{% url 'education_home' %}"
+                        {% if active_nav == 'edukasi' %}aria-current="page"{% endif %}>Edukasi</a>
                 </nav>
             </details>
-            {% endwith %}
         </div>
-
-        <nav id="mobile-nav" class="hidden flex-col gap-1 border-t border-[#dce7de] bg-white px-4 py-2 lg:hidden">
-            {% include "_nav_links.html" with mobile=True %}
-        </nav>
     </header>
-
-    <script>
-        (function () {
-            const toggle = document.getElementById('mobile-nav-toggle');
-            const nav = document.getElementById('mobile-nav');
-            if (!toggle || !nav) return;
-            toggle.addEventListener('click', () => {
-                const isOpen = nav.classList.toggle('flex');
-                nav.classList.toggle('hidden', !isOpen);
-                toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-            });
-        })();
-    </script>
 
     {% if messages %}
     <div class="container flash-wrap" role="status" aria-live="polite">
