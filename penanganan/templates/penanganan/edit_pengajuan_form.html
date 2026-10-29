@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit Pengajuan - KelolaKita{% endblock title %}
+
+{% block content %}
+<main class="mx-auto w-full max-w-[1440px] px-4 md:px-16 py-8 flex flex-col items-center">
+    
+    <div class="w-full max-w-3xl">
+        <!-- Header -->
+        <div class="mb-8 text-center md:text-left">
+            <p class="text-xs font-bold text-yellow-600 uppercase tracking-wide mb-2">Edit Data</p>
+            <h1 class="font-['Plus_Jakarta_Sans'] text-3xl font-extrabold text-[#1a2e1c] mb-2">
+                Perbarui Data Barang
+            </h1>
+            <p class="text-sm text-[#557a5b]">
+                Ubah informasi barangmu sebelum diproses oleh tim kami.
+            </p>
+        </div>
+
+        <!-- Form Edit -->
+        <div class="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-[#dce7de] w-full">
+            <!-- Action mengarah ke URL edit_pengajuan dengan menyertakan ID barang -->
+            <form method="POST" enctype="multipart/form-data" action="{% url 'pengajuan:edit_pengajuan' pemeriksaan.id %}">
+                {% csrf_token %} <!-- Perlindungan keamanan CSRF wajib untuk metode POST -->
+                
+                <!-- Input Foto (Tidak menggunakan atribut 'required' agar foto lama tetap aman jika input ini dikosongkan) -->
+                <div class="mb-6 rounded-xl border border-dashed border-yellow-400 bg-[#fffdf0] p-8 text-center relative hover:bg-[#fff9c4] transition">
+                    <input type="file" name="foto_barang" id="foto_barang" multiple accept="image/png, image/jpeg" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="previewImages(event)">
+                    
+                    <div id="upload-placeholder" class="flex flex-col items-center pointer-events-none">
+                        <span class="flex size-10 items-center justify-center rounded-full bg-white mb-3 shadow-sm border border-yellow-200">
+                            <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        </span>
+                        <p class="text-sm font-bold text-[#1a2e1c]">Unggah foto baru (Opsional)</p>
+                        <p class="text-xs text-[#557a5b] mt-1">Abaikan jika tidak ingin mengubah foto sebelumnya.</p>
+                    </div>
+                    
+                    <div id="image-preview-container" class="hidden grid grid-cols-2 md:grid-cols-4 gap-4 relative pointer-events-none"></div>
+                </div>
+
+                <!-- Grid Input: Nama & Kategori -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div class="location-form">
+                        <label class="block text-sm font-bold text-[#1a2e1c] mb-2">Nama barang</label>
+                        <!-- value diisi data lama -->
+                        <input type="text" name="nama_barang" value="{{ pemeriksaan.nama_barang }}" required>
+                    </div>
+                    <div class="location-form">
+                        <label class="block text-sm font-bold text-[#1a2e1c] mb-2">Kategori</label>
+                        <select name="kategori_barang" required>
+                            <option value="Furnitur rumah" {% if pemeriksaan.kategori_barang == 'Furnitur rumah' %}selected{% endif %}>Furnitur rumah</option>
+                            <option value="Elektronik" {% if pemeriksaan.kategori_barang == 'Elektronik' %}selected{% endif %}>Elektronik</option>
+                            <option value="Pakaian" {% if pemeriksaan.kategori_barang == 'Pakaian' %}selected{% endif %}>Pakaian</option>
+                            <option value="Lainnya" {% if pemeriksaan.kategori_barang == 'Lainnya' %}selected{% endif %}>Lainnya</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Pilihan Kondisi Barang (Radio Buttons) -->
+                <div class="mb-6">
+                    <label class="block text-sm font-bold text-[#1a2e1c] mb-2">Kondisi barang</label>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <label class="flex items-center justify-center gap-2 rounded-lg border border-[#dce7de] py-3 cursor-pointer hover:bg-gray-50 has-[:checked]:bg-[#e8f5e9] has-[:checked]:border-[#81c784] has-[:checked]:text-[#1f5a23]">
+                            <input type="radio" name="kondisi_barang" value="Sangat baik" class="w-4 h-4 text-[#2e7d32]" {% if pemeriksaan.kondisi_barang == 'Sangat baik' %}checked{% endif %} required>
+                            <span class="text-sm font-medium">Sangat baik</span>
+                        </label>
+                        <label class="flex items-center justify-center gap-2 rounded-lg border border-[#dce7de] py-3 cursor-pointer hover:bg-gray-50 has-[:checked]:bg-[#e8f5e9] has-[:checked]:border-[#81c784] has-[:checked]:text-[#1f5a23]">
+                            <input type="radio" name="kondisi_barang" value="Layak pakai" class="w-4 h-4 text-[#2e7d32]" {% if pemeriksaan.kondisi_barang == 'Layak pakai' %}checked{% endif %}>
+                            <span class="text-sm font-medium">Layak pakai</span>
+                        </label>
+                        <label class="flex items-center justify-center gap-2 rounded-lg border border-[#dce7de] py-3 cursor-pointer hover:bg-gray-50 has-[:checked]:bg-[#e8f5e9] has-[:checked]:border-[#81c784] has-[:checked]:text-[#1f5a23]">
+                            <input type="radio" name="kondisi_barang" value="Perlu perbaikan" class="w-4 h-4 text-[#2e7d32]" {% if pemeriksaan.kondisi_barang == 'Perlu perbaikan' %}checked{% endif %}>
+                            <span class="text-sm font-medium">Perlu perbaikan</span>
+                        </label>
+                        <label class="flex items-center justify-center gap-2 rounded-lg border border-[#dce7de] py-3 cursor-pointer hover:bg-gray-50 has-[:checked]:bg-[#e8f5e9] has-[:checked]:border-[#81c784] has-[:checked]:text-[#1f5a23]">
+                            <input type="radio" name="kondisi_barang" value="Rusak" class="w-4 h-4 text-[#2e7d32]" {% if pemeriksaan.kondisi_barang == 'Rusak' %}checked{% endif %}>
+                            <span class="text-sm font-medium">Rusak</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Catatan Tambahan -->
+                <div class="location-form mb-8">
+                    <label class="block text-sm font-bold text-[#1a2e1c] mb-2">Catatan tambahan</label>
+                    <textarea name="catatan_tambahan" rows="2">{{ pemeriksaan.catatan_tambahan }}</textarea>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center justify-between border-t border-[#dce7de] pt-6 mt-6">
+                    <a href="{% url 'pengajuan:daftar_pengajuan' %}" class="text-sm font-bold text-[#557a5b] hover:text-[#1a2e1c]">Batal</a>
+                    <button type="submit" class="flex items-center gap-2 rounded-lg bg-yellow-500 px-6 py-3 text-sm font-bold text-white hover:bg-yellow-600 transition">
+                        Simpan Perubahan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+
+<!-- Script pratinjau gambar -->
+<script>
+function previewImages(event) {
+    const placeholder = document.getElementById('upload-placeholder');
+    const previewContainer = document.getElementById('image-preview-container');
+    const files = event.target.files;
+    previewContainer.innerHTML = '';
+
+    if (files && files.length > 0) {
+        placeholder.classList.add('hidden');
+        previewContainer.classList.remove('hidden');
+        Array.from(files).forEach(file => {
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'w-full h-32 object-cover rounded-lg border-2 border-yellow-400 shadow-sm';
+                    previewContainer.appendChild(img);
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+    } else {
+        placeholder.classList.remove('hidden');
+        previewContainer.classList.add('hidden');
+    }
+}
+</script>
+{% endblock content %}

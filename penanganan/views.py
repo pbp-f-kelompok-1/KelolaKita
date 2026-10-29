@@ -106,3 +106,44 @@ def hapus_pengajuan(request, pk):
         return redirect("penanganan:daftar_pengajuan")
         
     return redirect("penanganan:daftar_pengajuan")
+
+@login_required(login_url="/login/")
+def edit_pengajuan(request, pk):
+    pemeriksaan = get_object_or_404(Pemeriksaan, pk=pk)
+
+    # Validasi Autentikasi & Kewenangan
+    if pemeriksaan.pengguna != request.user:
+        raise PermissionDenied
+    
+    if pemeriksaan.kategori_penanganan != 'Menunggu':
+        messages.error(request, "Data yang sudah diproses tidak dapat diubah lagi.")
+        return redirect("pengajuan:daftar_pengajuan")
+
+    # Proses Simpan Data (POST)
+    if request.method == "POST":
+        # Ambil data teks baru (jika kosong, gunakan data lama sebagai fallback)
+        pemeriksaan.nama_barang = request.POST.get('nama_barang', pemeriksaan.nama_barang)
+        pemeriksaan.kategori_barang = request.POST.get('kategori_barang', pemeriksaan.kategori_barang)
+        pemeriksaan.kondisi_barang = request.POST.get('kondisi_barang', pemeriksaan.kondisi_barang)
+        pemeriksaan.catatan_tambahan = request.POST.get('catatan_tambahan', pemeriksaan.catatan_tambahan)
+        
+        pemeriksaan.save()
+
+        # Update foto
+        fotos_baru = request.FILES.getlist('foto_barang')
+        if fotos_baru: 
+            # Hapus foto lama dari database
+            pemeriksaan.foto_barang.all().delete()
+            
+            # Simpan foto-foto baru
+            for foto in fotos_baru:
+                FotoBarang.objects.create(pemeriksaan=pemeriksaan, gambar=foto)
+
+        messages.success(request, "Pengajuan barang berhasil diperbarui!")
+        return redirect("penanganan:daftar_pengajuan")
+
+    # Tampilkan Form Edit (GET)
+    context = {
+        "pemeriksaan": pemeriksaan
+    }
+    return render(request, "penanganan/edit_pengajuan_form.html", context)
