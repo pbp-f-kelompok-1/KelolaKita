@@ -718,6 +718,19 @@ class FormTests(TestCase):
         self.assertFalse(form.is_valid())
         self.assertIn("end_at", form.errors)
 
+    def test_distribution_form_requires_date_when_delivered(self):
+        form = DistributionForm(data={
+            "item_name": "Tote bag",
+            "description": "",
+            "quantity": 1,
+            "destination": self.location.pk,
+            "status": Distribution.Status.delivered,
+            "distributed_at": "",
+        })
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("distributed_at", form.errors)
+
     def test_distribution_form_rejects_bank_destination(self):
         bank = make_location(name="Bank Sampah", category=Location.Category.bank_sampah)
         form = DistributionForm(data={
@@ -765,6 +778,46 @@ class ManagementAccessTests(TestCase):
         self.client.force_login(self.user)
 
         self.assertEqual(self.client.get(reverse("education_manage")).status_code, 403)
+
+    def test_inactive_staff_is_forbidden(self):
+        inactive = User.objects.create_user(
+            "inactive-staff", password="x", is_staff=True, is_active=False
+        )
+        self.client.force_login(inactive)
+
+        response = self.client.get(reverse("education_manage"))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/admin/login/", response["Location"])
+
+    def test_non_staff_cannot_post_mutations(self):
+        article = make_article()
+        self.client.force_login(self.user)
+        urls = [
+            reverse("article_create"),
+            reverse("article_update", args=[article.pk]),
+            reverse("article_delete", args=[article.pk]),
+            reverse("event_create"),
+            reverse("distribution_create"),
+        ]
+
+        for url in urls:
+            with self.subTest(url=url):
+                self.assertEqual(self.client.post(url, {}).status_code, 403)
+
+        self.assertTrue(Article.objects.filter(pk=article.pk).exists())
+
+    def test_staff_missing_records_return_404(self):
+        self.client.force_login(self.staff)
+
+        self.assertEqual(
+            self.client.get(reverse("article_update", args=[999999])).status_code,
+            404,
+        )
+        self.assertEqual(
+            self.client.post(reverse("article_delete", args=[999999])).status_code,
+            404,
+        )
 
     def test_staff_can_open_management_and_forms(self):
         self.client.force_login(self.staff)

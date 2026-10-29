@@ -24,6 +24,7 @@ ARTICLE_CATEGORY_LABELS = {
 
 
 def validate_article_image(image):
+    """Memvalidasi ukuran, ekstensi, format asli, dan dimensi gambar sampul."""
     if image.size > ARTICLE_IMAGE_MAX_BYTES:
         raise ValidationError("Ukuran file gambar maksimal 5 MB.")
 
@@ -50,6 +51,7 @@ def validate_article_image(image):
 
 class ArticleQuerySet(models.QuerySet):
     def published(self):
+        """Mengembalikan artikel terbit yang waktu publikasinya sudah lewat."""
         return self.filter(is_published=True, published_at__lte=timezone.now())
 
 
@@ -91,8 +93,10 @@ class Article(models.Model):
         if not self.slug:
             base = slugify(self.title)[:200] or "artikel"
             slug, number = base, 2
-            # shortcut: unique constraint + retry loop, bukan concurrency-safe.
-            # upgrade path: tangani IntegrityError / gunakan slug sequence bila volume naik.
+            # shortcut: pengecekan unique constraint + retry loop belum aman
+            # untuk request bersamaan.
+            # Jalur peningkatan: tangani IntegrityError atau gunakan slug
+            # sequence bila volume data bertambah.
             while Article.objects.filter(slug=slug).exclude(pk=self.pk).exists():
                 slug = f"{base}-{number}"
                 number += 1
@@ -115,7 +119,13 @@ class Article(models.Model):
 
     @property
     def cover(self):
-        # shortcut: exists() dicek setiap akses cover (satu stat per artikel), upgrade ke cache atau kolom flag bila artikel banyak.
+        """Mengembalikan URL gambar dan alt text, atau placeholder lokal.
+
+        Pemeriksaan keberadaan file mencegah gambar rusak ketika record
+        database masih ada, tetapi file sudah dihapus.
+        """
+        # shortcut: exists() dicek setiap akses cover (satu stat per artikel);
+        # jalur peningkatan: cache hasilnya atau tambahkan kolom flag bila artikel banyak.
         if self.image_available:
             return {"src": self.image.url, "alt": f"Gambar artikel {self.title}"}
         return {
@@ -150,6 +160,7 @@ class Event(models.Model):
         return self.title
 
     def clean(self):
+        """Menolak waktu selesai yang lebih awal daripada waktu mulai."""
         if self.start_at and self.end_at and self.end_at < self.start_at:
             raise ValidationError({"end_at": "Waktu selesai tidak boleh lebih awal daripada waktu mulai."})
 
@@ -182,6 +193,7 @@ class Distribution(models.Model):
         return f"{self.item_name} -> {self.destination}"
 
     def clean(self):
+        """Menegakkan aturan tujuan penyaluran dan tanggal status tersalurkan."""
         errors = {}
         if self.destination_id and self.destination.category not in (
             Location.Category.panti_asuhan,

@@ -34,13 +34,14 @@ urlpatterns = [
 ]
 
 if settings.DEBUG:
-    # Include django_browser_reload URLs only in DEBUG mode
+    # URL django_browser_reload hanya disertakan saat DEBUG.
     urlpatterns += [
         path("__reload__/", include("django_browser_reload.urls")),
     ]
 
-# PWS serves static via WhiteNoise, not uploaded media. Keep the media URL shape but
-# only serve files registered as Article images and only when the article is public.
+# WhiteNoise menyajikan static, bukan media upload. Bentuk URL media tetap
+# dipertahankan, tetapi hanya gambar yang terdaftar di Article yang dilayani,
+# dan hanya jika artikelnya boleh diakses publik.
 urlpatterns += [
     path(
         f"{settings.MEDIA_URL.strip('/')}/{ARTICLE_IMAGE_PREFIX}<path:path>",

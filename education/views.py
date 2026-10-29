@@ -22,10 +22,16 @@ ARTICLE_IMAGE_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
 
 
 def published_events():
+    """Mengembalikan agenda terbit beserta lokasinya yang sudah dimuat."""
     return Event.objects.filter(is_published=True).select_related("location")
 
 
 def public_distributions():
+    """Mengembalikan penyaluran tersalurkan yang aman ditampilkan publik.
+
+    Hanya penyaluran selesai ke panti asuhan/komunitas dengan tanggal pada
+    atau sebelum tanggal Jakarta hari ini yang ditampilkan.
+    """
     return Distribution.objects.filter(
         status=Distribution.Status.delivered,
         distributed_at__isnull=False,
@@ -45,9 +51,10 @@ class PublicEducationContextMixin:
 
 
 def article_image(request, path):
-    """Serve only images that are registered as article covers.
+    """Menyajikan hanya gambar yang terdaftar sebagai sampul artikel.
 
-    Public requests are limited to published articles; staff may preview drafts.
+    Request publik dibatasi ke artikel terbit; staff boleh melihat pratinjau
+    draf. File yang tidak terhubung ke Article.image akan menghasilkan 404.
     """
     if (
         not path
@@ -85,8 +92,8 @@ def article_image(request, path):
     except OSError:
         raise Http404
 
-    # shortcut: Django/gunicorn streams each image (no CDN/Web server); move to
-    # persistent object storage if media volume or traffic grows.
+    # shortcut: Django/gunicorn mengalirkan setiap gambar (tanpa CDN/web server);
+    # pindahkan ke object storage persisten bila volume media atau trafik naik.
     response = FileResponse(image_file, content_type=content_type)
     response["X-Content-Type-Options"] = "nosniff"
     response["Cache-Control"] = (
@@ -96,6 +103,7 @@ def article_image(request, path):
 
 
 def public_home(request):
+    """Merender halaman utama Education dari konten yang sudah terbit."""
     articles = Article.objects.published()
     featured = articles.first()
     context = {
@@ -118,6 +126,8 @@ def public_home(request):
 
 
 class ArticleListView(PublicEducationContextMixin, ListView):
+    """Menampilkan hanya artikel terbit yang tanggalnya sudah tiba."""
+
     template_name = "education/public_article_list.html"
     context_object_name = "articles"
 
@@ -126,6 +136,8 @@ class ArticleListView(PublicEducationContextMixin, ListView):
 
 
 class ArticleDetailView(PublicEducationContextMixin, DetailView):
+    """Menampilkan artikel terbit; draf dan artikel terjadwal menjadi 404."""
+
     model = Article
     template_name = "education/public_article_detail.html"
     context_object_name = "article"
@@ -135,6 +147,8 @@ class ArticleDetailView(PublicEducationContextMixin, DetailView):
 
 
 class EventListView(PublicEducationContextMixin, ListView):
+    """Menampilkan agenda terbit yang akan datang."""
+
     template_name = "education/public_event_list.html"
     context_object_name = "events"
 
@@ -143,6 +157,8 @@ class EventListView(PublicEducationContextMixin, ListView):
 
 
 class EventDetailView(PublicEducationContextMixin, DetailView):
+    """Menampilkan detail agenda terbit, termasuk agenda yang sudah lewat."""
+
     model = Event
     template_name = "education/public_event_detail.html"
     context_object_name = "event"
@@ -152,6 +168,8 @@ class EventDetailView(PublicEducationContextMixin, DetailView):
 
 
 class DistributionListView(PublicEducationContextMixin, ListView):
+    """Menampilkan penyaluran publik yang selesai beserta statistik ringkas."""
+
     template_name = "education/public_distribution_list.html"
     context_object_name = "distributions"
 
@@ -170,10 +188,12 @@ class DistributionListView(PublicEducationContextMixin, ListView):
 
 
 class StaffRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+    """Mewajibkan pengguna staff aktif pada setiap view pengelolaan/mutasi."""
+
     login_url = reverse_lazy("admin:login")
 
     def test_func(self):
-        return self.request.user.is_staff
+        return self.request.user.is_active and self.request.user.is_staff
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -187,6 +207,8 @@ class StaffRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
 
 
 class ManageDashboard(StaffRequiredMixin, TemplateView):
+    """Dashboard staff untuk artikel, agenda, dan catatan penyaluran."""
+
     template_name = "education/manage_list.html"
 
     def get_context_data(self, **kwargs):
@@ -199,6 +221,8 @@ class ManageDashboard(StaffRequiredMixin, TemplateView):
 
 
 class ManageFormMixin(StaffRequiredMixin):
+    """Perilaku create/update khusus staff dan umpan balik sukses."""
+
     template_name = "education/manage_form.html"
     success_url = reverse_lazy("education_manage")
     form_title = ""
@@ -223,6 +247,8 @@ class ManageUpdateView(ManageFormMixin, UpdateView):
 
 
 class ManageDeleteView(StaffRequiredMixin, DeleteView):
+    """Menampilkan konfirmasi pada GET dan menghapus hanya pada POST valid."""
+
     template_name = "education/manage_confirm_delete.html"
     success_url = reverse_lazy("education_manage")
     success_message = "Data berhasil dihapus."

@@ -12,6 +12,8 @@ from education.models import (
 
 
 class ArticleForm(ModelForm):
+    """Form artikel staff dengan validasi gambar dan label kategori publik."""
+
     image = forms.ImageField(
         label="Gambar artikel",
         required=False,
@@ -52,6 +54,8 @@ class ArticleForm(ModelForm):
 
 
 class EventForm(ModelForm):
+    """Form agenda; hanya lokasi aktif yang dapat dipilih untuk agenda baru."""
+
     class Meta:
         model = Event
         fields = ["title", "description", "start_at", "end_at", "location", "is_published"]
@@ -79,6 +83,8 @@ class EventForm(ModelForm):
 
 
 class DistributionForm(ModelForm):
+    """Form penyaluran yang dibatasi ke tujuan panti/komunitas aktif."""
+
     class Meta:
         model = Distribution
         fields = ["item_name", "description", "quantity", "destination", "status", "distributed_at"]

@@ -17,7 +17,14 @@ MODELS = ("articles", "locations", "events", "distributions")
 
 
 class Command(BaseCommand):
-    help = "Import public PWS Education content into the local database."
+    """Mengimpor snapshot konten publik PWS ke model lokal secara idempoten.
+
+    Pencocokan memakai slug/nama kanonis dan alias lokal yang eksplisit. Gambar
+    diverifikasi dengan SHA-256 lalu digunakan dari media lokal; file lain tidak
+    dipakai sebagai pengganti jika gambar sumber tidak tersedia.
+    """
+
+    help = "Mengimpor konten Education publik dari PWS ke basis data lokal."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -129,7 +136,7 @@ class Command(BaseCommand):
                 "longitude": Decimal(item["longitude"]),
                 "is_active": item.get("is_active", True),
             }
-            # Province and contact are not published on the source page.
+            # Province dan contact_person tidak dipublikasikan di halaman sumber.
             if item.get("province") is not None:
                 desired["province"] = item["province"]
             elif existing is None:
