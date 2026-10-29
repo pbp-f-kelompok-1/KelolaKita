@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Profil Pengguna | KelolaKita{% endblock title %}
 {% block meta_description %}Lihat dan perbarui informasi akun KelolaKita Anda.{% endblock meta_description %}
@@ -22,7 +23,7 @@
                 </div>
                 {% endif %}
                 <div class="min-w-0 flex-1">
-                    <h2 class="break-words text-2xl font-extrabold text-[#17261b]">{{ user.get_full_name|default:user.username }}</h2>
+                    <h2 data-profile-full-name class="break-words text-2xl font-extrabold text-[#17261b]">{{ user.get_full_name|default:user.username }}</h2>
                     <p class="mt-1 break-all text-sm text-[#557a5b]">@{{ user.username }}</p>
                     <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[#557a5b]">
                         <span class="rounded-full bg-[#e8f5e9] px-3 py-1 font-semibold text-[#1f5a23]">{{ profile.get_role_display }}</span>
@@ -50,7 +51,7 @@
                 </div>
                 <div class="min-w-0 rounded-2xl border border-[#dfe5e0] bg-white p-5 shadow-sm">
                     <dt class="text-sm font-medium text-[#557a5b]">Profil diperbarui</dt>
-                    <dd class="mt-2 text-base font-bold text-[#1a2e1c]">{{ profile.updated_at|date:"d F Y, H:i" }}</dd>
+                    <dd data-profile-updated-at class="mt-2 text-base font-bold text-[#1a2e1c]">{{ profile.updated_at|date:"d F Y, H:i" }}</dd>
                 </div>
             </dl>
         </section>
@@ -60,32 +61,31 @@
                 <h2 id="detail-title" class="text-xl font-bold text-[#17261b]">Detail pengguna</h2>
                 <p class="mt-1 text-sm text-[#557a5b]">Perbarui informasi yang dapat digunakan untuk menghubungi Anda.</p>
 
-                <form method="post" class="mt-6 space-y-5 [&_input]:min-w-0 [&_input]:w-full [&_input]:rounded-xl [&_input]:border [&_input]:border-[#dfe5e0] [&_input]:bg-white [&_input]:px-4 [&_input]:py-3 [&_input]:text-sm [&_input]:text-[#17261b] [&_input:focus]:border-[#2e7d32] [&_input:focus]:outline-2 [&_input:focus]:outline-[#2e7d32] [&_textarea]:min-w-0 [&_textarea]:w-full [&_textarea]:rounded-xl [&_textarea]:border [&_textarea]:border-[#dfe5e0] [&_textarea]:bg-white [&_textarea]:px-4 [&_textarea]:py-3 [&_textarea]:text-sm [&_textarea]:text-[#17261b] [&_textarea:focus]:border-[#2e7d32] [&_textarea:focus]:outline-2 [&_textarea:focus]:outline-[#2e7d32]">
+                <form id="profile-update-form" data-profile-form method="post" action="{% url 'accounts:profile' %}" class="mt-6 space-y-5 [&_input]:min-w-0 [&_input]:w-full [&_input]:rounded-xl [&_input]:border [&_input]:border-[#dfe5e0] [&_input]:bg-white [&_input]:px-4 [&_input]:py-3 [&_input]:text-sm [&_input]:text-[#17261b] [&_input:focus]:border-[#2e7d32] [&_input:focus]:outline-2 [&_input:focus]:outline-[#2e7d32] [&_textarea]:min-w-0 [&_textarea]:w-full [&_textarea]:rounded-xl [&_textarea]:border [&_textarea]:border-[#dfe5e0] [&_textarea]:bg-white [&_textarea]:px-4 [&_textarea]:py-3 [&_textarea]:text-sm [&_textarea]:text-[#17261b] [&_textarea:focus]:border-[#2e7d32] [&_textarea:focus]:outline-2 [&_textarea:focus]:outline-[#2e7d32]">
                     {% csrf_token %}
-                    {% if user_form.non_field_errors or profile_form.non_field_errors %}
-                    <div role="alert" class="rounded-xl border border-[#f1c0bb] bg-[#fff1ef] px-4 py-3 text-sm text-[#9f2d23]">
+                    <div data-profile-message class="flash" role="status" aria-live="polite" hidden></div>
+                    <div data-error-for="non_field" role="alert" class="rounded-xl border border-[#f1c0bb] bg-[#fff1ef] px-4 py-3 text-sm text-[#9f2d23]" {% if not user_form.non_field_errors and not profile_form.non_field_errors %}hidden{% endif %}>
                         {% for error in user_form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
                         {% for error in profile_form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
                     </div>
-                    {% endif %}
 
                     <div class="grid gap-5 sm:grid-cols-2">
                         <div class="min-w-0">
                             <label for="{{ user_form.first_name.id_for_label }}" class="mb-2 block text-sm font-semibold text-[#1a2e1c]">Nama depan</label>
                             {{ user_form.first_name }}
-                            {% for error in user_form.first_name.errors %}<p role="alert" class="mt-1.5 text-sm text-[#9f2d23]">{{ error }}</p>{% endfor %}
+                            <div data-error-for="user.first_name" class="mt-1.5 text-sm text-[#9f2d23]" {% if not user_form.first_name.errors %}hidden{% endif %}>{% for error in user_form.first_name.errors %}<p role="alert">{{ error }}</p>{% endfor %}</div>
                         </div>
                         <div class="min-w-0">
                             <label for="{{ user_form.last_name.id_for_label }}" class="mb-2 block text-sm font-semibold text-[#1a2e1c]">Nama belakang</label>
                             {{ user_form.last_name }}
-                            {% for error in user_form.last_name.errors %}<p role="alert" class="mt-1.5 text-sm text-[#9f2d23]">{{ error }}</p>{% endfor %}
+                            <div data-error-for="user.last_name" class="mt-1.5 text-sm text-[#9f2d23]" {% if not user_form.last_name.errors %}hidden{% endif %}>{% for error in user_form.last_name.errors %}<p role="alert">{{ error }}</p>{% endfor %}</div>
                         </div>
                     </div>
 
                     <div>
                         <label for="{{ user_form.email.id_for_label }}" class="mb-2 block text-sm font-semibold text-[#1a2e1c]">Alamat email</label>
                         {{ user_form.email }}
-                        {% for error in user_form.email.errors %}<p role="alert" class="mt-1.5 text-sm text-[#9f2d23]">{{ error }}</p>{% endfor %}
+                        <div data-error-for="user.email" class="mt-1.5 text-sm text-[#9f2d23]" {% if not user_form.email.errors %}hidden{% endif %}>{% for error in user_form.email.errors %}<p role="alert">{{ error }}</p>{% endfor %}</div>
                     </div>
 
                     <div class="rounded-xl border border-[#dfe5e0] bg-[#f4f6f5] px-4 py-3">
@@ -97,19 +97,19 @@
                         <div class="min-w-0">
                             <label for="{{ profile_form.phone_number.id_for_label }}" class="mb-2 block text-sm font-semibold text-[#1a2e1c]">Nomor telepon</label>
                             {{ profile_form.phone_number }}
-                            {% for error in profile_form.phone_number.errors %}<p role="alert" class="mt-1.5 text-sm text-[#9f2d23]">{{ error }}</p>{% endfor %}
+                            <div data-error-for="profile.phone_number" class="mt-1.5 text-sm text-[#9f2d23]" {% if not profile_form.phone_number.errors %}hidden{% endif %}>{% for error in profile_form.phone_number.errors %}<p role="alert">{{ error }}</p>{% endfor %}</div>
                         </div>
                         <div class="min-w-0">
                             <label for="{{ profile_form.avatar_url.id_for_label }}" class="mb-2 block text-sm font-semibold text-[#1a2e1c]">URL foto profil</label>
                             {{ profile_form.avatar_url }}
-                            {% for error in profile_form.avatar_url.errors %}<p role="alert" class="mt-1.5 text-sm text-[#9f2d23]">{{ error }}</p>{% endfor %}
+                            <div data-error-for="profile.avatar_url" class="mt-1.5 text-sm text-[#9f2d23]" {% if not profile_form.avatar_url.errors %}hidden{% endif %}>{% for error in profile_form.avatar_url.errors %}<p role="alert">{{ error }}</p>{% endfor %}</div>
                         </div>
                     </div>
 
                     <div>
                         <label for="{{ profile_form.address.id_for_label }}" class="mb-2 block text-sm font-semibold text-[#1a2e1c]">Alamat utama</label>
                         {{ profile_form.address }}
-                        {% for error in profile_form.address.errors %}<p role="alert" class="mt-1.5 text-sm text-[#9f2d23]">{{ error }}</p>{% endfor %}
+                        <div data-error-for="profile.address" class="mt-1.5 text-sm text-[#9f2d23]" {% if not profile_form.address.errors %}hidden{% endif %}>{% for error in profile_form.address.errors %}<p role="alert">{{ error }}</p>{% endfor %}</div>
                     </div>
 
                     <button type="submit" class="btn btn--primary w-full sm:w-auto">Simpan perubahan</button>
@@ -136,6 +136,7 @@
 {% endblock content %}
 
 {% block extra_js %}
+<script src="{% static 'accounts/js/profile.js' %}" defer></script>
 <script>
     for (const [id, value] of [
         ["{{ user_form.first_name.id_for_label|escapejs }}", "given-name"],

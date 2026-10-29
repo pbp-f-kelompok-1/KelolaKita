@@ -3,7 +3,10 @@ from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
+from django.http import JsonResponse
 from django.shortcuts import redirect, render
+from django.utils import timezone
+from django.utils.formats import date_format
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
@@ -97,6 +100,7 @@ def profile(request):
     user_profile, _ = Profile.objects.get_or_create(user=request.user)
 
     if request.method == "POST":
+        is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
         user_form = UserUpdateForm(request.POST, instance=request.user)
         profile_form = ProfileUpdateForm(request.POST, instance=user_profile)
 
@@ -107,8 +111,50 @@ def profile(request):
                 user_form.save()
                 profile_form.save()
 
-            messages.success(request, "Profil berhasil diperbarui.")
+            success_message = "Profil berhasil diperbarui."
+            if is_ajax:
+                return JsonResponse(
+                    {
+                        "success": True,
+                        "message": success_message,
+                        "full_name": request.user.get_full_name() or request.user.username,
+                        "username": request.user.username,
+                        "role": user_profile.get_role_display(),
+                        "points": user_profile.points,
+                        "avatar_url": user_profile.avatar_url,
+                        "updated_at": user_profile.updated_at.isoformat(),
+                        "updated_at_display": date_format(
+                            timezone.localtime(user_profile.updated_at), "d F Y, H:i"
+                        ),
+                    }
+                )
+
+            messages.success(request, success_message)
             return redirect(request.path)
+
+        if is_ajax:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "errors": {
+                        "user": {
+                            name: list(errors)
+                            for name, errors in user_form.errors.items()
+                            if name != "__all__"
+                        },
+                        "profile": {
+                            name: list(errors)
+                            for name, errors in profile_form.errors.items()
+                            if name != "__all__"
+                        },
+                    },
+                    "non_field_errors": {
+                        "user": list(user_form.non_field_errors()),
+                        "profile": list(profile_form.non_field_errors()),
+                    },
+                },
+                status=400,
+            )
     else:
         user_form = UserUpdateForm(instance=request.user)
         profile_form = ProfileUpdateForm(instance=user_profile)
