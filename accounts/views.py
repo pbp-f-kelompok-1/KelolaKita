@@ -1,11 +1,14 @@
 from django.contrib import messages
 from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
+from django.contrib.auth.decorators import login_required
+from django.db import transaction
 from django.shortcuts import redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
-from accounts.forms import LoginForm, RegisterForm
+from accounts.forms import LoginForm, ProfileUpdateForm, RegisterForm, UserUpdateForm
+from accounts.models import Profile
 
 
 def get_safe_next_url(request):
@@ -87,3 +90,35 @@ def logout_user(request):
     auth_logout(request)
     messages.success(request, "Kamu berhasil keluar dari akun.")
     return redirect("landing_page")
+
+
+@login_required
+def profile(request):
+    user_profile, _ = Profile.objects.get_or_create(user=request.user)
+
+    if request.method == "POST":
+        user_form = UserUpdateForm(request.POST, instance=request.user)
+        profile_form = ProfileUpdateForm(request.POST, instance=user_profile)
+
+        user_valid = user_form.is_valid()
+        profile_valid = profile_form.is_valid()
+        if user_valid and profile_valid:
+            with transaction.atomic():
+                user_form.save()
+                profile_form.save()
+
+            messages.success(request, "Profil berhasil diperbarui.")
+            return redirect(request.path)
+    else:
+        user_form = UserUpdateForm(instance=request.user)
+        profile_form = ProfileUpdateForm(instance=user_profile)
+
+    return render(
+        request,
+        "accounts/profile.html",
+        {
+            "user_form": user_form,
+            "profile_form": profile_form,
+            "profile": user_profile,
+        },
+    )
