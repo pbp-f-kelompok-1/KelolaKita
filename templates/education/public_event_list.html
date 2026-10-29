@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Agenda Mendatang — KelolaKita{% endblock title %}
+{% block meta_description %}Agenda kegiatan komunitas dan lingkungan KelolaKita mendatang.{% endblock meta_description %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/education.css' %}?v=20261029-2">
+{% endblock extra_css %}
+
+{% block content %}
+<main id="main">
+    <div class="container">
+        <div class="edu-main">
+            <a class="back-link" href="{% url 'education_home' %}">
+                <span aria-hidden="true">←</span> Kembali ke edukasi
+            </a>
+
+            <div class="section-head">
+                <div>
+                    <h1 class="section-title">Agenda mendatang</h1>
+                    <p class="section-sub">Kegiatan komunitas mendatang.</p>
+                </div>
+            </div>
+
+            {% if events %}
+            <div class="agenda">
+                {% for event in events %}
+                <div class="agenda__item">
+                    <div class="agenda__date" aria-hidden="true">
+                        <span class="agenda__day">{{ event.start_at|date:"d" }}</span>
+                        <span class="agenda__month">{{ event.start_at|date:"M" }}</span>
+                    </div>
+                    <div>
+                        <h2 class="agenda__title">
+                            <a class="text-link" href="{% url 'event_detail' event.pk %}">{{ event.title }}</a>
+                        </h2>
+                        <p class="agenda__meta meta-list">
+                            <span>{{ event.location.name }}</span>
+                            <span>
+                                <time datetime="{{ event.start_at|date:'c' }}">{{ event.start_at|date:"j M Y, H.i" }}</time>{% if event.end_at %}–{{ event.end_at|date:"H.i" }}{% endif %}
+                            </span>
+                        </p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-box">
+                <p class="empty-box__title">Belum ada agenda mendatang</p>
+                <p class="empty-box__text">Agenda baru akan tampil di sini setelah dijadwalkan pengelola.</p>
+            </div>
+            {% endif %}
+
+            <p class="mt-8"><a class="text-link" href="{% url 'article_list' %}">Lihat artikel edukasi <span aria-hidden="true">→</span></a></p>
+        </div>
+    </div>
+</main>
+{% endblock content %}

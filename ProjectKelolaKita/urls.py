@@ -14,11 +14,6 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.contrib import admin
-from django.urls import path, include
-from django.conf import settings
-from ProjectKelolaKita.views import landing_page, show_location, create_location, delete_location, location_detail
-
 from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
@@ -29,13 +24,15 @@ from ProjectKelolaKita.views import (
     landing_page,
     location_detail,
     show_location,
+    update_location,
 )
+from education.views import ARTICLE_IMAGE_PREFIX, article_image
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', landing_page, name='landing_page'),
-
+    path('locations/api/', include('Location.urls', namespace='Location')),
     path('locations/', show_location, name='show_location'),
     path('locations/add/', create_location, name='create_location'),
     path(
@@ -48,13 +45,30 @@ urlpatterns = [
         location_detail,
         name='location_detail',
     ),
+    path(
+        'locations/<uuid:location_id>/update/',
+        update_location,
+        name='update_location',
+    ),
 
     path('jadwal/', include('Schedule.urls')),
     path('accounts/', include('accounts.urls')),
+    path('edukasi/', include('education.urls')),
 ]
 
 if settings.DEBUG:
-    # Include django_browser_reload URLs only in DEBUG mode
+    # URL django_browser_reload hanya disertakan saat DEBUG.
     urlpatterns += [
         path("__reload__/", include("django_browser_reload.urls")),
     ]
+
+# WhiteNoise menyajikan static, bukan media upload. Bentuk URL media tetap
+# dipertahankan, tetapi hanya gambar yang terdaftar di Article yang dilayani,
+# dan hanya jika artikelnya boleh diakses publik.
+urlpatterns += [
+    path(
+        f"{settings.MEDIA_URL.strip('/')}/{ARTICLE_IMAGE_PREFIX}<path:path>",
+        article_image,
+        name="article_image",
+    )
+]

@@ -1,0 +1,48 @@
+{% if mobile %}
+<a href="{% url 'landing_page' %}"
+   class="rounded-lg px-3 py-2.5 text-sm {% if active_nav == 'beranda' %}font-bold text-[#2e7d32]{% else %}font-medium text-[#557a5b]{% endif %}">
+    Beranda
+</a>
+<a href="#"
+   class="rounded-lg px-3 py-2.5 text-sm {% if active_nav == 'pengajuan' %}font-bold text-[#2e7d32]{% else %}font-medium text-[#557a5b]{% endif %}">
+    Pengajuan
+</a>
+<a href="{% url 'show_location' %}"
+   class="rounded-lg px-3 py-2.5 text-sm {% if active_nav == 'peta' %}font-bold text-[#2e7d32]{% else %}font-medium text-[#557a5b]{% endif %}">
+    Peta Setoran
+</a>
+<a href="{% url 'show_schedule' %}"
+   class="rounded-lg px-3 py-2.5 text-sm {% if active_nav == 'jadwal' %}font-bold text-[#2e7d32]{% else %}font-medium text-[#557a5b]{% endif %}">
+    Jadwal
+</a>
+<a href="#"
+   class="rounded-lg px-3 py-2.5 text-sm {% if active_nav == 'edukasi' %}font-bold text-[#2e7d32]{% else %}font-medium text-[#557a5b]{% endif %}">
+    Edukasi
+</a>
+{% else %}
+<a href="{% url 'landing_page' %}"
+   class="flex flex-col items-center gap-[9px] text-sm whitespace-nowrap {% if active_nav == 'beranda' %}font-bold text-[#2e7d32]{% else %}font-medium text-[#557a5b] hover:text-[#2e7d32]{% endif %}">
+    Beranda
+    <span class="h-[3px] w-6 rounded-full bg-[#2e7d32] {% if active_nav != 'beranda' %}invisible{% endif %}"></span>
+</a>
+<a href="#"
+   class="flex flex-col items-center gap-[9px] text-sm whitespace-nowrap {% if active_nav == 'pengajuan' %}font-bold text-[#2e7d32]{% else %}font-medium text-[#557a5b] hover:text-[#2e7d32]{% endif %}">
+    Pengajuan
+    <span class="h-[3px] w-6 rounded-full bg-[#2e7d32] {% if active_nav != 'pengajuan' %}invisible{% endif %}"></span>
+</a>
+<a href="{% url 'show_location' %}"
+   class="flex flex-col items-center gap-[9px] text-sm whitespace-nowrap {% if active_nav == 'peta' %}font-bold text-[#2e7d32]{% else %}font-medium text-[#557a5b] hover:text-[#2e7d32]{% endif %}">
+    Peta Setoran
+    <span class="h-[3px] w-6 rounded-full bg-[#2e7d32] {% if active_nav != 'peta' %}invisible{% endif %}"></span>
+</a>
+<a href="{% url 'show_schedule' %}"
+   class="flex flex-col items-center gap-[9px] text-sm whitespace-nowrap {% if active_nav == 'jadwal' %}font-bold text-[#2e7d32]{% else %}font-medium text-[#557a5b] hover:text-[#2e7d32]{% endif %}">
+    Jadwal
+    <span class="h-[3px] w-6 rounded-full bg-[#2e7d32] {% if active_nav != 'jadwal' %}invisible{% endif %}"></span>
+</a>
+<a href="#"
+   class="flex flex-col items-center gap-[9px] text-sm whitespace-nowrap {% if active_nav == 'edukasi' %}font-bold text-[#2e7d32]{% else %}font-medium text-[#557a5b] hover:text-[#2e7d32]{% endif %}">
+    Edukasi
+    <span class="h-[3px] w-6 rounded-full bg-[#2e7d32] {% if active_nav != 'edukasi' %}invisible{% endif %}"></span>
+</a>
+{% endif %}

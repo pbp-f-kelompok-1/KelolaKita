@@ -35,6 +35,9 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     "rafa-darussalam-kelolakita.pws.cs.ui.ac.id",
 ]
+CSRF_TRUSTED_ORIGINS = [
+    "https://rafa-darussalam-kelolakita.pws.cs.ui.ac.id",
+]
 PRODUCTION = os.getenv('PRODUCTION', 'False').lower() == 'true'
 
 
@@ -53,6 +56,7 @@ INSTALLED_APPS = [
     'Location',
     'Schedule',
     'accounts.apps.AccountsConfig',
+    'education',
 ]
 
 MIDDLEWARE = [
@@ -132,9 +136,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'id'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Jakarta'
 
 USE_I18N = True
 
@@ -149,6 +153,9 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 WHITENOISE_USE_FINDERS = True
 
+MEDIA_URL = "/media/"
+MEDIA_ROOT = Path(os.getenv("MEDIA_ROOT") or (BASE_DIR / "media"))
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
@@ -156,6 +163,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 
 TAILWIND_APP_NAME = 'theme'
+# v4.3.0 standalone binary exits abnormally during build; v4.3.3 is verified.
+TAILWIND_STANDALONE_BINARY_VERSION = "v4.3.3"
+# Scan templates in all apps, including accounts, from the repository root.
+TAILWIND_STANDALONE_BUILD_COMMAND_ARGS = (
+    "-i theme/static_src/src/styles.css "
+    "-o theme/static/css/dist/styles.css --minify --cwd .."
+)
 
 if DEBUG:
     INSTALLED_APPS += ["django_browser_reload"]
