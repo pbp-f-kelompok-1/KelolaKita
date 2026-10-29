@@ -44,6 +44,14 @@
                         {{ pemeriksaan.kategori_penanganan }}
                     </span>
                 </div>
+
+                <!-- TAMPILKAN GAMBAR PERTAMA DI SINI -->
+                {% if pemeriksaan.foto_barang.first %}
+                <div class="mb-4">
+                    <!-- Menggunakan .url untuk mendapatkan path statis dari gambar -->
+                    <img src="{{ pemeriksaan.foto_barang.first.gambar.url }}" alt="Foto {{ pemeriksaan.nama_barang }}" class="w-full h-40 object-cover rounded-lg border border-[#dce7de]">
+                </div>
+                {% endif %}
                 
                 <!-- Detail Info -->
                 <div class="flex flex-col gap-1 mb-6">
