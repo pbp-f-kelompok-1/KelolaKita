@@ -162,6 +162,7 @@ class HeaderNavigationTests(TestCase):
         self.assertEqual(response.content.count(b'aria-current="page"'), 2)
         for name in (
             "landing_page",
+            "penanganan:daftar_pengajuan",
             "show_location",
             "show_schedule",
             "education_home",

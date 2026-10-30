@@ -1,8 +1,45 @@
+from pathlib import Path
+from uuid import uuid4
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.core.files.storage import FileSystemStorage
 from django.shortcuts import render, redirect, get_object_or_404
+from PIL import Image, UnidentifiedImageError
 from penanganan.models import Pemeriksaan, FotoBarang
+
+
+PENANGANAN_IMAGE_STORAGE = FileSystemStorage(
+    location=Path(__file__).resolve().parent.parent / "static" / "img" / "penanganan",
+)
+
+
+def _image_extension(upload):
+    try:
+        with Image.open(upload) as image:
+            image_format = image.format
+            image.verify()
+    except (UnidentifiedImageError, OSError, ValueError, Image.DecompressionBombError):
+        raise ValueError("File harus berupa gambar JPG atau PNG yang valid.")
+    finally:
+        upload.seek(0)
+
+    extensions = {"JPEG": ".jpg", "PNG": ".png"}
+    if image_format not in extensions:
+        raise ValueError("Format foto harus JPG atau PNG.")
+    return extensions[image_format]
+
+
+def _store_foto_barang(upload, extension):
+    return PENANGANAN_IMAGE_STORAGE.save(f"{uuid4().hex}{extension}", upload)
+
+
+def _delete_foto_barang_files(fotos):
+    for foto in fotos:
+        if "/" not in foto.gambar.name and "\\" not in foto.gambar.name:
+            PENANGANAN_IMAGE_STORAGE.delete(foto.gambar.name)
+
 
 def is_pengelola(user):
     return user.groups.filter(name='Pengelola').exists()
@@ -24,23 +61,35 @@ def tambah_pengajuan(request):
         if len(fotos) < 2:
             messages.error(request, "Minimal harus mengunggah 2 foto agar pemeriksaan lebih akurat.")
         else:
-            # Simpan data Pemeriksaan ke database
-            pemeriksaan = Pemeriksaan.objects.create(
-                pengguna=request.user,
-                nama_barang=nama_barang,
-                kategori_barang=kategori_barang,
-                kondisi_barang=kondisi_barang,
-                catatan_tambahan=catatan_tambahan
-            )
+            try:
+                extensions = [_image_extension(foto) for foto in fotos]
+            except ValueError as error:
+                messages.error(request, str(error))
+            else:
+                stored_names = [
+                    _store_foto_barang(foto, extension)
+                    for foto, extension in zip(fotos, extensions)
+                ]
+                pemeriksaan = Pemeriksaan.objects.create(
+                    pengguna=request.user,
+                    nama_barang=nama_barang,
+                    kategori_barang=kategori_barang,
+                    kondisi_barang=kondisi_barang,
+                    catatan_tambahan=catatan_tambahan
+                )
+
+                for stored_name in stored_names:
+                    FotoBarang.objects.create(
+                        pemeriksaan=pemeriksaan,
+                        gambar=stored_name,
+                    )
+
+                messages.success(request, "Pengajuan barang berhasil ditambahkan!")
+                return redirect("penanganan:daftar_pengajuan")
             
-            # Simpan setiap foto yang diunggah
-            for foto in fotos:
-                FotoBarang.objects.create(pemeriksaan=pemeriksaan, gambar=foto)
-                
-            messages.success(request, "Pengajuan barang berhasil ditambahkan!")
-            return redirect("penanganan:daftar_pengajuan")
-            
-    return render(request, "penanganan/pengajuan_form.html")
+    return render(request, "penanganan/pengajuan_form.html", {
+        "active_nav": "penanganan",
+    })
 
 # Melihat hasil pemeriksaan dan kategori penanganan
 @login_required(login_url="/login/")
@@ -53,7 +102,8 @@ def daftar_pengajuan(request):
         daftar_pemeriksaan = Pemeriksaan.objects.filter(pengguna=request.user).order_by('-created_at')
         
     context = {
-        "daftar_pemeriksaan": daftar_pemeriksaan
+        "daftar_pemeriksaan": daftar_pemeriksaan,
+        "active_nav": "penanganan",
     }
     return render(request, "penanganan/daftar_pengajuan.html", context)
 
@@ -78,7 +128,8 @@ def periksa_pengajuan(request, pk):
         return redirect("penanganan:daftar_pengajuan")
         
     context = {
-        "pemeriksaan": pemeriksaan
+        "pemeriksaan": pemeriksaan,
+        "active_nav": "penanganan",
     }
     return render(request, "penanganan/update_pemeriksaan.html", context)
 
@@ -101,6 +152,7 @@ def hapus_pengajuan(request, pk):
     
     # Proses Hapus
     if request.method == "POST":
+        _delete_foto_barang_files(pemeriksaan.foto_barang.all())
         pemeriksaan.delete()
         messages.success(request, "Data pengajuan berhasil dihapus!")
         return redirect("penanganan:daftar_pengajuan")
@@ -121,6 +173,16 @@ def edit_pengajuan(request, pk):
 
     # Proses Simpan Data (POST)
     if request.method == "POST":
+        fotos_baru = request.FILES.getlist('foto_barang')
+        try:
+            extensions = [_image_extension(foto) for foto in fotos_baru]
+        except ValueError as error:
+            messages.error(request, str(error))
+            return render(request, "penanganan/edit_pengajuan_form.html", {
+                "pemeriksaan": pemeriksaan,
+                "active_nav": "penanganan",
+            })
+
         # Ambil data teks baru (jika kosong, gunakan data lama sebagai fallback)
         pemeriksaan.nama_barang = request.POST.get('nama_barang', pemeriksaan.nama_barang)
         pemeriksaan.kategori_barang = request.POST.get('kategori_barang', pemeriksaan.kategori_barang)
@@ -130,20 +192,27 @@ def edit_pengajuan(request, pk):
         pemeriksaan.save()
 
         # Update foto
-        fotos_baru = request.FILES.getlist('foto_barang')
         if fotos_baru: 
-            # Hapus foto lama dari database
-            pemeriksaan.foto_barang.all().delete()
-            
-            # Simpan foto-foto baru
-            for foto in fotos_baru:
-                FotoBarang.objects.create(pemeriksaan=pemeriksaan, gambar=foto)
+            foto_lama = pemeriksaan.foto_barang.all()
+            stored_names = [
+                _store_foto_barang(foto, extension)
+                for foto, extension in zip(fotos_baru, extensions)
+            ]
+            _delete_foto_barang_files(foto_lama)
+            foto_lama.delete()
+
+            for stored_name in stored_names:
+                FotoBarang.objects.create(
+                    pemeriksaan=pemeriksaan,
+                    gambar=stored_name,
+                )
 
         messages.success(request, "Pengajuan barang berhasil diperbarui!")
         return redirect("penanganan:daftar_pengajuan")
 
     # Tampilkan Form Edit (GET)
     context = {
-        "pemeriksaan": pemeriksaan
+        "pemeriksaan": pemeriksaan,
+        "active_nav": "penanganan",
     }
     return render(request, "penanganan/edit_pengajuan_form.html", context)
