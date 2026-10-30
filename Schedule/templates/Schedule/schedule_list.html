@@ -17,93 +17,34 @@
         </p>
     </div>
 
+    {% if has_bookings %}
+    <div id="filter-controls" class="flex flex-wrap items-center gap-2">
+        <span class="text-xs font-bold text-[#557a5b]">Filter status:</span>
+        <a href="{% url 'schedule_list' %}" data-status=""
+           class="filter-link rounded-full px-3 py-1.5 text-xs font-bold {% if not filter_status %}bg-[#2e7d32] text-white{% else %}bg-[#f4f6f5] text-[#557a5b] hover:bg-[#e8f5e9]{% endif %}">
+            Semua
+        </a>
+        <a href="?status=terjadwal" data-status="terjadwal"
+           class="filter-link rounded-full px-3 py-1.5 text-xs font-bold {% if filter_status == 'terjadwal' %}bg-[#2e7d32] text-white{% else %}bg-[#f4f6f5] text-[#557a5b] hover:bg-[#e8f5e9]{% endif %}">
+            Terjadwal
+        </a>
+        <a href="?status=selesai" data-status="selesai"
+           class="filter-link rounded-full px-3 py-1.5 text-xs font-bold {% if filter_status == 'selesai' %}bg-[#2e7d32] text-white{% else %}bg-[#f4f6f5] text-[#557a5b] hover:bg-[#e8f5e9]{% endif %}">
+            Selesai
+        </a>
+    </div>
+    {% endif %}
+
     <div id="schedule-list-flash" class="flex flex-col gap-2" aria-live="polite"></div>
 
-    <div id="rows-list" class="{% if not rows %}hidden{% endif %} flex flex-col gap-4">
-        {% for row in rows %}
-        {% with booking=row.booking %}
-        <div id="booking-row-{{ booking.pk }}" data-booking-row
-             class="flex flex-col gap-4 rounded-2xl bg-white p-5 shadow-[0px_8px_24px_0px_rgba(23,53,28,0.07)] sm:flex-row sm:items-start sm:justify-between">
-            <div class="flex flex-col gap-2">
-                <div class="flex flex-wrap items-center gap-2">
-                    <span id="status-badge-{{ booking.pk }}" class="rounded-full px-2.5 py-1.5 text-xs font-bold
-                        {% if row.status == 'dibatalkan' %}bg-[#fdecea] text-[#b42318]
-                        {% elif row.status == 'selesai' %}bg-[#f4f6f5] text-[#557a5b]
-                        {% elif row.status == 'terkunci' %}bg-[#fff4d6] text-[#8a6d1d]
-                        {% else %}bg-[#e8f5e9] text-[#2e7d32]{% endif %}">
-                        {% if row.status == 'dibatalkan' %}Dibatalkan
-                        {% elif row.status == 'selesai' %}Selesai
-                        {% elif row.status == 'terkunci' %}Terjadwal &middot; tidak bisa dibatalkan
-                        {% else %}Terjadwal{% endif %}
-                    </span>
-                    <span class="text-xs text-[#557a5b]">
-                        {{ booking.get_metode_display }}
-                    </span>
-                </div>
-
-                <p class="text-[15px] font-extrabold text-[#1a2e1c]">
-                    {% for barang in booking.barang.all %}{{ barang.nama_barang }}{% if not forloop.last %}, {% endif %}{% endfor %}
-                </p>
-
-                <dl class="flex flex-col gap-1 text-xs text-[#557a5b]">
-                    <div class="flex gap-1.5">
-                        <dt class="font-bold text-[#1a2e1c]">Jadwal:</dt>
-                        <dd>{{ booking.tanggal|date:"l, j F Y" }} &middot; {{ booking.get_sesi_display }}</dd>
-                    </div>
-                    <div class="flex gap-1.5">
-                        <dt class="font-bold text-[#1a2e1c]">
-                            {% if booking.metode == 'kurir' %}Alamat:{% else %}Lokasi:{% endif %}
-                        </dt>
-                        <dd>
-                            {% if booking.metode == 'kurir' %}{{ booking.alamat_penjemputan }}
-                            {% else %}{{ booking.lokasi_mitra.name|default:"—" }}{% endif %}
-                        </dd>
-                    </div>
-                    <div class="flex gap-1.5">
-                        <dt class="font-bold text-[#1a2e1c]">Penerima:</dt>
-                        <dd>{{ booking.nama_penerima }} &middot; {{ booking.nomor_hp }}</dd>
-                    </div>
-                </dl>
-            </div>
-
-            <div id="booking-actions-{{ booking.pk }}" class="flex shrink-0 flex-col items-stretch gap-1.5 sm:items-end">
-                {% if row.can_edit %}
-                <a href="{% url 'edit_schedule' booking.pk %}"
-                   class="h-9 w-full rounded-lg border border-[#dce7de] px-4 text-center text-xs font-bold leading-9 text-[#2e7d32] hover:bg-[#e8f5e9] sm:w-auto">
-                    Ubah
-                </a>
-                {% endif %}
-                {% if row.can_cancel %}
-                <form method="post" action="{% url 'cancel_schedule' booking.pk %}"
-                      class="cancel-form" data-booking-pk="{{ booking.pk }}"
-                      onsubmit="return confirm('Batalkan jadwal ini?');">
-                    {% csrf_token %}
-                    <button type="submit"
-                            class="h-9 w-full rounded-lg border border-[#f1c0bb] px-4 text-xs font-bold text-[#b42318] hover:bg-[#fdecea] sm:w-auto">
-                        Batalkan
-                    </button>
-                </form>
-                {% elif row.status == 'terkunci' %}
-                <p class="max-w-[180px] text-right text-[11px] text-[#8a6d1d]">
-                    Kurang dari 12 jam menjelang sesi, tidak bisa dibatalkan.
-                </p>
-                {% elif row.status == 'dibatalkan' %}
-                <p class="max-w-[180px] text-right text-[11px] text-[#557a5b]">
-                    Dibatalkan pada {{ booking.dibatalkan_pada|date:"j M Y, H:i" }}.
-                </p>
-                {% endif %}
-            </div>
-        </div>
-        {% endwith %}
-        {% endfor %}
+    <div id="rows-container">
+        {% include "Schedule/_schedule_rows.html" %}
     </div>
-    <p id="rows-empty"
-       class="{% if rows %}hidden{% endif %} rounded-lg bg-[#f4f6f5] px-3.5 py-3 text-sm text-[#557a5b]">
-        Belum ada jadwal penyetoran yang dikonfirmasi.
-    </p>
 </main>
 
 <script>
+    const rowsContainer = document.getElementById('rows-container');
+    const filterControls = document.getElementById('filter-controls');
     const scheduleListFlash = document.getElementById('schedule-list-flash');
 
     function escapeHtmlList(value) {
@@ -117,54 +58,98 @@
         scheduleListFlash.innerHTML = `<p class="flash flash--${type}">${escapeHtmlList(message)}</p>`;
     }
 
-    function markRowCancelled(pk, dibatalkanPadaDisplay) {
-        const badge = document.getElementById(`status-badge-${pk}`);
-        if (badge) {
-            badge.className = 'rounded-full px-2.5 py-1.5 text-xs font-bold bg-[#fdecea] text-[#b42318]';
-            badge.textContent = 'Dibatalkan';
-        }
-        const actions = document.getElementById(`booking-actions-${pk}`);
-        if (actions) {
-            actions.innerHTML = `
-                <p class="max-w-[180px] text-right text-[11px] text-[#557a5b]">
-                    Dibatalkan pada ${escapeHtmlList(dibatalkanPadaDisplay || '')}.
-                </p>
-            `;
+    // --- Batalkan jadwal: submit lewat AJAX, hapus barisnya dari DOM ---
+    if (window.fetch && rowsContainer) {
+        rowsContainer.addEventListener('submit', async (event) => {
+            const cancelForm = event.target.closest('form.cancel-form');
+            if (!cancelForm) return;
+            if (!window.confirm('Batalkan jadwal ini?')) {
+                event.preventDefault();
+                return;
+            }
+            event.preventDefault();
+
+            const pk = cancelForm.dataset.bookingPk;
+            const row = document.getElementById(`booking-row-${pk}`);
+            const button = cancelForm.querySelector('button[type="submit"]');
+
+            button.disabled = true;
+            try {
+                const response = await fetch(cancelForm.action, {
+                    method: 'POST',
+                    body: new FormData(cancelForm),
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                    },
+                    credentials: 'same-origin',
+                });
+                const payload = await response.json();
+
+                if (response.ok && payload.success) {
+                    showListFlash(payload.message, 'success');
+                    if (row) row.remove();
+                    const rowsList = document.getElementById('rows-list');
+                    const rowsEmpty = document.getElementById('rows-empty');
+                    if (rowsList && rowsList.children.length === 0) {
+                        rowsList.classList.add('hidden');
+                        if (rowsEmpty) rowsEmpty.classList.remove('hidden');
+                    }
+                } else {
+                    showListFlash(payload.message || 'Jadwal gagal dibatalkan.', 'error');
+                    button.disabled = false;
+                }
+            } catch {
+                showListFlash('Jadwal gagal dibatalkan. Periksa koneksi, lalu coba lagi.', 'error');
+                button.disabled = false;
+            }
+        });
+    }
+
+    // --- Filter status: ganti isi #rows-container lewat AJAX tanpa reload halaman ---
+    function setActiveFilter(status) {
+        if (!filterControls) return;
+        filterControls.querySelectorAll('.filter-link').forEach((link) => {
+            const isActive = link.dataset.status === (status || '');
+            link.classList.toggle('bg-[#2e7d32]', isActive);
+            link.classList.toggle('text-white', isActive);
+            link.classList.toggle('bg-[#f4f6f5]', !isActive);
+            link.classList.toggle('text-[#557a5b]', !isActive);
+            link.classList.toggle('hover:bg-[#e8f5e9]', !isActive);
+        });
+    }
+
+    async function loadFilteredRows(url, status, pushHistory) {
+        try {
+            const response = await fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                },
+                credentials: 'same-origin',
+            });
+            const payload = await response.json();
+            if (!response.ok || !payload.success) throw new Error('bad response');
+
+            rowsContainer.innerHTML = payload.html;
+            setActiveFilter(status);
+            if (pushHistory) history.pushState({ status }, '', url);
+        } catch {
+            window.location.href = url;
         }
     }
 
-    if (window.fetch) {
-        document.querySelectorAll('form.cancel-form').forEach((cancelForm) => {
-            cancelForm.addEventListener('submit', async (event) => {
+    if (window.fetch && filterControls && rowsContainer) {
+        filterControls.querySelectorAll('.filter-link').forEach((link) => {
+            link.addEventListener('click', (event) => {
                 event.preventDefault();
-                const pk = cancelForm.dataset.bookingPk;
-                const button = cancelForm.querySelector('button[type="submit"]');
-
-                button.disabled = true;
-                try {
-                    const response = await fetch(cancelForm.action, {
-                        method: 'POST',
-                        body: new FormData(cancelForm),
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'Accept': 'application/json',
-                        },
-                        credentials: 'same-origin',
-                    });
-                    const payload = await response.json();
-
-                    if (response.ok && payload.success) {
-                        showListFlash(payload.message, 'success');
-                        markRowCancelled(pk, payload.dibatalkan_pada_display);
-                    } else {
-                        showListFlash(payload.message || 'Jadwal gagal dibatalkan.', 'error');
-                        button.disabled = false;
-                    }
-                } catch {
-                    showListFlash('Jadwal gagal dibatalkan. Periksa koneksi, lalu coba lagi.', 'error');
-                    button.disabled = false;
-                }
+                loadFilteredRows(link.getAttribute('href'), link.dataset.status, true);
             });
+        });
+
+        window.addEventListener('popstate', () => {
+            const status = new URLSearchParams(window.location.search).get('status') || '';
+            loadFilteredRows(window.location.href, status, false);
         });
     }
 </script>

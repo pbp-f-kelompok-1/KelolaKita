@@ -38,13 +38,7 @@ class Penjadwalan(models.Model):
         pagi = "pagi", "Pagi"
         siang = "siang", "Siang"
 
-    class Status(models.TextChoices):
-        terjadwal = "terjadwal", "Terjadwal"
-        dibatalkan = "dibatalkan", "Dibatalkan"
-
     barang = models.ManyToManyField(Pemeriksaan, related_name="penjadwalan_set")
-    status = models.CharField(max_length=20, choices=Status.choices, default=Status.terjadwal)
-    dibatalkan_pada = models.DateTimeField(null=True, blank=True)
     metode = models.CharField(max_length=10, choices=Metode.choices)
     tanggal = models.DateField()
     sesi = models.CharField(max_length=10, choices=Sesi.choices)

@@ -512,17 +512,92 @@ class ScheduleListViewTests(TestCase):
         bookings_shown = [row["booking"] for row in response.context["rows"]]
         self.assertNotIn(other_booking, bookings_shown)
 
-    def test_cancelled_booking_still_listed_with_dibatalkan_status(self):
-        booking = self._create_booking(datetime.date.today() + datetime.timedelta(days=5), Penjadwalan.Sesi.pagi)
-        booking.status = Penjadwalan.Status.dibatalkan
-        booking.dibatalkan_pada = timezone.now()
-        booking.save()
+    def test_no_filter_shows_all_bookings(self):
+        past_booking = self._create_booking(datetime.date.today() - datetime.timedelta(days=1), Penjadwalan.Sesi.pagi)
+        future_booking = self._create_booking(datetime.date.today() + datetime.timedelta(days=5), Penjadwalan.Sesi.pagi)
 
         response = self.client.get(reverse("schedule_list"))
-        row = response.context["rows"][0]
-        self.assertEqual(row["status"], "dibatalkan")
-        self.assertFalse(row["can_cancel"])
-        self.assertFalse(row["can_edit"])
+        bookings_shown = [row["booking"] for row in response.context["rows"]]
+        self.assertEqual(bookings_shown, [past_booking, future_booking])
+        self.assertEqual(response.context["filter_status"], "")
+
+    def test_filter_by_terjadwal_hides_finished_bookings(self):
+        self._create_booking(datetime.date.today() - datetime.timedelta(days=1), Penjadwalan.Sesi.pagi)
+        future_booking = self._create_booking(datetime.date.today() + datetime.timedelta(days=5), Penjadwalan.Sesi.pagi)
+
+        response = self.client.get(reverse("schedule_list"), {"status": "terjadwal"})
+        bookings_shown = [row["booking"] for row in response.context["rows"]]
+        self.assertEqual(bookings_shown, [future_booking])
+        self.assertEqual(response.context["filter_status"], "terjadwal")
+
+    def test_filter_by_selesai_hides_upcoming_bookings(self):
+        past_booking = self._create_booking(datetime.date.today() - datetime.timedelta(days=1), Penjadwalan.Sesi.pagi)
+        self._create_booking(datetime.date.today() + datetime.timedelta(days=5), Penjadwalan.Sesi.pagi)
+
+        response = self.client.get(reverse("schedule_list"), {"status": "selesai"})
+        bookings_shown = [row["booking"] for row in response.context["rows"]]
+        self.assertEqual(bookings_shown, [past_booking])
+        self.assertEqual(response.context["filter_status"], "selesai")
+
+    def test_terkunci_counts_as_part_of_terjadwal_filter(self):
+        session_date = datetime.date.today() + datetime.timedelta(days=10)
+        locked_booking = self._create_booking(session_date, Penjadwalan.Sesi.pagi)
+        self._create_booking(datetime.date.today() - datetime.timedelta(days=1), Penjadwalan.Sesi.pagi)
+
+        mocked_now = timezone.make_aware(datetime.datetime.combine(session_date, datetime.time(2, 0)))
+        with patch("django.utils.timezone.now", return_value=mocked_now):
+            response = self.client.get(reverse("schedule_list"), {"status": "terjadwal"})
+
+        bookings_shown = [row["booking"] for row in response.context["rows"]]
+        self.assertEqual(bookings_shown, [locked_booking])
+
+    def test_invalid_filter_value_is_ignored(self):
+        past_booking = self._create_booking(datetime.date.today() - datetime.timedelta(days=1), Penjadwalan.Sesi.pagi)
+        future_booking = self._create_booking(datetime.date.today() + datetime.timedelta(days=5), Penjadwalan.Sesi.pagi)
+
+        response = self.client.get(reverse("schedule_list"), {"status": "bukan-status-valid"})
+        bookings_shown = [row["booking"] for row in response.context["rows"]]
+        self.assertEqual(bookings_shown, [past_booking, future_booking])
+        self.assertEqual(response.context["filter_status"], "")
+
+    def test_filter_control_is_shown_even_when_filtered_result_is_empty(self):
+        self._create_booking(datetime.date.today() - datetime.timedelta(days=1), Penjadwalan.Sesi.pagi)
+
+        response = self.client.get(reverse("schedule_list"), {"status": "terjadwal"})
+        self.assertEqual(list(response.context["rows"]), [])
+        self.assertTrue(response.context["has_bookings"])
+        self.assertContains(response, "Tidak ada jadwal dengan status ini.")
+
+    def test_ajax_request_returns_json_html_fragment(self):
+        past_booking = self._create_booking(datetime.date.today() - datetime.timedelta(days=1), Penjadwalan.Sesi.pagi)
+        future_booking = self._create_booking(datetime.date.today() + datetime.timedelta(days=5), Penjadwalan.Sesi.pagi)
+
+        response = self.client.get(
+            reverse("schedule_list"), HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload["success"])
+        self.assertIn(f'booking-row-{past_booking.pk}', payload["html"])
+        self.assertIn(f'booking-row-{future_booking.pk}', payload["html"])
+        # Respons AJAX cuma fragmen baris, bukan halaman penuh dengan navbar.
+        self.assertNotIn("Riwayat jadwal", payload["html"])
+        # csrf_token harus tetap valid di fragmen ini supaya form Batalkan
+        # yang disuntikkan lewat innerHTML masih bisa POST tanpa ditolak CSRF.
+        self.assertIn("csrfmiddlewaretoken", payload["html"])
+
+    def test_ajax_request_with_filter_only_includes_matching_rows(self):
+        past_booking = self._create_booking(datetime.date.today() - datetime.timedelta(days=1), Penjadwalan.Sesi.pagi)
+        future_booking = self._create_booking(datetime.date.today() + datetime.timedelta(days=5), Penjadwalan.Sesi.pagi)
+
+        response = self.client.get(
+            reverse("schedule_list"),
+            {"status": "terjadwal"},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        payload = response.json()
+        self.assertIn(f'booking-row-{future_booking.pk}', payload["html"])
+        self.assertNotIn(f'booking-row-{past_booking.pk}', payload["html"])
 
 
 class CancelScheduleViewTests(TestCase):
@@ -549,15 +624,11 @@ class CancelScheduleViewTests(TestCase):
         booking.barang.set([self.item])
         return booking
 
-    def test_cancel_soft_cancels_booking_before_cutoff(self):
+    def test_cancel_deletes_booking_before_cutoff(self):
         booking = self._create_booking(datetime.date.today() + datetime.timedelta(days=5))
         response = self.client.post(reverse("cancel_schedule", args=[booking.pk]))
         self.assertRedirects(response, reverse("schedule_list"))
-
-        booking.refresh_from_db()
-        self.assertTrue(Penjadwalan.objects.filter(pk=booking.pk).exists())
-        self.assertEqual(booking.status, Penjadwalan.Status.dibatalkan)
-        self.assertIsNotNone(booking.dibatalkan_pada)
+        self.assertFalse(Penjadwalan.objects.filter(pk=booking.pk).exists())
 
     def test_cancel_rejected_within_cutoff_window(self):
         session_date = datetime.date.today() + datetime.timedelta(days=10)
@@ -568,28 +639,12 @@ class CancelScheduleViewTests(TestCase):
             response = self.client.post(reverse("cancel_schedule", args=[booking.pk]))
 
         self.assertRedirects(response, reverse("schedule_list"))
-        booking.refresh_from_db()
-        self.assertEqual(booking.status, Penjadwalan.Status.terjadwal)
+        self.assertTrue(Penjadwalan.objects.filter(pk=booking.pk).exists())
 
-    def test_get_request_does_not_cancel_booking(self):
+    def test_get_request_does_not_delete_booking(self):
         booking = self._create_booking(datetime.date.today() + datetime.timedelta(days=5))
         self.client.get(reverse("cancel_schedule", args=[booking.pk]))
-        booking.refresh_from_db()
-        self.assertEqual(booking.status, Penjadwalan.Status.terjadwal)
-
-    def test_cancelling_already_cancelled_booking_is_rejected(self):
-        booking = self._create_booking(datetime.date.today() + datetime.timedelta(days=5))
-        self.client.post(reverse("cancel_schedule", args=[booking.pk]))
-        booking.refresh_from_db()
-        first_dibatalkan_pada = booking.dibatalkan_pada
-
-        response = self.client.post(reverse("cancel_schedule", args=[booking.pk]), follow=True)
-        self.assertEqual(response.status_code, 200)
-        page_messages = list(response.context["messages"])
-        self.assertTrue(any("sudah dibatalkan" in str(m) for m in page_messages))
-
-        booking.refresh_from_db()
-        self.assertEqual(booking.dibatalkan_pada, first_dibatalkan_pada)
+        self.assertTrue(Penjadwalan.objects.filter(pk=booking.pk).exists())
 
     def test_cancelled_booking_frees_up_its_item_for_rescheduling(self):
         booking = self._create_booking(datetime.date.today() + datetime.timedelta(days=5))
@@ -642,10 +697,7 @@ class CancelScheduleViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         payload = response.json()
         self.assertTrue(payload["success"])
-        self.assertTrue(payload["dibatalkan_pada_display"])
-
-        booking.refresh_from_db()
-        self.assertEqual(booking.status, Penjadwalan.Status.dibatalkan)
+        self.assertFalse(Penjadwalan.objects.filter(pk=booking.pk).exists())
 
     def test_ajax_cancel_within_cutoff_returns_json_error_and_keeps_booking(self):
         session_date = datetime.date.today() + datetime.timedelta(days=10)
@@ -661,8 +713,7 @@ class CancelScheduleViewTests(TestCase):
         self.assertEqual(response.status_code, 400)
         payload = response.json()
         self.assertFalse(payload["success"])
-        booking.refresh_from_db()
-        self.assertEqual(booking.status, Penjadwalan.Status.terjadwal)
+        self.assertTrue(Penjadwalan.objects.filter(pk=booking.pk).exists())
 
 
 class EditScheduleViewTests(TestCase):
@@ -728,14 +779,11 @@ class EditScheduleViewTests(TestCase):
         self.assertEqual(self.booking.nama_penerima, "Budi")
 
     def test_edit_rejected_for_already_cancelled_booking(self):
-        self.booking.status = Penjadwalan.Status.dibatalkan
-        self.booking.dibatalkan_pada = timezone.now()
-        self.booking.save()
+        booking_pk = self.booking.pk
+        self.booking.delete()
 
-        response = self.client.post(reverse("edit_schedule", args=[self.booking.pk]), self._valid_payload())
-        self.assertRedirects(response, reverse("schedule_list"))
-        self.booking.refresh_from_db()
-        self.assertEqual(self.booking.nama_penerima, "Budi")
+        response = self.client.post(reverse("edit_schedule", args=[booking_pk]), self._valid_payload())
+        self.assertEqual(response.status_code, 404)
 
     def test_edit_other_users_booking_returns_404(self):
         other_user = User.objects.create_user(username="ani", password="pass12345")
