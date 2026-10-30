@@ -274,9 +274,21 @@ def show_schedule(request):
     return render(request, "Schedule/schedule.html", context)
 
 
+STATUS_FILTER_GROUPS = {
+    "terjadwal": {"terjadwal", "terkunci"},
+    "selesai": {"selesai"},
+}
+
+
 @login_required
 def schedule_list(request):
-    """Riwayat jadwal penyetoran yang sudah dikonfirmasi, dengan opsi pembatalan."""
+    """Riwayat jadwal penyetoran yang sudah dikonfirmasi, dengan opsi pembatalan.
+
+    Bisa difilter lewat query param `?status=terjadwal` atau
+    `?status=selesai`, yang menyembunyikan baris dari status lain.
+    `terkunci` ikut masuk grup `terjadwal` karena secara visual tetap
+    berstatus "Terjadwal" bagi pengguna, hanya saja tidak bisa dibatalkan.
+    """
     now = timezone.now()
     bookings = (
         _owned_bookings(request.user)
@@ -303,9 +315,17 @@ def schedule_list(request):
             "can_edit": status == "terjadwal",
         })
 
+    filter_status = request.GET.get("status") if request.GET.get("status") in STATUS_FILTER_GROUPS else ""
+    has_bookings = bool(rows)
+    if filter_status:
+        group = STATUS_FILTER_GROUPS[filter_status]
+        rows = [row for row in rows if row["status"] in group]
+
     context = {
         "active_nav": "jadwal",
         "rows": rows,
+        "filter_status": filter_status,
+        "has_bookings": has_bookings,
     }
     return render(request, "Schedule/schedule_list.html", context)
 

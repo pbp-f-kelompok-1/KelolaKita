@@ -512,6 +512,62 @@ class ScheduleListViewTests(TestCase):
         bookings_shown = [row["booking"] for row in response.context["rows"]]
         self.assertNotIn(other_booking, bookings_shown)
 
+    def test_no_filter_shows_all_bookings(self):
+        past_booking = self._create_booking(datetime.date.today() - datetime.timedelta(days=1), Penjadwalan.Sesi.pagi)
+        future_booking = self._create_booking(datetime.date.today() + datetime.timedelta(days=5), Penjadwalan.Sesi.pagi)
+
+        response = self.client.get(reverse("schedule_list"))
+        bookings_shown = [row["booking"] for row in response.context["rows"]]
+        self.assertEqual(bookings_shown, [past_booking, future_booking])
+        self.assertEqual(response.context["filter_status"], "")
+
+    def test_filter_by_terjadwal_hides_finished_bookings(self):
+        self._create_booking(datetime.date.today() - datetime.timedelta(days=1), Penjadwalan.Sesi.pagi)
+        future_booking = self._create_booking(datetime.date.today() + datetime.timedelta(days=5), Penjadwalan.Sesi.pagi)
+
+        response = self.client.get(reverse("schedule_list"), {"status": "terjadwal"})
+        bookings_shown = [row["booking"] for row in response.context["rows"]]
+        self.assertEqual(bookings_shown, [future_booking])
+        self.assertEqual(response.context["filter_status"], "terjadwal")
+
+    def test_filter_by_selesai_hides_upcoming_bookings(self):
+        past_booking = self._create_booking(datetime.date.today() - datetime.timedelta(days=1), Penjadwalan.Sesi.pagi)
+        self._create_booking(datetime.date.today() + datetime.timedelta(days=5), Penjadwalan.Sesi.pagi)
+
+        response = self.client.get(reverse("schedule_list"), {"status": "selesai"})
+        bookings_shown = [row["booking"] for row in response.context["rows"]]
+        self.assertEqual(bookings_shown, [past_booking])
+        self.assertEqual(response.context["filter_status"], "selesai")
+
+    def test_terkunci_counts_as_part_of_terjadwal_filter(self):
+        session_date = datetime.date.today() + datetime.timedelta(days=10)
+        locked_booking = self._create_booking(session_date, Penjadwalan.Sesi.pagi)
+        self._create_booking(datetime.date.today() - datetime.timedelta(days=1), Penjadwalan.Sesi.pagi)
+
+        mocked_now = timezone.make_aware(datetime.datetime.combine(session_date, datetime.time(2, 0)))
+        with patch("django.utils.timezone.now", return_value=mocked_now):
+            response = self.client.get(reverse("schedule_list"), {"status": "terjadwal"})
+
+        bookings_shown = [row["booking"] for row in response.context["rows"]]
+        self.assertEqual(bookings_shown, [locked_booking])
+
+    def test_invalid_filter_value_is_ignored(self):
+        past_booking = self._create_booking(datetime.date.today() - datetime.timedelta(days=1), Penjadwalan.Sesi.pagi)
+        future_booking = self._create_booking(datetime.date.today() + datetime.timedelta(days=5), Penjadwalan.Sesi.pagi)
+
+        response = self.client.get(reverse("schedule_list"), {"status": "bukan-status-valid"})
+        bookings_shown = [row["booking"] for row in response.context["rows"]]
+        self.assertEqual(bookings_shown, [past_booking, future_booking])
+        self.assertEqual(response.context["filter_status"], "")
+
+    def test_filter_control_is_shown_even_when_filtered_result_is_empty(self):
+        self._create_booking(datetime.date.today() - datetime.timedelta(days=1), Penjadwalan.Sesi.pagi)
+
+        response = self.client.get(reverse("schedule_list"), {"status": "terjadwal"})
+        self.assertEqual(list(response.context["rows"]), [])
+        self.assertTrue(response.context["has_bookings"])
+        self.assertContains(response, "Tidak ada jadwal dengan status ini.")
+
 
 class CancelScheduleViewTests(TestCase):
     def setUp(self):

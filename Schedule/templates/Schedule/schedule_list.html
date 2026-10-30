@@ -17,6 +17,24 @@
         </p>
     </div>
 
+    {% if has_bookings %}
+    <div class="flex flex-wrap items-center gap-2">
+        <span class="text-xs font-bold text-[#557a5b]">Filter status:</span>
+        <a href="{% url 'schedule_list' %}"
+           class="rounded-full px-3 py-1.5 text-xs font-bold {% if not filter_status %}bg-[#2e7d32] text-white{% else %}bg-[#f4f6f5] text-[#557a5b] hover:bg-[#e8f5e9]{% endif %}">
+            Semua
+        </a>
+        <a href="?status=terjadwal"
+           class="rounded-full px-3 py-1.5 text-xs font-bold {% if filter_status == 'terjadwal' %}bg-[#2e7d32] text-white{% else %}bg-[#f4f6f5] text-[#557a5b] hover:bg-[#e8f5e9]{% endif %}">
+            Terjadwal
+        </a>
+        <a href="?status=selesai"
+           class="rounded-full px-3 py-1.5 text-xs font-bold {% if filter_status == 'selesai' %}bg-[#2e7d32] text-white{% else %}bg-[#f4f6f5] text-[#557a5b] hover:bg-[#e8f5e9]{% endif %}">
+            Selesai
+        </a>
+    </div>
+    {% endif %}
+
     <div id="schedule-list-flash" class="flex flex-col gap-2" aria-live="polite"></div>
 
     <div id="rows-list" class="{% if not rows %}hidden{% endif %} flex flex-col gap-4">
@@ -93,7 +111,8 @@
     </div>
     <p id="rows-empty"
        class="{% if rows %}hidden{% endif %} rounded-lg bg-[#f4f6f5] px-3.5 py-3 text-sm text-[#557a5b]">
-        Belum ada jadwal penyetoran yang dikonfirmasi.
+        {% if filter_status %}Tidak ada jadwal dengan status ini.
+        {% else %}Belum ada jadwal penyetoran yang dikonfirmasi.{% endif %}
     </p>
 </main>
 
