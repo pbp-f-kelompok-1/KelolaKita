@@ -45,7 +45,8 @@ def tambah_pengajuan(request):
 @login_required
 def daftar_pengajuan(request):
     # Jika Pengelola, tampilkan semua data pengajuan untuk diperiksa
-    if is_pengelola(request.user):
+    pengelola = is_pengelola(request.user)
+    if pengelola:
         daftar_pemeriksaan = Pemeriksaan.objects.all().order_by('-created_at')
     # Jika Pengguna biasa, hanya tampilkan riwayat barang miliknya sendiri
     else:
@@ -53,6 +54,7 @@ def daftar_pengajuan(request):
         
     context = {
         "daftar_pemeriksaan": daftar_pemeriksaan,
+        "is_pengelola": pengelola,
         "active_nav": "penanganan",
     }
     return render(request, "penanganan/daftar_pengajuan.html", context)

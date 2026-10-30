@@ -68,9 +68,11 @@
                 
                 <!-- Action Buttons -->
                 <div class="mt-auto pt-4 border-t border-[#dce7de] flex items-center justify-end gap-3 md:gap-4">
+                    {% if is_pengelola %}
                     <a href="{% url 'penanganan:periksa_pengajuan' pemeriksaan.id %}" class="text-xs md:text-sm font-bold text-blue-600 hover:text-blue-800 transition">
                         Detail / Periksa
                     </a>
+                    {% endif %}
                     
                     {% if pemeriksaan.kategori_penanganan == 'Menunggu' %}
                     <a href="{% url 'penanganan:edit_pengajuan' pemeriksaan.id %}" class="text-xs md:text-sm font-bold text-yellow-600 hover:text-yellow-800 transition">

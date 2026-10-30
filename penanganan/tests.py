@@ -60,6 +60,17 @@ class ManagerRolePermissionTests(TestCase):
         self.assertContains(response, self.user_submission.nama_barang)
         self.assertNotContains(response, self.other_submission.nama_barang)
 
+    def test_only_manager_sees_detail_review_link(self):
+        list_url = reverse("penanganan:daftar_pengajuan")
+
+        self.client.force_login(self.manager)
+        manager_response = self.client.get(list_url)
+        self.assertContains(manager_response, "Detail / Periksa")
+
+        self.client.force_login(self.user)
+        user_response = self.client.get(list_url)
+        self.assertNotContains(user_response, "Detail / Periksa")
+
     def test_only_manager_role_can_review_submissions(self):
         review_url = reverse(
             "penanganan:periksa_pengajuan",
