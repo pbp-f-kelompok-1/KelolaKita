@@ -7,6 +7,7 @@ from django.core.exceptions import PermissionDenied
 from django.core.files.storage import FileSystemStorage
 from django.shortcuts import render, redirect, get_object_or_404
 from PIL import Image, UnidentifiedImageError
+from accounts.models import Profile
 from penanganan.models import Pemeriksaan, FotoBarang
 
 
@@ -42,7 +43,10 @@ def _delete_foto_barang_files(fotos):
 
 
 def is_pengelola(user):
-    return user.groups.filter(name='Pengelola').exists()
+    return Profile.objects.filter(
+        user=user,
+        role=Profile.Role.MANAGER,
+    ).exists()
 
 # Membuat data pemeriksaan
 @login_required
