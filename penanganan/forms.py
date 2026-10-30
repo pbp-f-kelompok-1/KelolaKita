@@ -73,6 +73,12 @@ class PengajuanForm(forms.ModelForm):
             ("Lainnya", "Lainnya"),
         ),
     )
+    kondisi_barang = forms.ChoiceField(
+        choices=Pemeriksaan.PILIHAN_KONDISI,
+        widget=forms.RadioSelect(
+            attrs={"class": "w-3.5 h-3.5 md:w-4 md:h-4 text-[#2e7d32]"}
+        ),
+    )
 
     def clean_foto_barang(self):
         fotos = self.cleaned_data["foto_barang"]

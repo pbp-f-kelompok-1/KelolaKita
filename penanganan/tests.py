@@ -8,8 +8,19 @@ from django.urls import reverse
 from PIL import Image
 
 from accounts.models import Profile
+from penanganan.forms import EditPengajuanForm, PengajuanForm
 from penanganan.models import FotoBarang, Pemeriksaan
 from penanganan.views import PENANGANAN_IMAGE_STORAGE
+
+
+class PengajuanFormTests(TestCase):
+    def test_condition_radio_choices_do_not_include_blank_option(self):
+        for form_class in (PengajuanForm, EditPengajuanForm):
+            with self.subTest(form=form_class.__name__):
+                choices = list(form_class().fields["kondisi_barang"].choices)
+
+                self.assertEqual(choices, Pemeriksaan.PILIHAN_KONDISI)
+                self.assertNotIn(("", "---------"), choices)
 
 
 class ManagerRolePermissionTests(TestCase):
