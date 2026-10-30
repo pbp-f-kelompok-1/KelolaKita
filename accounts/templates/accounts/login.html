@@ -1,0 +1,48 @@
+{% extends 'accounts/auth_base.html' %}
+
+{% block title %}Masuk{% endblock title %}
+
+{% block auth_content %}
+    <div class="mb-8">
+        <h1 class="font-['Plus_Jakarta_Sans'] text-[28px] font-extrabold leading-tight tracking-tight sm:text-[32px]">Selamat datang</h1>
+        <p class="mt-2 text-sm leading-6 text-[#557a5b]">Masuk ke akun untuk melanjutkan.</p>
+    </div>
+
+    <nav class="mb-7 grid grid-cols-2 rounded-xl bg-[#f4f6f5] p-1" aria-label="Halaman akun">
+        <span aria-current="page" class="rounded-lg bg-white px-3 py-2.5 text-center text-sm font-bold text-[#2e7d32] shadow-sm">Masuk</span>
+        <a href="{% url 'accounts:register' %}" class="rounded-lg px-3 py-2.5 text-center text-sm font-semibold text-[#557a5b] transition hover:text-[#2e7d32] focus-visible:outline-2 focus-visible:outline-[#2e7d32]">Daftar</a>
+    </nav>
+
+    {% if form.non_field_errors %}
+        <div role="alert" class="mb-5 rounded-xl border border-[#efc6c1] bg-[#fff1ef] px-4 py-3 text-sm leading-6 text-[#9f2d23]">
+            {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+    {% endif %}
+
+    <form method="post" class="space-y-5">
+        {% csrf_token %}
+        {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+
+        <div>
+            <label for="{{ form.username.id_for_label }}" class="mb-2 block text-sm font-semibold">Nama pengguna</label>
+            {{ form.username }}
+            {% for error in form.username.errors %}<p class="mt-1.5 text-sm text-[#a33128]">{{ error }}</p>{% endfor %}
+        </div>
+
+        <div>
+            <label for="{{ form.password.id_for_label }}" class="mb-2 block text-sm font-semibold">Kata sandi</label>
+            {{ form.password }}
+            {% for error in form.password.errors %}<p class="mt-1.5 text-sm text-[#a33128]">{{ error }}</p>{% endfor %}
+        </div>
+
+        <div class="flex items-start gap-2.5">
+            {{ form.remember_me }}
+            <label for="{{ form.remember_me.id_for_label }}" class="cursor-pointer text-sm leading-5 text-[#36543a]">Ingat saya</label>
+        </div>
+        {% for error in form.remember_me.errors %}<p class="text-sm text-[#a33128]">{{ error }}</p>{% endfor %}
+
+        <button type="submit" class="w-full rounded-xl bg-[#2e7d32] px-5 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#256b29] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2e7d32] active:bg-[#1f5a23] disabled:cursor-not-allowed disabled:opacity-50">Masuk ke KelolaKita</button>
+    </form>
+
+    <p class="mt-7 text-center text-sm text-[#557a5b]">Belum punya akun? <a href="{% url 'accounts:register' %}" class="font-bold text-[#2e7d32] underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2e7d32]">Daftar sekarang</a></p>
+{% endblock auth_content %}

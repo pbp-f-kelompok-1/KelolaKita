@@ -1,0 +1,59 @@
+{% load static tailwind_tags %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Akun{% endblock title %} | KelolaKita</title>
+    {% tailwind_css %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="flex min-h-screen flex-col bg-[#f4f6f5] font-['Inter'] text-[#1a2e1c]">
+    <header class="border-b border-[#dfe5e0] bg-white">
+        <div class="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-4 sm:px-6 lg:px-8">
+            <a href="{% url 'landing_page' %}" class="inline-flex min-w-0 items-center gap-2 focus-visible:rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2e7d32]">
+                <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#2e7d32]"><img src="{% static 'icons/leaf.svg' %}" alt="" class="size-[22px]"></span>
+                <span class="truncate font-['Plus_Jakarta_Sans'] text-base font-extrabold sm:text-lg">KelolaKita</span>
+            </a>
+            <a href="{% url 'landing_page' %}" class="shrink-0 rounded-md text-xs font-semibold text-[#557a5b] transition hover:text-[#2e7d32] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#2e7d32] sm:text-sm">Kembali ke beranda</a>
+        </div>
+    </header>
+
+    <main class="mx-auto flex w-full max-w-7xl flex-1 items-center px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16">
+        <div class="grid w-full min-w-0 items-stretch gap-8 lg:grid-cols-2 lg:gap-12 xl:gap-16">
+            <section class="relative hidden min-h-[620px] overflow-hidden rounded-[32px] bg-gradient-to-br from-[#2e7d32] via-[#245c2c] to-[#17261b] p-10 text-white lg:flex lg:flex-col lg:justify-between xl:p-12" aria-label="Tentang KelolaKita">
+                <div class="pointer-events-none absolute -right-20 -top-24 size-72 rounded-full border border-white/15 bg-white/5"></div>
+                <div class="pointer-events-none absolute -bottom-36 -left-20 size-96 rounded-full border border-white/10 bg-white/5"></div>
+                <div class="pointer-events-none absolute bottom-24 right-8 size-36 rounded-full border border-white/10"></div>
+                <div class="relative flex size-14 items-center justify-center rounded-2xl border border-white/25 bg-white/15 shadow-lg shadow-black/10">
+                    <img src="{% static 'icons/leaf.svg' %}" alt="" class="size-8">
+                </div>
+                <div class="relative max-w-md">
+                    <p class="mb-5 text-sm font-semibold tracking-wide text-[#cce9cf]">KelolaKita</p>
+                    <h2 class="font-['Plus_Jakarta_Sans'] text-4xl font-extrabold leading-tight xl:text-[42px]">Kembali berbuat baik, satu barang setiap kali.</h2>
+                    <p class="mt-6 max-w-sm text-base leading-7 text-[#e8f5e9]">Pantau dampak, atur penjemputan, dan temukan komunitas yang membutuhkan.</p>
+                </div>
+            </section>
+
+            <div class="flex min-w-0 items-center justify-center">
+                <div class="w-full max-w-[520px] min-w-0 rounded-2xl border border-[#dfe5e0] bg-white px-5 py-8 shadow-[0_18px_50px_rgba(26,46,28,0.07)] sm:rounded-[28px] sm:px-9 sm:py-10 xl:px-11">
+                    {% if messages %}
+                        <div class="mb-6 space-y-2" aria-live="polite">
+                            {% for message in messages %}
+                                <div role="status" class="rounded-xl border px-4 py-3 text-sm leading-6 {% if 'success' in message.tags %}border-[#b9ddbd] bg-[#e8f5e9] text-[#205b26]{% else %}border-[#efc6c1] bg-[#fff1ef] text-[#9f2d23]{% endif %}">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    {% block auth_content %}{% endblock auth_content %}
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="px-4 pb-7 text-center text-xs leading-5 text-[#557a5b] sm:px-6">
+        &copy; {% now "Y" %} KelolaKita. Barang lebih berguna, kota lebih berdaya.
+    </footer>
+</body>
+</html>
