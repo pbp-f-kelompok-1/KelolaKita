@@ -343,3 +343,61 @@ Platform ini diharapkan dapat membantu masyarakat membangun kebiasaan pengelolaa
 |---|---|
 | Figma Design | https://www.figma.com/design/qWvpcmwHTiBDkp8ccrIZ6m/KelolaKita?node-id=0-1&t=dVxiBbASnwhfqU7f-1 |
 | Deployment | https://rafa-darussalam-kelolakita.pws.cs.ui.ac.id/ |
+
+## AI Disclosure
+
+Dalam pengembangan KelolaKita, kelompok menggunakan beberapa perangkat AI sebagai **alat bantu** untuk mendukung proses eksplorasi ide, implementasi, debugging, pengujian, dan dokumentasi. Seluruh keputusan akhir, integrasi kode, serta validasi hasil tetap dilakukan oleh anggota kelompok.
+
+### Tools yang Digunakan
+
+| Tool | Tujuan Penggunaan |
+|---|---|
+| ChatGPT | Brainstorming fitur, penyusunan dokumentasi, dan bantuan troubleshooting |
+| OpenAI Codex | Saran implementasi, refactoring, penyusunan test case, dan analisis perubahan kode |
+| Claude Code | Bantuan implementasi modul, penelusuran codebase, debugging, dan code review |
+| DeepSeek V4.1 Flash | Alternatif analisis solusi, debugging, dan pemeriksaan logika program |
+| Gemini | Pemberian alternatif pendekatan, review kode, dan penyempurnaan dokumentasi |
+| Figma AI | Eksplorasi layout, komponen, dan konsistensi awal design system |
+
+### Ruang Lingkup Penggunaan
+
+AI digunakan untuk membantu kegiatan berikut:
+
+- mengeksplorasi alternatif desain dan alur fitur;
+- memberikan saran struktur model, form, view, template, dan JavaScript;
+- membantu menemukan penyebab error dan kemungkinan solusi;
+- menyusun atau memperluas unit test;
+- membantu merapikan dokumentasi teknis;
+- memberikan masukan saat proses refactoring dan integrasi antarmodul.
+
+Secara umum, kelompok memberikan konteks modul, ruang lingkup file, kebutuhan fitur, batasan keamanan, dan hasil yang diharapkan. Permintaan dipecah menjadi tugas-tugas kecil agar keluaran dapat diperiksa sebelum digabungkan ke codebase utama.
+
+### Verifikasi dan Perbaikan Manual
+
+Keluaran AI tidak langsung digunakan tanpa pemeriksaan. Kelompok melakukan:
+
+- pemeriksaan perubahan melalui Git diff dan Pull Request;
+- penyesuaian manual terhadap struktur dan konvensi codebase;
+- pemeriksaan ulang URL, validasi form, autentikasi, dan otorisasi;
+- penyelesaian conflict serta integrasi dengan modul anggota lain;
+- pengujian melalui `manage.py check`, unit test, dan pengujian manual di browser;
+- pemeriksaan responsivitas, konsistensi design system, serta hasil build Tailwind.
+
+### Keterbatasan AI
+
+Perangkat AI dapat menghasilkan asumsi yang tidak sesuai dengan kondisi branch terbaru, nama URL atau dependensi yang keliru, perubahan yang terlalu luas, maupun kode yang terlihat benar tetapi belum terintegrasi. Perbedaan rekomendasi antartools juga dapat terjadi. Oleh karena itu, kelompok membandingkan keluaran AI dengan kebutuhan proyek, dokumentasi resmi, kondisi codebase, dan hasil pengujian sebelum menerima suatu perubahan.
+
+AI tidak diberi kewenangan untuk menentukan keputusan produk atau melakukan merge dan deployment tanpa pemeriksaan anggota kelompok. Kredensial, password, token, serta data sensitif produksi tidak dimasukkan ke dalam prompt.
+
+## Batasan dan Pengembangan Lanjutan
+
+- Persistensi file media pada environment PWS masih perlu diverifikasi untuk penggunaan jangka panjang.
+- Penghapusan file gambar lama belum seluruhnya otomatis ketika record dihapus.
+- Modul tertentu masih menggunakan otorisasi group-level dan dapat dikembangkan menjadi object-level permission yang lebih granular.
+- Penghapusan akun secara mandiri belum diekspos sebagai fitur publik; penghapusan `User` oleh pengelola menghapus `Profile` terkait melalui `CASCADE`.
+- Audit log, rate limiting, notifikasi, dan soft delete dapat ditambahkan pada iterasi berikutnya.
+- Pipeline CI/CD otomatis belum tersedia; deployment saat ini dilakukan secara manual setelah review dan pengujian.
+
+---
+
+KelolaKita dikembangkan sebagai Proyek Tengah Semester mata kuliah Pemrograman Berbasis Platform, Fakultas Ilmu Komputer, Universitas Indonesia.
