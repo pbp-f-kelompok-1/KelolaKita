@@ -96,10 +96,9 @@
         </div>
     </div>
 </main>
-{% endblock content %}
 
 <script>
-function previewImages(event) {
+    function previewImages(event) {
     const placeholder = document.getElementById('upload-placeholder');
     const previewContainer = document.getElementById('image-preview-container');
     const files = event.target.files;
@@ -126,3 +125,4 @@ function previewImages(event) {
     }
 }
 </script>
+{% endblock content %}

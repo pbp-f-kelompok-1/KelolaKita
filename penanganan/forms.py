@@ -82,7 +82,7 @@ class PengajuanForm(forms.ModelForm):
 
     def clean_foto_barang(self):
         fotos = self.cleaned_data["foto_barang"]
-        if self.require_multiple_photos and len(fotos) < 2:
+        if len(fotos) < 2 and (self.require_multiple_photos or fotos):
             raise ValidationError("Minimal harus mengunggah 2 foto.")
         return fotos
 
