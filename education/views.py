@@ -6,14 +6,14 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Sum
-from django.http import FileResponse, Http404
+from django.http import FileResponse, Http404, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, TemplateView, UpdateView
 
 from education.forms import ArticleForm, DistributionForm, EventForm
-from education.models import Article, Distribution, Event
+from education.models import ARTICLE_CATEGORY_LABELS, Article, Distribution, Event
 from Location.models import Location
 
 BUSINESS_TIMEZONE = ZoneInfo("Asia/Jakarta")
@@ -126,13 +126,50 @@ def public_home(request):
 
 
 class ArticleListView(PublicEducationContextMixin, ListView):
-    """Menampilkan hanya artikel terbit yang tanggalnya sudah tiba."""
+    """Menampilkan artikel terbit, dengan pencarian dan kategori opsional.
+
+    Filter dibaca dari query string (GET), bukan dari state JavaScript, agar
+    URL tetap dapat dibagikan dan fungsi tetap bekerja tanpa JavaScript.
+    """
 
     template_name = "education/public_article_list.html"
     context_object_name = "articles"
 
+    def _filter_values(self):
+        query = self.request.GET.get("q", "").strip()[:100]
+        category = self.request.GET.get("category", "")
+        if category not in Article.Category.values:
+            category = ""
+        return query, category
+
     def get_queryset(self):
-        return Article.objects.published()
+        queryset = Article.objects.published()
+        query, category = self._filter_values()
+        if query:
+            queryset = queryset.filter(title__icontains=query)
+        if category:
+            queryset = queryset.filter(category=category)
+        return queryset
+
+    def get_template_names(self):
+        if self.request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return ["education/_article_results.html"]
+        return [self.template_name]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        query, category = self._filter_values()
+        context["article_query"] = query
+        context["selected_category"] = category
+        context["has_active_filter"] = bool(query or category)
+        context["article_categories"] = [
+            (value, ARTICLE_CATEGORY_LABELS.get(value, label))
+            for value, label in Article.Category.choices
+        ]
+        context["selected_category_label"] = dict(context["article_categories"]).get(
+            category, ""
+        )
+        return context
 
 
 class ArticleDetailView(PublicEducationContextMixin, DetailView):
@@ -190,7 +227,7 @@ class DistributionListView(PublicEducationContextMixin, ListView):
 class StaffRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     """Mewajibkan pengguna staff aktif pada setiap view pengelolaan/mutasi."""
 
-    login_url = reverse_lazy("admin:login")
+    login_url = reverse_lazy("accounts:login")
 
     def test_func(self):
         return self.request.user.is_active and self.request.user.is_staff
@@ -259,6 +296,16 @@ class ManageDeleteView(StaffRequiredMixin, DeleteView):
         return context
 
     def form_valid(self, form):
+        if self.request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            self.object = self.get_object()
+            self.object.delete()
+            return JsonResponse(
+                {
+                    "success": True,
+                    "message": self.success_message,
+                    "redirect": self.get_success_url(),
+                }
+            )
         messages.success(self.request, self.success_message)
         return super().form_valid(form)
 

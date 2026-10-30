@@ -137,6 +137,12 @@ Menambahkan `active_nav` untuk semua public CBV.
 Keduanya memakai `Article.objects.published()`. Detail artikel draf/terjadwal akan 404,
 bukan hanya disembunyikan di template.
 
+`ArticleListView` juga membaca `q` dan `category` dari query string, memvalidasi
+kategori terhadap `Article.Category.values`, dan memfilter `title__icontains` pada
+queryset yang sudah `published()`. Jika request membawa header
+`X-Requested-With: XMLHttpRequest`, view merender `_article_results.html` saja;
+tanpa header, halaman penuh tetap dirender. Filter GET tetap menjadi fallback.
+
 ### `EventListView` / `EventDetailView`
 
 - List: event terbit dan start >= sekarang.
@@ -155,7 +161,7 @@ Memakai queryset publik dan menambahkan aggregate:
 
 `LoginRequiredMixin` + `UserPassesTestMixin`:
 
-- anonymous → redirect login admin;
+- anonymous → redirect login aplikasi `accounts`;
 - authenticated non-staff → 403;
 - staff inactive → tidak dapat mempertahankan akses (redirect login);
 - `test_func` memeriksa `is_active and is_staff`.
@@ -179,7 +185,10 @@ mengisi `model` dan `form_class`; validasi tetap milik form/model.
 - GET menampilkan halaman konfirmasi.
 - POST melakukan delete.
 - `form_valid` mengirim pesan sukses.
-- Tidak ada delete lewat GET; tombol memakai form POST + CSRF.
+- Jika POST membawa header `X-Requested-With: XMLHttpRequest`, view mengembalikan
+  JSON `success`, `message`, dan `redirect` setelah menghapus objek; JavaScript
+  dashboard menghapus baris tanpa reload.
+- Tanpa JavaScript, tautan tetap menuju form konfirmasi POST + CSRF.
 
 ### `ArticleCreateView`, `ArticleUpdateView`, `ArticleDeleteView`
 
@@ -258,13 +267,15 @@ Konfirmasi delete dengan `csrf_token` dan tombol POST.
 
 ## 6. `static/js/education.js`
 
-Hanya progressive enhancement untuk reveal section:
+Selain progressive reveal section, file ini menangani:
 
-- jika browser tidak mendukung `IntersectionObserver`, tidak ada yang disembunyikan;
-- jika `prefers-reduced-motion`, tidak ada animasi;
-- fallback timeout menampilkan konten jika observer tidak berjalan.
+- filter artikel asynchronous dengan `fetch`, debounce 300 ms, `AbortController`,
+  update partial `#article-results`, dan `history.replaceState` untuk URL filter;
+- hapus data dashboard asynchronous dengan `fetch` POST, CSRF token, konfirmasi,
+  status feedback, dan fallback reload bila item terakhir terhapus.
 
-Tidak ada fetch/CRUD asynchronous. Saat demo, jangan menyebut ini sebagai AJAX/HTMX.
+Tanpa JavaScript, filter memakai form GET dan delete memakai halaman konfirmasi
+POST biasa. Tidak ada HTMX; CRUD create/update tetap full-page.
 
 ## 7. Management command impor PWS
 

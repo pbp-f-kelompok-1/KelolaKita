@@ -5,7 +5,7 @@
 {% block meta_description %}Panduan guna ulang dan pengurangan sampah untuk mengelola barang dan sampah rumah tangga.{% endblock meta_description %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/education.css' %}?v=20261029-2">
+<link rel="stylesheet" href="{% static 'css/education.css' %}?v=20261030-1">
 {% endblock extra_css %}
 
 {% block content %}
@@ -23,38 +23,40 @@
                 </div>
             </div>
 
-            {% if articles %}
-            <div class="article-grid">
-                {% for article in articles %}
-                <article class="article-card" data-reveal>
-                    <div class="article-card__media">
-                        <img src="{{ article.cover.src }}" alt="{{ article.cover.alt }}" loading="lazy"
-                            decoding="async">
-                    </div>
-                    <div class="article-card__body">
-                        <div class="meta article-meta">
-                            <span class="article-meta__category">{{ article.category_label }}</span>
-                            <time class="article-meta__detail" datetime="{{ article.published_at|date:'c' }}">{{ article.published_at|date:"j M Y" }}</time>
-                            <span class="article-meta__detail">{{ article.read_minutes }} menit baca</span>
-                        </div>
-                        <h2><a href="{% url 'article_detail' article.slug %}">{{ article.title }}</a></h2>
-                        <p class="article-card__summary">{{ article.summary }}</p>
-                        <a class="text-link" href="{% url 'article_detail' article.slug %}">
-                            Baca panduan <span aria-hidden="true">→</span>
-                        </a>
-                    </div>
-                </article>
-                {% endfor %}
+            <form class="article-filter" method="get" action="{% url 'article_list' %}"
+                role="search" aria-label="Filter artikel" data-article-filter>
+                <div class="article-filter__field">
+                    <label for="article-search">Cari artikel</label>
+                    <input id="article-search" name="q" type="search" value="{{ article_query }}"
+                        maxlength="100" placeholder="Cari judul artikel">
+                </div>
+                <div class="article-filter__field">
+                    <label for="article-category">Kategori</label>
+                    <select id="article-category" name="category">
+                        <option value="">Semua kategori</option>
+                        {% for value, label in article_categories %}
+                        <option value="{{ value }}"{% if value == selected_category %} selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="article-filter__actions">
+                    <button class="btn btn--primary btn--sm" type="submit">Terapkan</button>
+                    {% if has_active_filter %}
+                    <a class="text-link" href="{% url 'article_list' %}">Reset filter</a>
+                    {% endif %}
+                </div>
+            </form>
+
+            <div id="article-results" data-article-results aria-live="polite">
+                {% include "education/_article_results.html" %}
             </div>
-            {% else %}
-            <div class="empty-box">
-                <p class="empty-box__title">Belum ada artikel yang terbit</p>
-                <p class="empty-box__text">Artikel baru akan tampil setelah diterbitkan pengelola.</p>
-            </div>
-            {% endif %}
 
             <p class="mt-8"><a class="text-link" href="{% url 'event_list' %}">Lihat agenda mendatang <span aria-hidden="true">→</span></a></p>
         </div>
     </div>
 </main>
 {% endblock content %}
+
+{% block extra_js %}
+<script src="{% static 'js/education.js' %}?v=20261030-1" defer></script>
+{% endblock extra_js %}

@@ -26,8 +26,8 @@ Modul Education mengelola konten edukasi dan bukti kegiatan komunitas:
 | Catatan penyaluran | Ada: CRUD staff, halaman publik penyaluran |
 | Relasi lokasi | Ada: `Event.location` dan `Distribution.destination` memakai `PROTECT` |
 | Dashboard staff | Ada di `/edukasi/kelola/` |
-| Pencarian/filter artikel | Tidak ada filter khusus; daftar memakai urutan model |
-| AJAX/HTMX | Tidak dipakai; interaksi utama adalah full-page form submission |
+| Pencarian/filter artikel | Ada: `q` dan `category` melalui GET + partial AJAX |
+| AJAX/HTMX | AJAX `fetch` untuk filter artikel dan hapus dashboard; HTMX tidak dipakai; create/update masih full-page |
 | Produk guna ulang | Konten static/template, bukan model database |
 | Import konten PWS | Ada management command, bukan bagian request web |
 
@@ -69,7 +69,7 @@ production), misalnya lewat:
 python manage.py createsuperuser
 ```
 
-Login melalui `/admin/login/` lalu buka `http://127.0.0.1:8000/edukasi/kelola/`.
+Login melalui `/accounts/login/` lalu buka `http://127.0.0.1:8000/edukasi/kelola/`.
 
 ## URL utama
 

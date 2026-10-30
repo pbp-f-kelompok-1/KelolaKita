@@ -9,7 +9,8 @@ Education adalah Django app yang menyediakan tiga entitas konten (`Article`, `Ev
 2. **Staff** — CRUD melalui dashboard `/edukasi/kelola/`.
 
 Modul ini menggunakan pola Django standar: URL dispatcher → view → form/ORM → template.
-Tidak ada service layer, repository pattern, HTMX, atau JavaScript framework tambahan.
+Tidak ada service layer, repository pattern, atau framework frontend tambahan. Interaksi
+asynchronous memakai Fetch API vanilla, bukan HTMX.
 
 ```mermaid
 flowchart LR
@@ -164,6 +165,38 @@ sequenceDiagram
 `StaffRequiredMixin` adalah satu-satunya pintu authorization untuk seluruh view
 management. Tombol yang disembunyikan di template bukan pengganti pemeriksaan ini.
 
+### 3.3 Filter artikel dan respons parsial
+
+```mermaid
+sequenceDiagram
+    participant B as Browser
+    participant V as ArticleListView
+    participant O as Article.objects.published()
+    participant T as _article_results.html
+
+    B->>V: GET /edukasi/artikel/?q=plastik&category=reduce
+    V->>V: validasi q/category
+    V->>O: filter(title__icontains, category)
+    alt header X-Requested-With
+        V->>T: render partial
+        T-->>B: potongan HTML
+        B->>B: update #article-results + history
+    else request biasa
+        V-->>B: halaman penuh
+    end
+```
+
+Tanpa JavaScript, form GET pada halaman tetap mengirim query string dan menerima
+halaman penuh. AJAX tidak mengubah kebijakan publikasi; queryset tetap dimulai dari
+`Article.objects.published()`.
+
+### 3.4 Async delete dashboard
+
+Tautan hapus tetap mengarah ke halaman konfirmasi. JavaScript di dashboard memakai
+`fetch` POST dengan CSRF dan header `X-Requested-With`. `ManageDeleteView` memeriksa
+`StaffRequiredMixin`, menghapus objek, lalu mengembalikan JSON untuk request async.
+Jika item terakhir terhapus, halaman dimuat ulang agar empty state tampil.
+
 ## 4. Form dan validasi
 
 | Form | Dipakai | Validasi penting |
@@ -186,8 +219,9 @@ duplikat di view.
 - `static/js/education.js`: progressive reveal saat section masuk viewport.
   Tanpa JS atau dengan `prefers-reduced-motion`, konten tetap tampil.
 
-Tidak ada JavaScript untuk submit form, delete, atau fetch data. Form memakai
-submission HTML biasa dan redirect Django.
+Create/update form memakai submission HTML biasa dan redirect Django. Filter artikel
+dan hapus data dashboard memiliki progressive enhancement Fetch API; tanpa JavaScript,
+keduanya tetap memakai GET form dan halaman konfirmasi biasa.
 
 ## 6. Media dan gambar
 
@@ -233,5 +267,9 @@ Import bukan bagian request web dan tidak dijalankan otomatis saat server start.
 - Memakai `PROTECT` untuk relasi lokasi agar data historis tidak kehilangan tujuan.
 - Menyajikan media lewat endpoint sempit karena PWS tidak menyediakan media server
   yang terverifikasi; bukan route blanket ke seluruh `MEDIA_ROOT`.
-- Tidak memakai HTMX/AJAX karena alur CRUD saat ini tetap jelas dengan full-page form;
-  penambahan itu akan menambah state dan pengujian tanpa kebutuhan produk yang jelas.
+- Memakai Fetch API tipis untuk filter dan hapus, bukan HTMX, agar dependency tetap
+  minimal dan form GET/POST biasa tetap menjadi fallback.
+- Create/update tetap full-page karena mempertahankan generic view dan FormData yang
+  sudah teruji; belum ada kebutuhan untuk mengganti seluruh alur.
+- Login staff sekarang diarahkan ke `accounts:login` agar konsisten dengan aplikasi
+  dan tidak terkesan memakai Django Admin sebagai pintu CRUD.

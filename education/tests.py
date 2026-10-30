@@ -772,7 +772,7 @@ class ManagementAccessTests(TestCase):
         response = self.client.get(reverse("education_manage"))
 
         self.assertEqual(response.status_code, 302)
-        self.assertIn("/admin/login/", response["Location"])
+        self.assertIn("/accounts/login/", response["Location"])
 
     def test_non_staff_is_forbidden(self):
         self.client.force_login(self.user)
@@ -788,7 +788,7 @@ class ManagementAccessTests(TestCase):
         response = self.client.get(reverse("education_manage"))
 
         self.assertEqual(response.status_code, 302)
-        self.assertIn("/admin/login/", response["Location"])
+        self.assertIn("/accounts/login/", response["Location"])
 
     def test_non_staff_cannot_post_mutations(self):
         article = make_article()
@@ -939,6 +939,18 @@ class CrudTests(TestCase):
 
         self.assertEqual(response.status_code, 403)
         self.assertTrue(Article.objects.filter(pk=article.pk).exists())
+
+    def test_async_article_delete_returns_json_and_deletes(self):
+        article = make_article()
+
+        response = self.client.post(
+            reverse("article_delete", args=[article.pk]),
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["success"])
+        self.assertFalse(Article.objects.filter(pk=article.pk).exists())
 
 
 class LocationRegressionTests(TestCase):
@@ -1092,6 +1104,84 @@ class PublicPagesTests(TestCase):
         self.assertEqual(self.client.get(reverse("article_list")).status_code, 200)
         self.assertEqual(self.client.get(reverse("event_list")).status_code, 200)
         self.assertEqual(self.client.get(reverse("education_manage")).status_code, 302)
+
+
+class ArticleFilterTests(TestCase):
+    def setUp(self):
+        self.reduce = make_article(
+            title="Panduan Plastik",
+            category=Article.Category.reduce,
+        )
+        self.panduan = make_article(
+            title="Belajar Memilah",
+            category=Article.Category.panduan,
+        )
+        self.draft = make_article(
+            title="Panduan Plastik Draf",
+            category=Article.Category.reduce,
+            is_published=False,
+        )
+        self.future = make_article(
+            title="Panduan Plastik Terjadwal",
+            category=Article.Category.reduce,
+            published_at=timezone.now() + timedelta(days=1),
+        )
+
+    def test_search_is_case_insensitive_and_hides_unpublished(self):
+        response = self.client.get(reverse("article_list"), {"q": "PLASTIK"})
+
+        self.assertContains(response, self.reduce.title)
+        self.assertNotContains(response, self.draft.title)
+        self.assertNotContains(response, self.future.title)
+        self.assertNotContains(response, self.panduan.title)
+        self.assertEqual(response.context["article_query"], "PLASTIK")
+
+    def test_category_and_combined_filter(self):
+        response = self.client.get(
+            reverse("article_list"), {"category": Article.Category.reduce}
+        )
+
+        self.assertContains(response, self.reduce.title)
+        self.assertNotContains(response, self.panduan.title)
+        self.assertEqual(response.context["selected_category"], "reduce")
+
+        response = self.client.get(
+            reverse("article_list"),
+            {"q": "Belajar", "category": Article.Category.reduce},
+        )
+        self.assertContains(response, "Tidak ada artikel yang cocok")
+        self.assertNotContains(response, self.reduce.title)
+
+    def test_invalid_category_is_ignored(self):
+        response = self.client.get(
+            reverse("article_list"), {"category": "bukan-kategori"}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.reduce.title)
+        self.assertContains(response, self.panduan.title)
+        self.assertEqual(response.context["selected_category"], "")
+
+    def test_async_filter_returns_partial_without_page_chrome(self):
+        response = self.client.get(
+            reverse("article_list"),
+            {"q": "plastik"},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "education/_article_results.html")
+        self.assertContains(response, self.reduce.title)
+        self.assertNotContains(response, "<!DOCTYPE")
+        self.assertNotContains(response, self.draft.title)
+
+    def test_filter_form_and_empty_state_are_rendered(self):
+        response = self.client.get(reverse("article_list"), {"q": "tidak-ada"})
+
+        self.assertContains(response, 'name="q"')
+        self.assertContains(response, 'name="category"')
+        self.assertContains(response, "Tidak ada artikel yang cocok")
+        self.assertContains(response, reverse("article_list"))
 
 
 class PublicDistributionTests(TestCase):

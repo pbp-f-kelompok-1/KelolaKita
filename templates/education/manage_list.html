@@ -4,7 +4,7 @@
 {% block title %}Kelola edukasi — KelolaKita{% endblock title %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/education.css' %}?v=20261029-2">
+<link rel="stylesheet" href="{% static 'css/education.css' %}?v=20261030-1">
 {% endblock extra_css %}
 
 {% block content %}
@@ -21,6 +21,9 @@
                     <a class="btn btn--primary btn--sm" href="{% url 'article_create' %}">Tulis artikel</a>
                 </div>
             </div>
+
+            <p class="dash-feedback" data-dash-feedback role="status" aria-live="polite"></p>
+            <form class="dash-csrf" hidden aria-hidden="true">{% csrf_token %}</form>
 
             <section class="dash-section dash-section--articles" aria-labelledby="kelola-artikel">
                 <div class="dash-section__head">
@@ -176,3 +179,7 @@
     </div>
 </main>
 {% endblock content %}
+
+{% block extra_js %}
+<script src="{% static 'js/education.js' %}?v=20261030-1" defer></script>
+{% endblock extra_js %}

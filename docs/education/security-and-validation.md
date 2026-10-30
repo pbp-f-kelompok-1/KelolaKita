@@ -6,7 +6,7 @@ Jangan mengklaim aplikasi “100% aman” saat demo.
 ## 1. Authentication vs authorization
 
 - **Authentication** membuktikan siapa user. Project memakai Django auth/session dan
-  login admin lokal.
+  login aplikasi `accounts` lokal.
 - **Authorization** menentukan boleh atau tidak. Education memakai
   `StaffRequiredMixin`.
 
@@ -14,7 +14,7 @@ Jangan mengklaim aplikasi “100% aman” saat demo.
 
 ```python
 class StaffRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
-    login_url = reverse_lazy("admin:login")
+    login_url = reverse_lazy("accounts:login")
 
     def test_func(self):
         return self.request.user.is_active and self.request.user.is_staff
@@ -29,7 +29,7 @@ Konsekuensi:
 
 | Kondisi | Hasil |
 |---|---|
-| Anonymous membuka management | redirect ke login admin |
+| Anonymous membuka management | redirect ke login aplikasi `accounts` |
 | User login non-staff | 403 Forbidden |
 | Staff aktif | boleh |
 | Staff inactive | tidak mempertahankan sesi; redirect login |
@@ -84,6 +84,11 @@ GET. Tes `test_csrf_required_for_delete` mengirim POST tanpa token dan memastika
 serta record tetap ada.
 
 GET hanya untuk membaca/konfirmasi; bukan untuk mutasi.
+
+Filter artikel adalah GET read-only. Input `q` di-trim dan dibatasi 100 karakter;
+`category` hanya diterima jika ada di `Article.Category.values`; queryset dimulai dari
+`published()`. Async delete tetap memakai POST, CSRF token, dan `StaffRequiredMixin`
+sebelum `JsonResponse` dikirim.
 
 ## 5. Konten tidak terbit
 
