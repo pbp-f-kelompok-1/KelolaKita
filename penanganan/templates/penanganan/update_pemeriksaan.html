@@ -58,7 +58,7 @@
                 <div class="grid grid-cols-2 gap-2 md:gap-3">
                     {% for foto in pemeriksaan.foto_barang.all %}
                         <!-- object-cover menjaga proporsi foto tetap pas meskipun dipaksa responsif -->
-                        {% if "foto_pemeriksaan/" in foto.gambar.name %}
+                        {% if "static/img/" in foto.gambar.name or "foto_pemeriksaan/" in foto.gambar.name %}
                         <img src="{{ foto.gambar.url }}" alt="Foto Barang" class="w-full h-28 sm:h-32 md:h-40 object-cover rounded-lg border border-[#dce7de]">
                         {% else %}
                         <img src="{% static 'img/penanganan/' %}{{ foto.gambar.name }}" alt="Foto Barang" class="w-full h-28 sm:h-32 md:h-40 object-cover rounded-lg border border-[#dce7de]">

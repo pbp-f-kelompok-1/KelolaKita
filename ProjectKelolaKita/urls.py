@@ -17,6 +17,7 @@ Including another URLconf
 from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
+from django.conf.urls.static import static
 
 from ProjectKelolaKita.views import (
     create_location,
@@ -62,6 +63,7 @@ if settings.DEBUG:
     urlpatterns += [
         path("__reload__/", include("django_browser_reload.urls")),
     ]
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # WhiteNoise menyajikan static, bukan media upload. Bentuk URL media tetap
 # dipertahankan, tetapi hanya gambar yang terdaftar di Article yang dilayani,
