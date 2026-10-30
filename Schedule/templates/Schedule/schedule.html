@@ -41,21 +41,21 @@
                             <input type="checkbox" name="barang" value="{{ item.pk }}" class="sr-only"
                                    {% if item.pk|stringformat:"s" in selected_item_ids %}checked{% endif %}
                                    data-nama="{{ item.nama_barang }}"
-                                   data-jenis="{{ item.jenis_barang }}"
+                                   data-jenis="{{ item.kategori_barang }}"
                                    data-kondisi="{{ item.kondisi_barang }}"
                                    data-kategori="{{ item.get_kategori_penanganan_display }}"
                                    data-kategori-slug="{{ item.kategori_penanganan }}"
                                    data-owner="{{ item.pengguna.get_full_name|default:item.pengguna.username }}">
                             <span aria-hidden="true"
                                   class="flex size-11 shrink-0 items-center justify-center rounded-lg text-base font-extrabold
-                                         {% if item.kategori_penanganan == 'recycle' %}bg-[#e3f2fd] text-[#1565c0]
-                                         {% elif item.kategori_penanganan == 'reduce' %}bg-[#fff3e0] text-[#ef6c00]
+                                         {% if item.kategori_penanganan == 'Recycle' %}bg-[#e3f2fd] text-[#1565c0]
+                                         {% elif item.kategori_penanganan == 'Reduce' %}bg-[#fff3e0] text-[#ef6c00]
                                          {% else %}bg-[#e8f5e9] text-[#2e7d32]{% endif %}">
-                                {{ item.jenis_barang|first|upper }}
+                                {{ item.kategori_barang|first|upper }}
                             </span>
                             <span class="flex flex-col gap-0.5">
                                 <span class="text-sm font-extrabold text-[#1a2e1c]">{{ item.nama_barang }}</span>
-                                <span class="text-xs text-[#557a5b]">{{ item.jenis_barang }}</span>
+                                <span class="text-xs text-[#557a5b]">{{ item.kategori_barang }}</span>
                             </span>
                             <span class="ml-auto shrink-0 rounded-full bg-[#e7f6ee] px-2.5 py-1.5 text-xs font-bold text-[#237b4b]">
                                 {{ item.get_kategori_penanganan_display }}
@@ -313,9 +313,9 @@
     const scheduleFlash = document.getElementById('schedule-flash');
 
     const CATEGORY_STYLES = {
-        recycle: { bg: '#e3f2fd', fg: '#1565c0' },
-        reduce: { bg: '#fff3e0', fg: '#ef6c00' },
-        reuse: { bg: '#e8f5e9', fg: '#2e7d32' },
+        Recycle: { bg: '#e3f2fd', fg: '#1565c0' },
+        Reduce: { bg: '#fff3e0', fg: '#ef6c00' },
+        Reuse: { bg: '#e8f5e9', fg: '#2e7d32' },
     };
 
     // --- Kontak: strip spaces/dashes live, matching server-side normalization ---
@@ -345,7 +345,7 @@
             summaryItemKondisi.textContent = '';
         } else if (checked.length === 1) {
             const input = checked[0];
-            const style = CATEGORY_STYLES[input.dataset.kategoriSlug] || CATEGORY_STYLES.reuse;
+            const style = CATEGORY_STYLES[input.dataset.kategoriSlug] || CATEGORY_STYLES.Reuse;
             summaryItemBadge.style.backgroundColor = style.bg;
             summaryItemBadge.style.color = style.fg;
             summaryItemBadge.textContent = (input.dataset.jenis || '?').charAt(0).toUpperCase();
@@ -508,7 +508,7 @@
         const label = document.createElement('label');
         label.className = 'item-card group flex cursor-pointer items-center gap-3 rounded-xl border '
             + 'border-[#dce7de] bg-white p-3.5 has-[:checked]:border-[#2e7d32] has-[:checked]:bg-[#e8f5e9]';
-        const style = CATEGORY_STYLES[item.kategori_slug] || CATEGORY_STYLES.reuse;
+        const style = CATEGORY_STYLES[item.kategori_slug] || CATEGORY_STYLES.Reuse;
         label.innerHTML = `
             <input type="checkbox" name="barang" value="${item.pk}" class="sr-only"
                    data-nama="${escapeHtml(item.nama_barang)}"

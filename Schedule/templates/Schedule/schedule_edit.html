@@ -32,7 +32,7 @@
                            {% if item.pk|stringformat:"s" in selected_item_ids %}checked{% endif %}>
                     <span class="flex flex-col gap-0.5">
                         <span class="text-sm font-extrabold text-[#1a2e1c]">{{ item.nama_barang }}</span>
-                        <span class="text-xs text-[#557a5b]">{{ item.jenis_barang }}</span>
+                        <span class="text-xs text-[#557a5b]">{{ item.kategori_barang }}</span>
                     </span>
                     <span class="ml-auto shrink-0 rounded-full bg-[#e7f6ee] px-2.5 py-1.5 text-xs font-bold text-[#237b4b]">
                         {{ item.get_kategori_penanganan_display }}
