@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-label="Ilustrasi artikel KelolaKita">
+  <rect width="1200" height="675" fill="#e7ebdd"/>
+  <path d="M0 520C180 455 315 560 465 520s255-105 405-52 220 45 330 5v202H0Z" fill="#d8e2cf"/>
+  <path d="M0 585c180-55 300 25 455-8s210-78 350-38 245 22 395-18v154H0Z" fill="#c8d6bc" opacity=".7"/>
+  <g fill="none" stroke="#2f5a3a" stroke-linecap="round">
+    <path d="M600 440V230" stroke-width="10"/>
+    <path d="M600 310c-70-80-150-82-210-48 35 88 112 115 210 48Z" stroke-width="10"/>
+    <path d="M600 265c65-68 140-75 205-35-38 82-112 104-205 35Z" stroke-width="10"/>
+  </g>
+  <circle cx="945" cy="155" r="52" fill="#d9a13b" opacity=".85"/>
+  <circle cx="220" cy="165" r="24" fill="#2f5a3a" opacity=".18"/>
+  <circle cx="285" cy="125" r="13" fill="#2f5a3a" opacity=".14"/>
+</svg>

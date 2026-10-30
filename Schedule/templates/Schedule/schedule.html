@@ -5,11 +5,19 @@
 {% block content %}
 <main class="mx-auto flex w-full max-w-[1440px] flex-col items-start gap-7 px-16 py-[42px]">
 
-    <div class="flex flex-col gap-2">
-        <p class="text-xs font-extrabold tracking-wide text-[#2e7d32] uppercase">Atur penyerahan</p>
-        <h1 class="font-['Plus_Jakarta_Sans'] text-2xl leading-tight font-extrabold text-[#1a2e1c]">
-            Pilih cara dan waktu yang nyaman
-        </h1>
+    <div class="flex w-full flex-col gap-2">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="flex flex-col gap-2">
+                <p class="text-xs font-extrabold tracking-wide text-[#2e7d32] uppercase">Atur penyerahan</p>
+                <h1 class="font-['Plus_Jakarta_Sans'] text-2xl leading-tight font-extrabold text-[#1a2e1c]">
+                    Pilih cara dan waktu yang nyaman
+                </h1>
+            </div>
+            <a href="{% url 'schedule_list' %}"
+               class="shrink-0 text-sm font-bold text-[#2e7d32] underline-offset-2 hover:underline">
+                Lihat riwayat jadwal &rarr;
+            </a>
+        </div>
         <p class="max-w-[60rem] text-[15px] leading-relaxed text-[#557a5b]">
             Antar langsung ke lokasi mitra atau jadwalkan kurir penjemputan.
         </p>
@@ -24,17 +32,25 @@
             <section class="flex flex-col gap-3.5">
                 <h2 class="font-['Plus_Jakarta_Sans'] text-lg font-extrabold text-[#1a2e1c]">0. Pilih barang</h2>
                 {% if items %}
+                <p class="text-xs text-[#557a5b]">Bisa pilih lebih dari satu barang untuk dijadwalkan sekaligus.</p>
                 <div class="flex flex-col gap-3">
                     {% for item in items %}
                     <label class="item-card group flex cursor-pointer items-center gap-3 rounded-xl border border-[#dce7de] bg-white p-3.5 has-[:checked]:border-[#2e7d32] has-[:checked]:bg-[#e8f5e9]">
-                        <input type="radio" name="barang" value="{{ item.pk }}" class="sr-only"
-                               {% if item.pk == selected_item_id %}checked{% endif %}
+                        <input type="checkbox" name="barang" value="{{ item.pk }}" class="sr-only"
+                               {% if item.pk|stringformat:"s" in selected_item_ids %}checked{% endif %}
                                data-nama="{{ item.nama_barang }}"
                                data-jenis="{{ item.jenis_barang }}"
                                data-kondisi="{{ item.kondisi_barang }}"
-                               data-kategori="{{ item.get_kategori_penanganan_display }}">
-                        <img src="{% static 'img/schedule/item-placeholder.jpg' %}" alt=""
-                             class="size-11 shrink-0 rounded-lg object-cover">
+                               data-kategori="{{ item.get_kategori_penanganan_display }}"
+                               data-kategori-slug="{{ item.kategori_penanganan }}"
+                               data-owner="{{ item.pengguna.get_full_name|default:item.pengguna.username }}">
+                        <span aria-hidden="true"
+                              class="flex size-11 shrink-0 items-center justify-center rounded-lg text-base font-extrabold
+                                     {% if item.kategori_penanganan == 'recycle' %}bg-[#e3f2fd] text-[#1565c0]
+                                     {% elif item.kategori_penanganan == 'reduce' %}bg-[#fff3e0] text-[#ef6c00]
+                                     {% else %}bg-[#e8f5e9] text-[#2e7d32]{% endif %}">
+                            {{ item.jenis_barang|first|upper }}
+                        </span>
                         <span class="flex flex-col gap-0.5">
                             <span class="text-sm font-extrabold text-[#1a2e1c]">{{ item.nama_barang }}</span>
                             <span class="text-xs text-[#557a5b]">{{ item.jenis_barang }}</span>
@@ -46,7 +62,10 @@
                     {% endfor %}
                 </div>
                 {% else %}
-                <p class="text-sm text-[#557a5b]">Belum ada barang yang disetujui untuk dijadwalkan.</p>
+                <p class="rounded-lg bg-[#f4f6f5] px-3.5 py-3 text-sm text-[#557a5b]">
+                    Belum ada barang yang disetujui untuk dijadwalkan. Ajukan dan tunggu barangmu
+                    diperiksa terlebih dahulu sebelum bisa mengatur jadwal penyerahan.
+                </p>
                 {% endif %}
             </section>
 
@@ -55,7 +74,7 @@
                 <div class="flex flex-col gap-3 sm:flex-row">
                     {% for method in methods %}
                     <label class="method-card group relative flex flex-1 cursor-pointer flex-col gap-2.5 rounded-xl border border-[#dce7de] bg-white p-4 transition-colors has-[:checked]:border-[#2e7d32] has-[:checked]:bg-[#e8f5e9]">
-                        <input type="radio" name="method" value="{{ method.value }}" class="sr-only"
+                        <input type="radio" name="metode" value="{{ method.value }}" class="sr-only"
                                {% if method.value == selected_method %}checked{% endif %}
                                data-info-title="{{ method.info_title }}"
                                data-info-body="{{ method.info_body }}"
@@ -76,6 +95,42 @@
                     </label>
                     {% endfor %}
                 </div>
+
+                <div id="method-detail-kurir"
+                     class="{% if selected_method == 'kurir' %}flex{% else %}hidden{% endif %} flex-col gap-3">
+                    <div class="flex flex-col gap-1.5">
+                        <label for="id_alamat_penjemputan" class="text-[13px] font-bold text-[#1a2e1c]">Alamat penjemputan</label>
+                        <input type="text" name="alamat_penjemputan" id="id_alamat_penjemputan"
+                               {% if selected_method == 'kurir' %}required{% endif %}
+                               value="{{ alamat_penjemputan_value }}"
+                               placeholder="Jalan, nomor rumah, RT/RW, kota"
+                               class="h-11 w-full rounded-lg border border-[#dce7de] bg-white px-3.5 text-sm text-[#1a2e1c] focus:border-[#2e7d32] focus:outline-2 focus:outline-[#2e7d32]">
+                    </div>
+                    <input type="hidden" name="alamat_latitude" id="id_alamat_latitude" value="{{ alamat_latitude_value }}">
+                    <input type="hidden" name="alamat_longitude" id="id_alamat_longitude" value="{{ alamat_longitude_value }}">
+                </div>
+
+                <div id="method-detail-titik"
+                     class="{% if selected_method == 'titik' %}flex{% else %}hidden{% endif %} flex-col gap-1.5">
+                    <label for="id_lokasi_mitra" class="text-[13px] font-bold text-[#1a2e1c]">Lokasi mitra</label>
+                    {% if locations %}
+                    <select name="lokasi_mitra" id="id_lokasi_mitra"
+                            {% if selected_method == 'titik' %}required{% endif %}
+                            class="h-11 w-full rounded-lg border border-[#dce7de] bg-white px-3.5 text-sm text-[#1a2e1c] focus:border-[#2e7d32] focus:outline-2 focus:outline-[#2e7d32]">
+                        <option value="" disabled {% if not selected_lokasi_id %}selected{% endif %}>Pilih titik setoran</option>
+                        {% for loc in locations %}
+                        <option value="{{ loc.id }}" {% if loc.id|stringformat:"s" == selected_lokasi_id %}selected{% endif %}>
+                            {{ loc.name }} &middot; {{ loc.city }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {% else %}
+                    <p class="rounded-lg bg-[#f4f6f5] px-3.5 py-3 text-sm text-[#557a5b]">
+                        Belum ada lokasi mitra aktif. Lihat
+                        <a href="{% url 'show_location' %}" class="font-bold text-[#2e7d32] underline">Peta Setoran</a>.
+                    </p>
+                    {% endif %}
+                </div>
             </section>
 
             <section class="flex flex-col gap-3.5">
@@ -94,7 +149,7 @@
                     {% for date in dates %}
                     <label class="date-choice group flex h-[74px] cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border border-[#dce7de] bg-white has-[:checked]:border-[#2e7d32] has-[:checked]:bg-[#2e7d32]"
                            data-page="{{ date.page }}">
-                        <input type="radio" name="date" value="{{ date.iso }}" class="sr-only"
+                        <input type="radio" name="tanggal" value="{{ date.iso }}" class="sr-only"
                                {% if date.iso == selected_date %}checked{% endif %}
                                data-full-label="{{ date.full_label }}">
                         <span class="text-[11px] text-[#557a5b] group-has-[:checked]:text-[#e8f5e9]">{{ date.day_abbr }}</span>
@@ -109,7 +164,7 @@
                 <div class="flex flex-col gap-3 sm:flex-row">
                     {% for session in sessions %}
                     <label class="session-card flex flex-1 cursor-pointer items-center gap-3 rounded-xl border border-[#dce7de] p-4 has-[:checked]:border-[#2e7d32] has-[:checked]:bg-[#e8f5e9] has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-40 has-[:disabled]:pointer-events-none">
-                        <input type="radio" name="session" value="{{ session.value }}" class="sr-only"
+                        <input type="radio" name="sesi" value="{{ session.value }}" class="sr-only"
                                {% if session.value == selected_session %}checked{% endif %}
                                data-summary-label="{{ session.name }} &middot; {{ session.time }}">
                         <img src="{% static session.icon %}" alt="" class="size-6 shrink-0">
@@ -117,6 +172,7 @@
                             <span class="text-sm font-extrabold text-[#1a2e1c]">{{ session.name }}</span>
                             <span class="text-xs text-[#557a5b]">{{ session.time }}</span>
                         </span>
+                        <span class="ml-auto shrink-0 text-[11px] font-bold text-[#557a5b]" data-slot-label="{{ session.value }}"></span>
                     </label>
                     {% endfor %}
                 </div>
@@ -124,17 +180,29 @@
 
             <section class="flex flex-col gap-4 sm:flex-row">
                 <div class="flex flex-1 flex-col gap-1.5">
-                    <label for="id_contact" class="text-[13px] font-bold text-[#1a2e1c]">Kontak penerima</label>
-                    <input type="text" name="contact" id="id_contact" required
-                           value="{{ contact_default }}"
+                    <label for="id_nama_penerima" class="text-[13px] font-bold text-[#1a2e1c]">Nama penerima</label>
+                    <input type="text" name="nama_penerima" id="id_nama_penerima" required
+                           value="{{ nama_penerima_value }}"
+                           placeholder="{% if contact_placeholder_name %}cth. {{ contact_placeholder_name }}{% else %}Nama lengkap{% endif %}"
                            class="h-11 w-full rounded-lg border border-[#dce7de] bg-white px-3.5 text-sm text-[#1a2e1c] focus:border-[#2e7d32] focus:outline-2 focus:outline-[#2e7d32]">
                 </div>
                 <div class="flex flex-1 flex-col gap-1.5">
-                    <label for="id_notes" class="text-[13px] font-bold text-[#1a2e1c]">Catatan kurir</label>
-                    <input type="text" name="notes" id="id_notes"
-                           value="{{ notes_default }}"
+                    <label for="id_nomor_hp" class="text-[13px] font-bold text-[#1a2e1c]">Nomor HP</label>
+                    <input type="tel" name="nomor_hp" id="id_nomor_hp" required
+                           inputmode="tel" pattern="(\+62|0)8[0-9]{7,11}"
+                           title="Contoh: 08123456789 atau +628123456789"
+                           value="{{ nomor_hp_value }}"
+                           placeholder="08xxxxxxxxxx"
                            class="h-11 w-full rounded-lg border border-[#dce7de] bg-white px-3.5 text-sm text-[#1a2e1c] focus:border-[#2e7d32] focus:outline-2 focus:outline-[#2e7d32]">
                 </div>
+            </section>
+
+            <section class="flex flex-col gap-1.5">
+                <label for="id_notes" class="text-[13px] font-bold text-[#1a2e1c]">Catatan kurir</label>
+                <input type="text" name="notes" id="id_notes"
+                       value="{{ notes_value }}"
+                       placeholder="Catatan untuk kurir (opsional)"
+                       class="h-11 w-full rounded-lg border border-[#dce7de] bg-white px-3.5 text-sm text-[#1a2e1c] focus:border-[#2e7d32] focus:outline-2 focus:outline-[#2e7d32]">
             </section>
 
             <section class="flex items-center gap-2.5 rounded-lg bg-[#eaf2fb] p-3">
@@ -156,33 +224,31 @@
                 <span class="rounded-full bg-[#f4f6f5] px-2.5 py-1.5 text-xs font-bold text-[#557a5b]">Draf</span>
             </div>
 
-            <img src="{% static 'img/schedule/item-placeholder.jpg' %}" alt=""
-                 class="h-[150px] w-full rounded-xl object-cover">
+            <div id="summary-item-badge" aria-hidden="true"
+                 class="flex h-[150px] w-full items-center justify-center rounded-xl text-5xl font-extrabold bg-[#f4f6f5] text-[#a9bdac]">
+                ?
+            </div>
 
             <div class="flex flex-col gap-1.5">
-                <p id="summary-item-name" class="text-[15px] font-extrabold text-[#1a2e1c]">
-                    {% if items %}{{ items.0.nama_barang }}{% else %}Belum ada barang{% endif %}
-                </p>
+                <p id="summary-item-name" class="text-[15px] font-extrabold text-[#1a2e1c]">Belum ada barang</p>
                 <div class="flex gap-2">
-                    <span id="summary-item-kategori" class="rounded-full bg-[#e7f6ee] px-2.5 py-1.5 text-xs font-bold text-[#237b4b]">
-                        {% if items %}{{ items.0.get_kategori_penanganan_display }}{% endif %}
-                    </span>
-                    <span id="summary-item-jenis" class="rounded-full bg-[#f4f6f5] px-2.5 py-1.5 text-xs font-bold text-[#557a5b]">
-                        {% if items %}{{ items.0.jenis_barang }}{% endif %}
-                    </span>
+                    <span id="summary-item-kategori" class="rounded-full bg-[#e7f6ee] px-2.5 py-1.5 text-xs font-bold text-[#237b4b]"></span>
+                    <span id="summary-item-jenis" class="rounded-full bg-[#f4f6f5] px-2.5 py-1.5 text-xs font-bold text-[#557a5b]"></span>
                 </div>
             </div>
 
             <dl class="flex flex-col gap-2 text-xs">
                 <div class="flex items-start justify-between gap-3">
-                    <dt class="text-[#557a5b]">Kondisi</dt>
-                    <dd id="summary-item-kondisi" class="w-[220px] text-right font-bold text-[#1a2e1c]">
-                        {% if items %}{{ items.0.kondisi_barang }}{% endif %}
-                    </dd>
+                    <dt id="summary-kondisi-label" class="text-[#557a5b]">Kondisi</dt>
+                    <dd id="summary-item-kondisi" class="w-[220px] text-right font-bold text-[#1a2e1c]"></dd>
                 </div>
                 <div class="flex items-start justify-between gap-3">
                     <dt class="text-[#557a5b]">Metode</dt>
                     <dd id="summary-method" class="w-[220px] text-right font-bold text-[#1a2e1c]">{{ methods.0.summary_label }}</dd>
+                </div>
+                <div class="flex items-start justify-between gap-3">
+                    <dt class="text-[#557a5b]">Lokasi</dt>
+                    <dd id="summary-lokasi" class="w-[220px] text-right font-bold text-[#1a2e1c]">—</dd>
                 </div>
                 <div class="flex items-start justify-between gap-3">
                     <dt class="text-[#557a5b]">Tanggal</dt>
@@ -196,13 +262,19 @@
 
             <div class="h-px w-full bg-[#dce7de]"></div>
 
-            <button type="submit"
-                    class="flex h-11 w-full cursor-pointer items-center justify-center rounded-lg bg-[#2e7d32] px-[18px] text-sm font-bold text-white transition hover:bg-[#1f5a23] active:scale-[0.98]">
+            <button type="submit" id="submit-btn" {% if not items %}disabled{% endif %}
+                    class="flex h-11 w-full items-center justify-center rounded-lg bg-[#2e7d32] px-[18px] text-sm font-bold text-white transition hover:bg-[#1f5a23] active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[#a9bdac] disabled:hover:bg-[#a9bdac] disabled:active:scale-100">
                 Konfirmasi jadwal
             </button>
+            {% if items %}
             <p class="text-center text-[11px] leading-relaxed text-[#557a5b]">
-                Bisa diubah hingga 12 jam sebelum sesi tanpa biaya.
+                Bisa dibatalkan hingga 12 jam sebelum sesi lewat halaman riwayat jadwal.
             </p>
+            {% else %}
+            <p class="text-center text-[11px] leading-relaxed text-[#b42318]">
+                Belum ada barang untuk dijadwalkan.
+            </p>
+            {% endif %}
         </aside>
         {{ availability|json_script:"availability-data" }}
     </form>
@@ -218,20 +290,131 @@
     const summaryItemKategori = document.getElementById('summary-item-kategori');
     const summaryItemJenis = document.getElementById('summary-item-jenis');
     const summaryItemKondisi = document.getElementById('summary-item-kondisi');
+    const summaryKondisiLabel = document.getElementById('summary-kondisi-label');
+    const summaryItemBadge = document.getElementById('summary-item-badge');
+    const summaryLokasi = document.getElementById('summary-lokasi');
+    const namaInput = document.getElementById('id_nama_penerima');
+    const nomorHpInput = document.getElementById('id_nomor_hp');
+    const methodDetailKurir = document.getElementById('method-detail-kurir');
+    const methodDetailTitik = document.getElementById('method-detail-titik');
+    const alamatInput = document.getElementById('id_alamat_penjemputan');
+    const lokasiSelect = document.getElementById('id_lokasi_mitra');
     const infoTitle = document.getElementById('info-title');
     const infoBody = document.getElementById('info-body');
+    const submitBtn = document.getElementById('submit-btn');
 
+    const CATEGORY_STYLES = {
+        recycle: { bg: '#e3f2fd', fg: '#1565c0' },
+        reduce: { bg: '#fff3e0', fg: '#ef6c00' },
+        reuse: { bg: '#e8f5e9', fg: '#2e7d32' },
+    };
+
+    // --- Kontak: strip spaces/dashes live, matching server-side normalization ---
+    if (nomorHpInput) {
+        nomorHpInput.addEventListener('input', () => {
+            const cleaned = nomorHpInput.value.replace(/[\s-]/g, '');
+            if (cleaned !== nomorHpInput.value) nomorHpInput.value = cleaned;
+        });
+    }
+
+    // --- 0. Pilih barang: multi-select summary ---
+    function updateItemSummary() {
+        const checked = Array.from(form.querySelectorAll('input[name="barang"]:checked'));
+
+        if (submitBtn && form.querySelectorAll('input[name="barang"]').length > 0) {
+            submitBtn.disabled = checked.length === 0;
+        }
+
+        if (checked.length === 0) {
+            summaryItemBadge.style.backgroundColor = '#f4f6f5';
+            summaryItemBadge.style.color = '#a9bdac';
+            summaryItemBadge.textContent = '?';
+            summaryItemName.textContent = 'Belum ada barang';
+            summaryItemKategori.textContent = '';
+            summaryItemJenis.textContent = '';
+            summaryKondisiLabel.textContent = 'Kondisi';
+            summaryItemKondisi.textContent = '';
+        } else if (checked.length === 1) {
+            const input = checked[0];
+            const style = CATEGORY_STYLES[input.dataset.kategoriSlug] || CATEGORY_STYLES.reuse;
+            summaryItemBadge.style.backgroundColor = style.bg;
+            summaryItemBadge.style.color = style.fg;
+            summaryItemBadge.textContent = (input.dataset.jenis || '?').charAt(0).toUpperCase();
+            summaryItemName.textContent = input.dataset.nama;
+            summaryItemKategori.textContent = input.dataset.kategori;
+            summaryItemJenis.textContent = input.dataset.jenis;
+            summaryKondisiLabel.textContent = 'Kondisi';
+            summaryItemKondisi.textContent = input.dataset.kondisi;
+        } else {
+            summaryItemBadge.style.backgroundColor = '#e8f5e9';
+            summaryItemBadge.style.color = '#2e7d32';
+            summaryItemBadge.textContent = String(checked.length);
+            summaryItemName.textContent = `${checked.length} barang dipilih`;
+            summaryItemKategori.textContent = '';
+            summaryItemJenis.textContent = '';
+            summaryKondisiLabel.textContent = 'Barang';
+            summaryItemKondisi.textContent = checked.map((c) => c.dataset.nama).join(', ');
+        }
+
+        if (namaInput && !namaInput.value.trim()) {
+            const owner = checked.length ? checked[checked.length - 1].dataset.owner : '';
+            namaInput.placeholder = owner ? `cth. ${owner}` : 'Nama lengkap';
+        }
+    }
+
+    // --- 1. Metode & lokasi/alamat ---
+    function currentLokasiLabel() {
+        if (!methodDetailTitik.classList.contains('hidden')) {
+            if (lokasiSelect && lokasiSelect.value) {
+                return lokasiSelect.selectedOptions[0].textContent.trim();
+            }
+            return '—';
+        }
+        return (alamatInput && alamatInput.value.trim()) || '—';
+    }
+
+    function updateMethodDetailVisibility(methodValue) {
+        const isKurir = methodValue === 'kurir';
+        methodDetailKurir.classList.toggle('hidden', !isKurir);
+        methodDetailKurir.classList.toggle('flex', isKurir);
+        methodDetailTitik.classList.toggle('hidden', isKurir);
+        methodDetailTitik.classList.toggle('flex', !isKurir);
+        if (alamatInput) alamatInput.required = isKurir;
+        if (lokasiSelect) lokasiSelect.required = !isKurir;
+        if (summaryLokasi) summaryLokasi.textContent = currentLokasiLabel();
+    }
+
+    if (alamatInput) {
+        alamatInput.addEventListener('input', () => {
+            if (summaryLokasi) summaryLokasi.textContent = currentLokasiLabel();
+        });
+    }
+    if (lokasiSelect) {
+        lokasiSelect.addEventListener('change', () => {
+            if (summaryLokasi) summaryLokasi.textContent = currentLokasiLabel();
+        });
+    }
+
+    // --- 3. Sesi: ketersediaan slot ---
     const availability = JSON.parse(document.getElementById('availability-data').textContent);
-    const sessionInputs = Array.from(form.querySelectorAll('input[name="session"]'));
+    const sessionInputs = Array.from(form.querySelectorAll('input[name="sesi"]'));
 
     function updateSessionAvailability() {
-        const selectedDate = form.querySelector('input[name="date"]:checked');
+        const selectedDate = form.querySelector('input[name="tanggal"]:checked');
         if (!selectedDate) return;
         const remainingBySession = availability[selectedDate.value] || {};
         sessionInputs.forEach((input) => {
             const remaining = remainingBySession[input.value] ?? 0;
             const isFull = remaining <= 0;
             input.disabled = isFull;
+
+            const label = input.closest('label').querySelector(`[data-slot-label="${input.value}"]`);
+            if (label) {
+                label.textContent = isFull ? 'Penuh' : `${remaining} slot tersisa`;
+                label.classList.toggle('text-[#b42318]', isFull);
+                label.classList.toggle('text-[#557a5b]', !isFull);
+            }
+
             if (isFull && input.checked) {
                 input.checked = false;
                 const firstAvailable = sessionInputs.find((s) => !s.disabled);
@@ -245,24 +428,24 @@
 
     form.addEventListener('change', (event) => {
         const input = event.target;
-        if (input.name === 'method') {
+        if (input.name === 'metode') {
             summaryMethod.textContent = input.dataset.summaryLabel;
             infoTitle.textContent = input.dataset.infoTitle;
             infoBody.textContent = input.dataset.infoBody;
-        } else if (input.name === 'date') {
+            updateMethodDetailVisibility(input.value);
+        } else if (input.name === 'tanggal') {
             summaryDate.textContent = input.dataset.fullLabel;
             updateSessionAvailability();
-        } else if (input.name === 'session') {
+        } else if (input.name === 'sesi') {
             summarySession.textContent = input.dataset.summaryLabel;
         } else if (input.name === 'barang') {
-            summaryItemName.textContent = input.dataset.nama;
-            summaryItemKategori.textContent = input.dataset.kategori;
-            summaryItemJenis.textContent = input.dataset.jenis;
-            summaryItemKondisi.textContent = input.dataset.kondisi;
+            updateItemSummary();
         }
     });
 
+    updateItemSummary();
     updateSessionAvailability();
+    updateMethodDetailVisibility(form.querySelector('input[name="metode"]:checked')?.value);
 
     // Date pager: show only the active page of 6 date cards (30 days total).
     const dateLabels = Array.from(document.querySelectorAll('#date-track label.date-choice'));

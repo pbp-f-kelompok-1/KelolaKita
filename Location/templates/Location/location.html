@@ -1,74 +1,122 @@
 {% extends 'base.html' %}
 {% block content %}
-<main class="finder">
+<main class="grid grid-cols-1 font-sans text-[#17261b] md:h-[630px] md:grid-cols-[30%_70%] md:grid-rows-1">
 
-    <aside class="panel">
-        <h1 class="panel__title">Temukan titik setoran</h1>
-        <p class="panel__subtitle">Cari mitra berdasarkan lokasi, jenis, barang, dan layanan</p>
+    <aside class="flex min-h-0 flex-col overflow-y-auto border-t border-[#dfe5e0] px-5 py-6 md:border-t-0 md:border-r md:border-dashed md:border-r-[#4a90d9]">
+        <h1 class="mb-1.5 text-[1.4rem] font-extrabold tracking-[-0.02em] text-[#1a2e1c]">Temukan titik setoran</h1>
+        <p class="mb-[18px] text-[0.7rem] leading-snug text-[#557A5B]">Cari mitra berdasarkan lokasi, jenis, barang, dan layanan</p>
 
-        <form class="search-box" id="search-form" role="search">
-            <svg class="search-box__icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-                <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
-            </svg>
-            <input type="search" id="search-input" class="search-input"
-                placeholder="Contoh: Tebet, Jakarta Selatan" autocomplete="off">
+        <form class="flex items-center gap-2" id="search-form" role="search">
+            <div class="relative flex-1">
+                <svg class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#2e7d32]"
+                     viewBox="0 0 24 24" width="18" height="18" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                    <circle cx="11" cy="11" r="7"/>
+                    <path d="M20 20l-3.5-3.5"/>
+                </svg>
+                <input
+                    type="search"
+                    id="search-input"
+                    autocomplete="off"
+                    placeholder="Cari lokasi terdaftar atau area, contoh: Fasilkom UI"
+                    class="w-full rounded-[10px] border border-[#dfe5e0] bg-white py-3 pl-[42px] pr-3.5 text-[0.9rem] text-[#17261b] focus:border-[#2e7d32] focus:outline-2 focus:outline-[#2e7d32]"
+                >
+            </div>
+            <button type="submit"
+                    class="cursor-pointer rounded-[10px] bg-[#2e7d32] px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-[#1f5a23]">
+                Cari
+            </button>
         </form>
-        <a href="{% url 'create_location' %}" class="sort-btn">Tambah lokasi</a>
+        <p id="search-status" role="status" aria-live="polite" class="mt-2 min-h-4 text-xs text-[#5f6f64]"></p>
 
-        <ul class="loc-list" id="loc-list">
+        {% if request.user.is_authenticated and request.user.is_staff %}
+        <a href="{% url 'create_location' %}"
+           class="mb-3 mt-1 self-start text-sm font-bold text-[#2e7d32] no-underline hover:text-[#1f5a23]">
+            + Tambah lokasi
+        </a>
+        {% endif %}
+
+        <ul class="flex flex-col gap-2.5" id="loc-list">
             {% for loc in location_list %}
-            <li class="loc-card" data-id="{{ loc.id }}">
-                <div class="loc-card__top">
-                    <strong>{{ loc.name }}</strong>
-                    <span class="badge-dist">-</span>
+            <li data-id="{{ loc.id }}"
+                class="loc-card flex cursor-pointer flex-col gap-1 rounded-xl border border-[#dfe5e0] bg-white px-3.5 py-3 transition-colors hover:border-[#81c784] data-[selected]:border-[#2e7d32] data-[selected]:bg-[#e8f5e9]">
+
+                <div class="flex items-start justify-between gap-2">
+                    <strong class="text-[0.95rem]">{{ loc.name }}</strong>
+                    <span class="badge-dist shrink-0 rounded-full bg-[#eef2ee] px-2.5 py-0.5 text-[0.72rem] font-bold">-</span>
                 </div>
                 <span class="loc-card__type">{{ loc.description }}</span>
                 <span class="loc-card__status">{{ loc.open_hours }}</span>
                 <span class="loc-card__meta">{{ loc.city }}</span>
-                <span>{{ loc.category }}</span>
+                <span>{{ loc.get_category_display }}</span>
 
+                {% if request.user.is_authenticated and request.user.is_staff %}
                 <button type="button" class="button-danger"
                         popovertarget="delete-location-{{ loc.id }}">Hapus</button>
 
-                <div id="delete-location-{{ loc.id }}" class="delete-modal" popover="auto">
-                    <h2>Hapus lokasi?</h2>
-                    <p>Yakin ingin menghapus <strong>{{ loc.name }}</strong>?</p>
-                    <div class="delete-modal__actions">
+                <div class="mt-1.5 flex items-center gap-2">
+                    <a href="{% url 'update_location' loc.id %}"
+                       class="button-edit inline-flex cursor-pointer items-center rounded-lg border border-[#cfe3d1] bg-white px-2.5 py-1 text-xs font-bold text-[#2e7d32] no-underline transition-colors hover:bg-[#e8f5e9]">
+                        Update
+                    </a>
+
+                    <button type="button" popovertarget="delete-location-{{ loc.id }}"
+                            class="button-danger cursor-pointer rounded-lg border border-[#f1c0bb] bg-white px-2.5 py-1 text-xs font-bold text-[#b42318] transition-colors hover:bg-[#fdecea]">
+                        Hapus
+                    </button>
+                </div>
+
+                <div id="delete-location-{{ loc.id }}" popover="auto"
+                     class="delete-modal m-auto w-[min(90vw,400px)] rounded-xl border border-[#dfe5e0] p-5 backdrop:bg-black/50">
+                    <h2 class="text-lg font-bold">Hapus lokasi?</h2>
+                    <p class="mt-2 text-sm">Yakin ingin menghapus <strong>{{ loc.name }}</strong>?</p>
+                    <div class="mt-4 flex justify-end gap-2.5">
                         <button type="button"
                                 popovertarget="delete-location-{{ loc.id }}"
-                                popovertargetaction="hide">Batal</button>
+                                popovertargetaction="hide"
+                                class="cursor-pointer rounded-lg border border-[#dfe5e0] bg-white px-3 py-1.5 text-sm font-semibold hover:bg-[#e8f5e9]">
+                            Batal
+                        </button>
                         <form method="post" action="{% url 'delete_location' loc.id %}">
                             {% csrf_token %}
-                            <button type="submit" class="button-danger">Ya, hapus</button>
+                            <button type="submit"
+                                    class="button-danger cursor-pointer rounded-lg border border-[#b42318] bg-[#b42318] px-3 py-1.5 text-sm font-bold text-white hover:bg-[#8f1b12]">
+                                Ya, hapus
+                            </button>
                         </form>
                     </div>
                 </div>
+                {% endif %}
             </li>
+            {% empty %}
+            <li class="empty-note">Belum ada lokasi aktif.</li>
             {% endfor %}
         </ul>
-        <p class="empty-note" id="empty-note" hidden>Tidak ada lokasi yang cocok. Coba kata kunci lain.</p>
+
+        <p id="empty-note" hidden class="mt-3.5 rounded-[10px] bg-[#f3f5f3] px-3.5 py-3 text-[0.78rem] font-bold text-[#5f6f64]">
+            Tidak ditemukan lokasi.
+        </p>
     </aside>
 
-    <section class="map-wrap">
-        <div id="map"></div>
+    <section class="relative order-first h-[45vh] min-w-0 md:order-none md:h-auto">
+        <div id="map" class="absolute inset-0 z-0"></div>
 
-        <div class="detail-card" id="detail-card" hidden>
-            <div class="detail-card__head">
-                <strong id="dc-name"></strong>
-                <span class="badge-open" id="dc-hours"></span>
+        <div id="detail-card" hidden
+             class="absolute bottom-6 left-1/2 z-[1000] w-[min(340px,calc(100%_-_32px))] -translate-x-1/2 rounded-2xl bg-white p-4 shadow-[0_10px_30px_rgba(0,0,0,0.18)]">
+            <div class="flex items-center justify-between gap-3">
+                <strong id="dc-name" class="text-[1.05rem] leading-snug"></strong>
+                <span id="dc-hours"
+                      class="shrink-0 whitespace-nowrap rounded-full bg-[#e8f5e9] px-2.5 py-0.5 text-[0.72rem] font-bold text-[#2e7d32] data-[closed]:bg-[#fdecea] data-[closed]:text-[#b42318]"></span>
             </div>
             <p id="dc-address"></p>
-            <div class="detail-card__actions">
-                <a class="btn btn--ghost" id="dc-detail" href="#">Lihat detail</a>
-                <button class="btn btn--primary" id="dc-pick" type="button">Pilih lokasi</button>
-            </div>
+            <a class="btn btn--ghost" id="dc-detail" href="#">Lihat detail</a>
         </div>
     </section>
 
 </main>
 
 {{ locations|json_script:"locations_json" }}
+
 <script>
     const map = L.map('map').setView([-6.4025, 106.7942], 15);
 
@@ -84,29 +132,37 @@
 
     const NIL_UUID = '00000000-0000-0000-0000-000000000000';
     const detailUrlTpl = "{% url 'location_detail' '00000000-0000-0000-0000-000000000000' %}";
-    
+
     const dc = {
         card:    document.getElementById('detail-card'),
         name:    document.getElementById('dc-name'),
         hours:   document.getElementById('dc-hours'),
         address: document.getElementById('dc-address'),
         detail:  document.getElementById('dc-detail'),
-        pick:    document.getElementById('dc-pick'),
     };
 
     const pinIcon = L.divIcon({
-        className: 'pin-wrap',
-        html: '<div class="pin-marker"></div>',
+        className: 'flex items-center justify-center',
+        html: '<div class="pin-marker size-5 rounded-full border-[3px] border-white bg-[#2e7d32] shadow-[0_2px_8px_rgba(0,0,0,0.3)] data-[selected]:size-[25px] data-[selected]:bg-[#f9a825]"></div>',
         iconSize: [40, 40],
         iconAnchor: [20, 20],
+    });
+
+    const searchPinIcon = L.divIcon({
+        className: 'flex items-center justify-center',
+        html: '<div class="size-6 rounded-full border-[3px] border-white bg-[#2563eb] shadow-[0_2px_6px_rgba(0,0,0,0.35)]"></div>',
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
+        popupAnchor: [0, -12]
     });
 
     function setSelectedStyle(id, on) {
         if (id === null) return;
         const el = markers[id] && markers[id].getElement();
-        if (el) el.querySelector('.pin-marker').classList.toggle('is-selected', on);
+        const pin = el && el.querySelector('.pin-marker');
+        if (pin) pin.toggleAttribute('data-selected', on);
         const card = document.querySelector(`.loc-card[data-id="${id}"]`);
-        if (card) card.classList.toggle('is-selected', on);
+        if (card) card.toggleAttribute('data-selected', on);
     }
 
     function selectLocation(id) {
@@ -119,7 +175,7 @@
 
         dc.name.textContent = loc.name;
         dc.hours.textContent = loc.open_hours;
-        dc.hours.classList.toggle('is-closed', /tutup/i.test(loc.open_hours));
+        dc.hours.toggleAttribute('data-closed', /tutup/i.test(loc.open_hours));
         dc.address.textContent = `${loc.address} · ${loc.city}`;
         dc.detail.href = detailUrlTpl.replace(NIL_UUID, id);
         dc.card.hidden = false;
@@ -136,6 +192,18 @@
         dc.card.hidden = true;
     }
 
+    function updateDistances(originLatLng) {
+        document.querySelectorAll('.loc-card').forEach(card => {
+            const loc = byId[card.dataset.id];
+            if (!loc) return;
+            const m = map.distance(originLatLng, [loc.latitude, loc.longitude]);
+            const badge = card.querySelector('.badge-dist');
+            if (badge) {
+                badge.textContent = m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`;
+            }
+        });
+    }
+
     locations.forEach(loc => {
         byId[loc.id] = loc;
         markers[loc.id] = L.marker([loc.latitude, loc.longitude], { icon: pinIcon })
@@ -147,38 +215,193 @@
     });
 
     document.getElementById('loc-list').addEventListener('click', e => {
-        if (e.target.closest('.button-danger, .delete-modal')) return;
+        if (e.target.closest('.button-danger, .button-edit, .delete-modal')) return;
         const card = e.target.closest('.loc-card');
         if (card) selectLocation(card.dataset.id);
     });
 
     map.on('click', clearSelection);
 
-    dc.pick.addEventListener('click', () => {
-        if (selectedId === null) return;
-        console.log('Lokasi dipilih:', byId[selectedId].name);
+    document.getElementById('search-input').addEventListener('input', event => {
+        const query = event.target.value.toLowerCase().trim();
+        let visibleCount = 0;
+        const visibleIds = new Set();
+        document.querySelectorAll('.loc-card').forEach(card => {
+            const match = card.textContent.toLowerCase().includes(query);
+            card.hidden = !match;
+            if (match) {
+                visibleCount += 1;
+                visibleIds.add(card.dataset.id);
+            }
+        });
+        Object.entries(markers).forEach(([id, marker]) => {
+            if (visibleIds.has(id) && !map.hasLayer(marker)) marker.addTo(map);
+            if (!visibleIds.has(id) && map.hasLayer(marker)) map.removeLayer(marker);
+        });
+        if (selectedId && !visibleIds.has(selectedId)) clearSelection();
+        document.getElementById('empty-note').hidden = visibleCount > 0;
     });
 
     let userMarker = null;
 
     map.on('locationfound', e => {
         if (userMarker) map.removeLayer(userMarker);
+
         userMarker = L.circleMarker(e.latlng, {
-            radius: 8, color: '#fff', weight: 3,
-            fillColor: '#2E7D32', fillOpacity: 1
+            radius: 9,
+            color: '#ffffff',
+            weight: 3,
+            fillColor: '#2563eb',
+            fillOpacity: 1
         }).addTo(map);
+
+        updateDistances(e.latlng);
+    });
+
+    map.on('locationerror', e => console.warn('Lokasi pengguna tidak ditemukan: ' + e.message));
+
+    map.locate({ enableHighAccuracy: true });
+
+    const searchForm   = document.getElementById('search-form');
+    const searchInput  = document.getElementById('search-input');
+    const searchStatus = document.getElementById('search-status');
+    const emptyNote    = document.getElementById('empty-note');
+
+    let searchMarker = null;
+    let lastSearchTime = 0;
+
+    function normalize(s) {
+        return String(s || '').toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function matchLocation(loc, query) {
+        const words = normalize(query).split(/\s+/).filter(Boolean);
+        if (!words.length) return true;
+        const text = normalize([loc.name, loc.description, loc.address, loc.city, loc.category].join(' '));
+        return words.every(w => text.includes(w));
+    }
+
+    function applyFilter(query) {
+        const matched = [];
 
         document.querySelectorAll('.loc-card').forEach(card => {
             const loc = byId[card.dataset.id];
             if (!loc) return;
-            const m = map.distance(e.latlng, [loc.latitude, loc.longitude]);
-            card.querySelector('.badge-dist').textContent =
-                m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`;
+
+            const ok = matchLocation(loc, query);
+            card.hidden = !ok;
+
+            if (ok) {
+                matched.push(loc);
+                markers[loc.id].addTo(map);
+            } else {
+                map.removeLayer(markers[loc.id]);
+                if (selectedId === loc.id) clearSelection();
+            }
         });
+
+        emptyNote.hidden = matched.length > 0 || !query.trim();
+        return matched;
+    }
+
+    function showMatches(matched) {
+        if (matched.length === 1) {
+            selectLocation(matched[0].id);
+            return;
+        }
+        const bounds = L.latLngBounds(matched.map(l => [l.latitude, l.longitude]));
+        map.fitBounds(bounds.pad(0.3), { maxZoom: 16 });
+    }
+
+    searchInput.addEventListener('input', () => {
+        const q = searchInput.value.trim();
+        applyFilter(q);
+
+        if (!q && searchMarker) {
+            map.removeLayer(searchMarker);
+            searchMarker = null;
+        }
     });
 
-    map.on('locationerror', e => console.warn('Lokasi tidak ditemukan: ' + e.message));
+    async function searchArea(query) {
+        searchStatus.textContent = 'Mencari area...';
 
-    map.locate({ enableHighAccuracy: true });
-    </script>
+        try {
+            const params = new URLSearchParams({ q: query });
+            const geocodeUrl = "{% url 'Location:geocode_location' %}";
+            const response = await fetch(`${geocodeUrl}?${params.toString()}`, {
+                headers: { "Accept": "application/json" }
+            });
+
+            const contentType = response.headers.get("content-type") || "";
+
+            if (!response.ok || !contentType.includes("application/json")) {
+                throw new Error(`Koneksi server gagal (HTTP ${response.status}).`);
+            }
+
+            const data = await response.json();
+            const place = data.results && data.results[0];
+
+            if (!place) {
+                searchStatus.textContent = 'Lokasi tidak ditemukan.';
+                return;
+            }
+
+            const lat = Number(place.lat);
+            const lon = Number(place.lon);
+            if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+                throw new Error('Koordinat lokasi tidak valid.');
+            }
+
+            const target = L.latLng(lat, lon);
+            map.flyTo(target, 16, { duration: 0.8 });
+
+            if (searchMarker) map.removeLayer(searchMarker);
+
+            const popup = document.createElement('div');
+            popup.textContent = place.display_name;
+
+            searchMarker = L.marker(target, { icon: searchPinIcon })
+                .addTo(map)
+                .bindPopup(popup)
+                .openPopup();
+
+            updateDistances(target);
+            applyFilter('');
+            searchStatus.textContent = 'Menampilkan area hasil pencarian.';
+        } catch (error) {
+            console.error('Location search error:', error);
+            searchStatus.textContent = error.message || 'Pencarian gagal. Coba lagi nanti.';
+        }
+    }
+
+    searchForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        const query = searchInput.value.trim();
+        if (!query) {
+            applyFilter('');
+            searchStatus.textContent = 'Masukkan nama lokasi terlebih dahulu.';
+            return;
+        }
+
+        const matched = applyFilter(query);
+
+        if (matched.length > 0) {
+            searchStatus.textContent = `${matched.length} lokasi terdaftar ditemukan.`;
+            showMatches(matched);
+            return;
+        }
+
+        const now = Date.now();
+        if (now - lastSearchTime < 1000) {
+            searchStatus.textContent = 'Tunggu sebentar sebelum mencari lagi.';
+            return;
+        }
+        lastSearchTime = now;
+
+        searchArea(query);
+    });
+</script>
 {% endblock content %}
