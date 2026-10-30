@@ -124,9 +124,36 @@ class PenjadwalanModelTests(TestCase):
         self.assertIn("Kardus", str(booking))
 
 
+class ScheduleAuthenticationTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="budi", password="pass12345")
+
+    def test_show_schedule_redirects_anonymous_user_to_login(self):
+        response = self.client.get(reverse("show_schedule"))
+        self.assertRedirects(
+            response,
+            f"{reverse('accounts:login')}?next={reverse('show_schedule')}",
+        )
+
+    def test_schedule_list_redirects_anonymous_user_to_login(self):
+        response = self.client.get(reverse("schedule_list"))
+        self.assertRedirects(
+            response,
+            f"{reverse('accounts:login')}?next={reverse('schedule_list')}",
+        )
+
+    def test_cancel_schedule_redirects_anonymous_user_to_login(self):
+        response = self.client.post(reverse("cancel_schedule", args=[1]))
+        self.assertRedirects(
+            response,
+            f"{reverse('accounts:login')}?next={reverse('cancel_schedule', args=[1])}",
+        )
+
+
 class ShowScheduleGetTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="budi", password="pass12345")
+        self.client.force_login(self.user)
         self.ready_item = Pemeriksaan.objects.create(
             pengguna=self.user,
             nama_barang="Botol plastik",
@@ -170,6 +197,7 @@ class ShowScheduleGetTests(TestCase):
 class ShowSchedulePostTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="budi", password="pass12345")
+        self.client.force_login(self.user)
         self.item = Pemeriksaan.objects.create(
             pengguna=self.user,
             nama_barang="Botol plastik",
@@ -289,6 +317,7 @@ class ShowSchedulePostTests(TestCase):
 class ScheduleListViewTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="budi", password="pass12345")
+        self.client.force_login(self.user)
 
     def _create_booking(self, tanggal, sesi):
         item = Pemeriksaan.objects.create(
@@ -343,6 +372,7 @@ class ScheduleListViewTests(TestCase):
 class CancelScheduleViewTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="budi", password="pass12345")
+        self.client.force_login(self.user)
         self.item = Pemeriksaan.objects.create(
             pengguna=self.user,
             nama_barang="Botol plastik",

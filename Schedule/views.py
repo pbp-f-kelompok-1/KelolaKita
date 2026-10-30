@@ -1,6 +1,7 @@
 import datetime
 
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -121,6 +122,7 @@ def _session_datetime(tanggal, sesi, edge="start"):
     return timezone.make_aware(datetime.datetime.combine(tanggal, clock))
 
 
+@login_required
 def show_schedule(request):
     """Halaman penjadwalan penyetoran/penjemputan barang (modul Penyetoran & Penjemputan).
 
@@ -195,6 +197,7 @@ def show_schedule(request):
     return render(request, "Schedule/schedule.html", context)
 
 
+@login_required
 def schedule_list(request):
     """Riwayat jadwal penyetoran yang sudah dikonfirmasi, dengan opsi pembatalan."""
     now = timezone.now()
@@ -229,6 +232,7 @@ def schedule_list(request):
     return render(request, "Schedule/schedule_list.html", context)
 
 
+@login_required
 def cancel_schedule(request, pk):
     booking = get_object_or_404(Penjadwalan, pk=pk)
     if request.method == "POST":
