@@ -10,7 +10,7 @@ from django.utils import timezone
 
 from Location.models import Location
 from Schedule.models import Pemeriksaan, Penjadwalan, phone_validator
-from Schedule.views import SESSION_QUOTAS
+from Schedule.views import SESSION_QUOTAS, _is_session_passed
 
 
 def _date_offset(days):
@@ -123,6 +123,25 @@ class PenjadwalanModelTests(TestCase):
         ))
         booking.barang.set([item])
         self.assertIn("Kardus", str(booking))
+
+
+class IsSessionPassedTests(TestCase):
+    def test_future_date_is_never_passed(self):
+        future_date = datetime.date.today() + datetime.timedelta(days=1)
+        self.assertFalse(_is_session_passed(future_date, "pagi"))
+
+    def test_today_before_session_end_is_not_passed(self):
+        today = datetime.date.today()
+        mocked_now = timezone.make_aware(datetime.datetime.combine(today, datetime.time(9, 0)))
+        with patch("django.utils.timezone.now", return_value=mocked_now):
+            self.assertFalse(_is_session_passed(today, "pagi"))
+
+    def test_today_after_session_end_is_passed(self):
+        today = datetime.date.today()
+        mocked_now = timezone.make_aware(datetime.datetime.combine(today, datetime.time(12, 0)))
+        with patch("django.utils.timezone.now", return_value=mocked_now):
+            self.assertTrue(_is_session_passed(today, "pagi"))
+            self.assertFalse(_is_session_passed(today, "siang"))
 
 
 class ScheduleAuthenticationTests(TestCase):
@@ -312,19 +331,21 @@ class ShowSchedulePostTests(TestCase):
 
     def test_full_session_is_rejected(self):
         date_iso = _date_offset(3)
-        Penjadwalan.objects.create(
-            metode=Penjadwalan.Metode.titik,
-            tanggal=date_iso,
-            sesi=Penjadwalan.Sesi.siang,
-            nama_penerima="Lain",
-            nomor_hp="08129999999",
-            lokasi_mitra=self.location,
-        )
+        for _ in range(SESSION_QUOTAS["siang"]):
+            Penjadwalan.objects.create(
+                metode=Penjadwalan.Metode.titik,
+                tanggal=date_iso,
+                sesi=Penjadwalan.Sesi.siang,
+                nama_penerima="Lain",
+                nomor_hp="08129999999",
+                lokasi_mitra=self.location,
+            )
+        existing_count = Penjadwalan.objects.count()
 
         payload = self._valid_kurir_payload(tanggal=date_iso, sesi="siang")
         response = self.client.post(reverse("show_schedule"), payload)
 
-        self.assertEqual(Penjadwalan.objects.count(), 1)
+        self.assertEqual(Penjadwalan.objects.count(), existing_count)
         messages = list(response.context["messages"])
         self.assertTrue(any("penuh" in str(m) for m in messages))
 
@@ -355,14 +376,16 @@ class ShowSchedulePostTests(TestCase):
 
     def test_ajax_full_session_returns_json_error_without_creating(self):
         date_iso = _date_offset(3)
-        Penjadwalan.objects.create(
-            metode=Penjadwalan.Metode.titik,
-            tanggal=date_iso,
-            sesi=Penjadwalan.Sesi.siang,
-            nama_penerima="Lain",
-            nomor_hp="08129999999",
-            lokasi_mitra=self.location,
-        )
+        for _ in range(SESSION_QUOTAS["siang"]):
+            Penjadwalan.objects.create(
+                metode=Penjadwalan.Metode.titik,
+                tanggal=date_iso,
+                sesi=Penjadwalan.Sesi.siang,
+                nama_penerima="Lain",
+                nomor_hp="08129999999",
+                lokasi_mitra=self.location,
+            )
+        existing_count = Penjadwalan.objects.count()
 
         response = self.client.post(
             reverse("show_schedule"),
@@ -373,6 +396,42 @@ class ShowSchedulePostTests(TestCase):
         payload = response.json()
         self.assertFalse(payload["success"])
         self.assertIn("penuh", payload["message"])
+        self.assertEqual(Penjadwalan.objects.count(), existing_count)
+
+    def test_session_already_passed_today_is_rejected(self):
+        today = datetime.date.today()
+        mocked_now = timezone.make_aware(datetime.datetime.combine(today, datetime.time(12, 0)))
+        payload = self._valid_kurir_payload(tanggal=today.isoformat(), sesi="pagi")
+        with patch("django.utils.timezone.now", return_value=mocked_now):
+            response = self.client.post(reverse("show_schedule"), payload)
+
+        self.assertEqual(Penjadwalan.objects.count(), 0)
+        messages = list(response.context["messages"])
+        self.assertTrue(any("lewat" in str(m) for m in messages))
+
+    def test_ajax_session_already_passed_today_returns_json_error(self):
+        today = datetime.date.today()
+        mocked_now = timezone.make_aware(datetime.datetime.combine(today, datetime.time(12, 0)))
+        payload = self._valid_kurir_payload(tanggal=today.isoformat(), sesi="pagi")
+        with patch("django.utils.timezone.now", return_value=mocked_now):
+            response = self.client.post(
+                reverse("show_schedule"), payload, HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+            )
+
+        self.assertEqual(response.status_code, 400)
+        json_payload = response.json()
+        self.assertFalse(json_payload["success"])
+        self.assertIn("lewat", json_payload["message"])
+        self.assertEqual(Penjadwalan.objects.count(), 0)
+
+    def test_session_not_yet_passed_today_is_allowed(self):
+        today = datetime.date.today()
+        mocked_now = timezone.make_aware(datetime.datetime.combine(today, datetime.time(6, 0)))
+        payload = self._valid_kurir_payload(tanggal=today.isoformat(), sesi="pagi")
+        with patch("django.utils.timezone.now", return_value=mocked_now):
+            response = self.client.post(reverse("show_schedule"), payload)
+            self.assertRedirects(response, reverse("show_schedule"))
+
         self.assertEqual(Penjadwalan.objects.count(), 1)
 
 
@@ -710,14 +769,15 @@ class EditScheduleViewTests(TestCase):
             kategori_penanganan="recycle",
         )
         full_date = _date_offset(6)
-        Penjadwalan.objects.create(
-            metode=Penjadwalan.Metode.kurir,
-            tanggal=full_date,
-            sesi=Penjadwalan.Sesi.siang,
-            nama_penerima="Ani",
-            nomor_hp="08129999999",
-            alamat_penjemputan="Jl. Kenanga No. 1",
-        ).barang.set([other_item])
+        for _ in range(SESSION_QUOTAS["siang"]):
+            Penjadwalan.objects.create(
+                metode=Penjadwalan.Metode.kurir,
+                tanggal=full_date,
+                sesi=Penjadwalan.Sesi.siang,
+                nama_penerima="Ani",
+                nomor_hp="08129999999",
+                alamat_penjemputan="Jl. Kenanga No. 1",
+            ).barang.set([other_item])
 
         payload = self._valid_payload(tanggal=full_date, sesi="siang")
         response = self.client.post(reverse("edit_schedule", args=[self.booking.pk]), payload)
@@ -732,3 +792,14 @@ class EditScheduleViewTests(TestCase):
         self.assertRedirects(response, reverse("schedule_list"))
         self.booking.refresh_from_db()
         self.assertEqual(self.booking.nama_penerima, "Budi Santoso")
+
+    def test_edit_rejected_when_moved_to_already_passed_session_today(self):
+        today = datetime.date.today()
+        mocked_now = timezone.make_aware(datetime.datetime.combine(today, datetime.time(12, 0)))
+        payload = self._valid_payload(tanggal=today.isoformat(), sesi="pagi")
+        with patch("django.utils.timezone.now", return_value=mocked_now):
+            response = self.client.post(reverse("edit_schedule", args=[self.booking.pk]), payload)
+
+        self.assertEqual(response.status_code, 200)
+        self.booking.refresh_from_db()
+        self.assertEqual(self.booking.nama_penerima, "Budi")

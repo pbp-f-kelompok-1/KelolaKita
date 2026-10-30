@@ -58,7 +58,7 @@ PICKUP_SESSIONS = [
     },
 ]
 
-SESSION_QUOTAS = {"pagi": 3, "siang": 1}
+SESSION_QUOTAS = {"pagi": 5, "siang": 5}
 SESSION_WINDOWS = {
     "pagi": (datetime.time(8, 0), datetime.time(11, 30)),
     "siang": (datetime.time(13, 0), datetime.time(16, 30)),
@@ -83,6 +83,26 @@ def _upcoming_dates(days=DATE_WINDOW_DAYS):
             "page": offset // DATES_PER_PAGE,
         })
     return dates
+
+
+def _is_session_passed(tanggal, sesi):
+    """True jika `tanggal`+`sesi` adalah hari ini dan jam sesinya sudah berakhir."""
+    now = timezone.localtime(timezone.now())
+    if tanggal != now.date():
+        return False
+    return now.time() >= SESSION_WINDOWS[sesi][1]
+
+
+def _passed_sessions_for_dates(dates):
+    """Status "sudah lewat" per tanggal+sesi, untuk menonaktifkan pilihan sesi di UI.
+
+    Hanya tanggal hari ini yang pernah bisa punya sesi yang sudah lewat;
+    tanggal lain di `dates` selalu di masa depan sehingga selalu `False`.
+    """
+    return {
+        d["iso"]: {sesi: _is_session_passed(datetime.date.fromisoformat(d["iso"]), sesi) for sesi in SESSION_WINDOWS}
+        for d in dates
+    }
 
 
 def _availability_for_dates(dates):
@@ -193,27 +213,34 @@ def show_schedule(request):
         if form.is_valid():
             tanggal = form.cleaned_data["tanggal"]
             sesi = form.cleaned_data["sesi"]
-            remaining = SESSION_QUOTAS[sesi] - Penjadwalan.objects.filter(
-                tanggal=tanggal, sesi=sesi, status=Penjadwalan.Status.terjadwal,
-            ).count()
-            if remaining <= 0:
-                message = "Sesi yang dipilih sudah penuh, silakan pilih sesi lain."
+            if _is_session_passed(tanggal, sesi):
+                message = "Sesi yang dipilih sudah lewat untuk hari ini, silakan pilih sesi atau tanggal lain."
                 if is_ajax:
                     return JsonResponse({"success": False, "message": message}, status=400)
                 messages.error(request, message)
             else:
-                form.save()
-                message = "Jadwal penyetoran berhasil dikonfirmasi."
-                if is_ajax:
-                    remaining_items = _approved_items(request.user)
-                    return JsonResponse({
-                        "success": True,
-                        "message": message,
-                        "items": [_serialize_item(item) for item in remaining_items],
-                        "availability": _availability_for_dates(dates),
-                    })
-                messages.success(request, message)
-                return redirect("show_schedule")
+                remaining = SESSION_QUOTAS[sesi] - Penjadwalan.objects.filter(
+                    tanggal=tanggal, sesi=sesi, status=Penjadwalan.Status.terjadwal,
+                ).count()
+                if remaining <= 0:
+                    message = "Sesi yang dipilih sudah penuh, silakan pilih sesi lain."
+                    if is_ajax:
+                        return JsonResponse({"success": False, "message": message}, status=400)
+                    messages.error(request, message)
+                else:
+                    form.save()
+                    message = "Jadwal penyetoran berhasil dikonfirmasi."
+                    if is_ajax:
+                        remaining_items = _approved_items(request.user)
+                        return JsonResponse({
+                            "success": True,
+                            "message": message,
+                            "items": [_serialize_item(item) for item in remaining_items],
+                            "availability": _availability_for_dates(dates),
+                            "passed_sessions": _passed_sessions_for_dates(dates),
+                        })
+                    messages.success(request, message)
+                    return redirect("show_schedule")
         else:
             message = (
                 "Lengkapi barang, metode, tanggal, sesi, nama & nomor HP penerima, "
@@ -244,6 +271,7 @@ def show_schedule(request):
         "selected_item_ids": form["barang"].value() or [],
         "selected_lokasi_id": form["lokasi_mitra"].value() or "",
         "availability": _availability_for_dates(dates),
+        "passed_sessions": _passed_sessions_for_dates(dates),
         "contact_placeholder_name": _owner_display_name(first_item.pengguna) if first_item else "",
         "locations": locations,
         "nama_penerima_value": form["nama_penerima"].value() or "",
@@ -409,18 +437,21 @@ def edit_schedule(request, pk):
         if form.is_valid():
             tanggal = form.cleaned_data["tanggal"]
             sesi = form.cleaned_data["sesi"]
-            remaining = (
-                SESSION_QUOTAS[sesi]
-                - Penjadwalan.objects.filter(
-                    tanggal=tanggal, sesi=sesi, status=Penjadwalan.Status.terjadwal,
-                ).exclude(pk=booking.pk).count()
-            )
-            if remaining <= 0:
-                messages.error(request, "Sesi yang dipilih sudah penuh, silakan pilih sesi lain.")
+            if _is_session_passed(tanggal, sesi):
+                messages.error(request, "Sesi yang dipilih sudah lewat untuk hari ini, silakan pilih sesi atau tanggal lain.")
             else:
-                form.save()
-                messages.success(request, "Jadwal penyetoran berhasil diperbarui.")
-                return redirect("schedule_list")
+                remaining = (
+                    SESSION_QUOTAS[sesi]
+                    - Penjadwalan.objects.filter(
+                        tanggal=tanggal, sesi=sesi, status=Penjadwalan.Status.terjadwal,
+                    ).exclude(pk=booking.pk).count()
+                )
+                if remaining <= 0:
+                    messages.error(request, "Sesi yang dipilih sudah penuh, silakan pilih sesi lain.")
+                else:
+                    form.save()
+                    messages.success(request, "Jadwal penyetoran berhasil diperbarui.")
+                    return redirect("schedule_list")
         else:
             messages.error(
                 request,
