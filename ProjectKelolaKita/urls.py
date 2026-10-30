@@ -30,6 +30,7 @@ urlpatterns = [
     path('location/<uuid:pk>/', location_detail, name='location_detail'),
     path('locations/<uuid:location_id>/update/', update_location, name="update_location"),
     path('jadwal/', include('Schedule.urls')),
+    path('pengajuan/', include('penanganan.urls')),
     path('edukasi/', include('education.urls')),
 ]
 

@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Pengajuan Barang - KelolaKita{% endblock title %}
+
+{% block content %}
+<main class="mx-auto w-full max-w-[1440px] px-4 md:px-16 py-6 md:py-8 flex flex-col items-center">
+    
+    <div class="w-full max-w-3xl">
+        <!-- Header -->
+        <div class="mb-6 md:mb-8 text-center md:text-left">
+            <p class="text-[11px] md:text-xs font-bold text-[#2e7d32] uppercase tracking-wide mb-1 md:mb-2">Pengajuan Barang</p>
+            <h1 class="font-['Plus_Jakarta_Sans'] text-2xl md:text-3xl font-extrabold text-[#1a2e1c] mb-2">
+                Bantu kami menentukan jalur terbaik
+            </h1>
+            <p class="text-xs md:text-sm text-[#557a5b]">
+                Lengkapi informasi berikut. Pemeriksaan awal akan merekomendasikan Recycle, Reuse, atau Reduce.
+            </p>
+        </div>
+
+        <!-- Form Pengajuan -->
+        <div class="bg-white rounded-2xl p-5 md:p-8 shadow-sm border border-[#dce7de] w-full">
+            <p class="text-[10px] md:text-xs font-bold text-[#2e7d32] mb-1">LANGKAH 1</p>
+            <h2 class="font-['Plus_Jakarta_Sans'] text-xl md:text-2xl font-extrabold text-[#1a2e1c] mb-2">
+                Foto dan detail barang
+            </h2>
+            <p class="text-xs md:text-sm text-[#557a5b] mb-5 md:mb-6">
+                Gunakan foto terang dari beberapa sisi agar hasil pemeriksaan lebih akurat.
+            </p>
+
+            <form method="POST" enctype="multipart/form-data" action="{% url 'penanganan:tambah_pengajuan' %}">
+                {% csrf_token %}
+                
+                <!-- Input Foto (Responsif Tinggi) -->
+                <div class="mb-5 md:mb-6 rounded-xl border border-dashed border-[#81c784] bg-[#e8f5e9] p-5 md:p-8 text-center relative hover:bg-[#dce7de] transition min-h-[200px] md:min-h-[240px] flex items-center justify-center">
+                    <input type="file" name="foto_barang" id="foto_barang" multiple accept="image/png, image/jpeg" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" onchange="previewImages(event)" required>
+                    
+                    <div id="upload-placeholder" class="flex flex-col items-center pointer-events-none z-10 transition-opacity duration-300">
+                        <span class="flex size-10 items-center justify-center rounded-full bg-white mb-3 shadow-sm border border-yellow-200">
+                            <svg class="w-5 h-5 text-[#2e7d32]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        </span>
+                        <p class="text-xs md:text-sm font-bold text-[#1a2e1c]">Tarik foto ke sini</p>
+                        <p class="text-[10px] md:text-xs text-[#557a5b] mt-1">JPG, PNG - Maks. 10 MB - Min. 2 foto</p>
+                        <button type="button" class="mt-3 md:mt-4 rounded-lg bg-white px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm font-bold text-[#1a2e1c] border border-[#dce7de] shadow-sm pointer-events-none">Pilih foto</button>
+                    </div>
+                    
+                    <div id="image-preview-container" class="hidden absolute inset-0 w-full h-full p-3 md:p-4 grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 z-10 bg-[#e8f5e9] rounded-xl overflow-hidden items-center">
+                    </div>
+                </div>
+
+                <!-- Grid Input: Nama & Kategori (Responsif Grid 1 Kolom di HP) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-5 md:mb-6">
+                    <div class="location-form">
+                        <label class="block text-xs md:text-sm font-bold text-[#1a2e1c] mb-1.5 md:mb-2">Nama barang</label>
+                        <input type="text" name="nama_barang" placeholder="Meja belajar kayu" required>
+                    </div>
+                    <div class="location-form">
+                        <label class="block text-xs md:text-sm font-bold text-[#1a2e1c] mb-1.5 md:mb-2">Kategori</label>
+                        <select name="kategori_barang" required>
+                            <option value="" disabled selected>Pilih Kategori</option>
+                            <option value="Furnitur rumah">Furnitur rumah</option>
+                            <option value="Elektronik">Elektronik</option>
+                            <option value="Pakaian">Pakaian</option>
+                            <option value="Lainnya">Lainnya</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Pilihan Kondisi Barang (Responsif Grid Susun) -->
+                <div class="mb-5 md:mb-6">
+                    <label class="block text-xs md:text-sm font-bold text-[#1a2e1c] mb-1.5 md:mb-2">Kondisi barang</label>
+                    <!-- grid-cols-1 di HP sangat sempit, grid-cols-2 di HP lebar, grid-cols-4 di laptop -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+                        <label class="flex items-center justify-center gap-2 rounded-lg border border-[#dce7de] py-2.5 md:py-3 cursor-pointer hover:bg-gray-50 has-[:checked]:bg-[#e8f5e9] has-[:checked]:border-[#81c784] has-[:checked]:text-[#1f5a23]">
+                            <input type="radio" name="kondisi_barang" value="Sangat baik" class="w-3.5 h-3.5 md:w-4 md:h-4 text-[#2e7d32]" required>
+                            <span class="text-xs md:text-sm font-medium">Sangat baik</span>
+                        </label>
+                        <label class="flex items-center justify-center gap-2 rounded-lg border border-[#dce7de] py-2.5 md:py-3 cursor-pointer hover:bg-gray-50 has-[:checked]:bg-[#e8f5e9] has-[:checked]:border-[#81c784] has-[:checked]:text-[#1f5a23]">
+                            <input type="radio" name="kondisi_barang" value="Layak pakai" class="w-3.5 h-3.5 md:w-4 md:h-4 text-[#2e7d32]">
+                            <span class="text-xs md:text-sm font-medium">Layak pakai</span>
+                        </label>
+                        <label class="flex items-center justify-center gap-2 rounded-lg border border-[#dce7de] py-2.5 md:py-3 cursor-pointer hover:bg-gray-50 has-[:checked]:bg-[#e8f5e9] has-[:checked]:border-[#81c784] has-[:checked]:text-[#1f5a23]">
+                            <input type="radio" name="kondisi_barang" value="Perlu perbaikan" class="w-3.5 h-3.5 md:w-4 md:h-4 text-[#2e7d32]">
+                            <span class="text-xs md:text-sm font-medium">Perlu perbaikan</span>
+                        </label>
+                        <label class="flex items-center justify-center gap-2 rounded-lg border border-[#dce7de] py-2.5 md:py-3 cursor-pointer hover:bg-gray-50 has-[:checked]:bg-[#e8f5e9] has-[:checked]:border-[#81c784] has-[:checked]:text-[#1f5a23]">
+                            <input type="radio" name="kondisi_barang" value="Rusak" class="w-3.5 h-3.5 md:w-4 md:h-4 text-[#2e7d32]">
+                            <span class="text-xs md:text-sm font-medium">Rusak</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="location-form mb-6 md:mb-8">
+                    <label class="block text-xs md:text-sm font-bold text-[#1a2e1c] mb-1.5 md:mb-2">Catatan tambahan</label>
+                    <textarea name="catatan_tambahan" rows="2" placeholder="Kokoh, ada goresan ringan..."></textarea>
+                </div>
+
+                <!-- Action Buttons (Responsif Susun di HP) -->
+                <div class="flex flex-col-reverse sm:flex-row items-center justify-between border-t border-[#dce7de] pt-5 md:pt-6 mt-4 md:mt-6 gap-3 sm:gap-0">
+                    <a href="{% url 'penanganan:daftar_pengajuan' %}" class="w-full sm:w-auto text-center text-sm font-bold text-[#557a5b] hover:text-[#1a2e1c] py-2 sm:py-0">Batal</a>
+                    <button type="submit" class="w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg bg-[#2e7d32] px-6 py-3 text-sm font-bold text-white hover:bg-[#1f5a23] transition">
+                        <img src="{% static 'icons/sparkles-white.svg' %}" alt="" class="size-4" onerror="this.style.display='none'">
+                        Kirim Pengajuan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+{% endblock content %}
+
+<script>
+function previewImages(event) {
+    const placeholder = document.getElementById('upload-placeholder');
+    const previewContainer = document.getElementById('image-preview-container');
+    const files = event.target.files;
+    previewContainer.innerHTML = '';
+    if (files && files.length > 0) {
+        previewContainer.classList.remove('hidden');
+        placeholder.style.display = 'none';
+        Array.from(files).forEach(file => {
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    // class disesuaikan agar ukuran gambar pas di layar kecil
+                    img.className = 'w-full h-24 sm:h-32 md:h-40 object-cover rounded-lg border border-[#81c784] shadow-sm';
+                    previewContainer.appendChild(img);
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+    } else {
+        previewContainer.classList.add('hidden');
+        placeholder.style.display = 'flex';
+    }
+}
+</script>

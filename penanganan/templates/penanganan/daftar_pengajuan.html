@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Daftar Pengajuan - KelolaKita{% endblock title %}
+
+{% block content %}
+<main class="mx-auto w-full max-w-[1440px] px-4 md:px-16 py-6 md:py-8 min-h-[60vh]">
+    <!-- Header Bagian Atas -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+        <div>
+            <p class="text-xs font-bold text-[#2e7d32] uppercase tracking-wide mb-2">Riwayat & Daftar</p>
+            <h1 class="font-['Plus_Jakarta_Sans'] text-2xl md:text-3xl font-extrabold text-[#1a2e1c]">
+                Daftar Pengajuan Barang
+            </h1>
+        </div>
+        
+        <!-- Tombol Tambah Pengajuan -->
+        <a href="{% url 'penanganan:tambah_pengajuan' %}" class="flex items-center justify-center gap-2 rounded-lg bg-[#2e7d32] px-6 py-3 text-sm font-bold text-white hover:bg-[#1f5a23] transition w-full sm:w-auto">
+            <span aria-hidden="true" class="text-lg leading-none">+</span>
+            Tambah Pengajuan
+        </a>
+    </div>
+
+    <!-- Grid Daftar Barang (1 Kolom di HP, 2 Kolom di Tablet, 3 Kolom di Laptop) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        
+        <!-- Looping Data Pemeriksaan -->
+        {% for pemeriksaan in daftar_pemeriksaan %}
+            <div class="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-[#dce7de] flex flex-col hover:shadow-md transition duration-200">
+                
+                <!-- Judul dan Badge Status -->
+                <div class="flex justify-between items-start mb-4 gap-3">
+                    <h2 class="font-bold text-base md:text-lg text-[#1a2e1c] line-clamp-2 leading-tight">
+                        {{ pemeriksaan.nama_barang }}
+                    </h2>
+                    
+                    <span class="text-[10px] md:text-[11px] font-extrabold uppercase tracking-wider px-2.5 md:px-3 py-1 rounded-full whitespace-nowrap
+                        {% if pemeriksaan.kategori_penanganan == 'Menunggu' %} bg-[#fff8e1] text-[#f57f17] border border-[#ffe082]
+                        {% elif pemeriksaan.kategori_penanganan == 'Recycle' %} bg-[#e3f2fd] text-[#1976d2] border border-[#bbdefb]
+                        {% elif pemeriksaan.kategori_penanganan == 'Reuse' %} bg-[#e8f5e9] text-[#2e7d32] border border-[#81c784]
+                        {% elif pemeriksaan.kategori_penanganan == 'Reduce' %} bg-[#fbe9e7] text-[#d84315] border border-[#ffccbc]
+                        {% else %} bg-gray-100 text-gray-700 border border-gray-300 {% endif %}">
+                        {{ pemeriksaan.kategori_penanganan }}
+                    </span>
+                </div>
+
+                <!-- Tampilkan Gambar Pertama -->
+                {% if pemeriksaan.foto_barang.first %}
+                <div class="mb-4">
+                    <img src="{{ pemeriksaan.foto_barang.first.gambar.url }}" alt="Foto {{ pemeriksaan.nama_barang }}" class="w-full h-36 md:h-40 object-cover rounded-lg border border-[#dce7de]">
+                </div>
+                {% endif %}
+                
+                <!-- Detail Info -->
+                <div class="flex flex-col gap-1 mb-6">
+                    <p class="text-xs md:text-sm text-[#557a5b]">
+                        <span class="font-semibold text-[#1a2e1c]">Kategori:</span> {{ pemeriksaan.kategori_barang }}
+                    </p>
+                    <p class="text-xs md:text-sm text-[#557a5b]">
+                        <span class="font-semibold text-[#1a2e1c]">Kondisi:</span> {{ pemeriksaan.kondisi_barang }}
+                    </p>
+                    <p class="text-[11px] text-gray-400 mt-2">Diajukan: {{ pemeriksaan.created_at|date:"d M Y, H:i" }}</p>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="mt-auto pt-4 border-t border-[#dce7de] flex items-center justify-end gap-3 md:gap-4">
+                    <a href="{% url 'penanganan:periksa_pengajuan' pemeriksaan.id %}" class="text-xs md:text-sm font-bold text-blue-600 hover:text-blue-800 transition">
+                        Detail / Periksa
+                    </a>
+                    
+                    {% if pemeriksaan.kategori_penanganan == 'Menunggu' %}
+                    <a href="{% url 'penanganan:edit_pengajuan' pemeriksaan.id %}" class="text-xs md:text-sm font-bold text-yellow-600 hover:text-yellow-800 transition">
+                        Edit
+                    </a>
+                    <form method="post" action="{% url 'penanganan:hapus_pengajuan' pemeriksaan.id %}" class="inline m-0 p-0">
+                        {% csrf_token %}
+                        <button type="submit" class="text-xs md:text-sm font-bold text-red-500 hover:text-red-700 transition" onclick="return confirm('Apakah Anda yakin ingin menghapus pengajuan ini?')">
+                            Hapus
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+            
+        <!-- Tampilan Kosong -->
+        {% empty %}
+            <div class="col-span-full bg-white rounded-2xl p-6 sm:p-12 text-center border border-[#dce7de] flex flex-col items-center justify-center">
+                <span class="flex size-14 sm:size-16 items-center justify-center rounded-full bg-[#f4f6f5] mb-4">
+                    <svg class="w-7 h-7 sm:w-8 sm:h-8 text-[#81c784]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+                </span>
+                <p class="text-lg sm:text-xl font-bold text-[#1a2e1c] mb-2">Belum ada pengajuan</p>
+                <p class="text-xs sm:text-sm text-[#557a5b] mb-6 max-w-md">
+                    Saat ini belum ada data pengajuan barang yang ditemukan. Silakan ajukan barang pertamamu agar kami bisa menentukan jalur penanganan terbaik.
+                </p>
+                <a href="{% url 'penanganan:tambah_pengajuan' %}" class="text-blue-600 hover:text-blue-800 underline font-semibold text-xs sm:text-sm transition">
+                    Buat pengajuan baru sekarang
+                </a>
+            </div>
+        {% endfor %}
+        
+    </div>
+</main>
+{% endblock content %}

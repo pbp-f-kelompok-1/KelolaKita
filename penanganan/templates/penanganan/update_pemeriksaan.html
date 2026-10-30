@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Pemeriksaan Barang - KelolaKita{% endblock title %}
+
+{% block content %}
+<main class="mx-auto w-full max-w-[1440px] px-4 md:px-16 py-6 md:py-8">
+    
+    <!-- Header -->
+    <div class="mb-6 md:mb-8 text-center md:text-left">
+        <p class="text-[11px] md:text-xs font-bold text-[#2e7d32] uppercase tracking-wide mb-1 md:mb-2">Panel Pengelola</p>
+        <h1 class="font-['Plus_Jakarta_Sans'] text-2xl md:text-3xl font-extrabold text-[#1a2e1c] mb-2">
+            Pemeriksaan & Evaluasi Barang
+        </h1>
+        <p class="text-xs md:text-sm text-[#557a5b]">
+            Tinjau detail barang yang diajukan pengguna dan tentukan jalur penanganan terbaiknya.
+        </p>
+    </div>
+
+    <!-- Layout Grid (1 Kolom HP, 2 Kolom Laptop) -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+        
+        <!-- KOLOM KIRI -->
+        <div class="bg-[#f9fbf9] rounded-2xl p-5 md:p-8 border border-[#dce7de]">
+            <h2 class="font-['Plus_Jakarta_Sans'] text-lg md:text-xl font-extrabold text-[#1a2e1c] mb-4 md:mb-6 border-b border-[#dce7de] pb-3 md:pb-4">
+                Informasi Pengajuan
+            </h2>
+            
+            <div class="flex flex-col gap-3 md:gap-4 mb-5 md:mb-6">
+                <div>
+                    <p class="text-[10px] md:text-xs font-bold text-[#557a5b] uppercase tracking-wider">Nama Barang</p>
+                    <p class="text-base md:text-lg font-bold text-[#1a2e1c]">{{ pemeriksaan.nama_barang }}</p>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                    <div>
+                        <p class="text-[10px] md:text-xs font-bold text-[#557a5b] uppercase tracking-wider">Kategori</p>
+                        <p class="text-sm font-medium text-[#1a2e1c]">{{ pemeriksaan.kategori_barang }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] md:text-xs font-bold text-[#557a5b] uppercase tracking-wider">Kondisi</p>
+                        <p class="text-sm font-medium text-[#1a2e1c]">{{ pemeriksaan.kondisi_barang }}</p>
+                    </div>
+                </div>
+                <div>
+                    <p class="text-[10px] md:text-xs font-bold text-[#557a5b] uppercase tracking-wider">Catatan Tambahan</p>
+                    <p class="text-sm font-medium text-[#1a2e1c]">
+                        {{ pemeriksaan.catatan_tambahan|default:"Tidak ada catatan." }}
+                    </p>
+                </div>
+                <div>
+                    <p class="text-[10px] md:text-xs font-bold text-[#557a5b] uppercase tracking-wider">Diajukan Pada</p>
+                    <p class="text-sm font-medium text-[#1a2e1c]">{{ pemeriksaan.created_at|date:"d F Y, H:i" }}</p>
+                </div>
+            </div>
+
+            <div>
+                <p class="text-[10px] md:text-xs font-bold text-[#557a5b] uppercase tracking-wider mb-2 md:mb-3">Foto Lampiran</p>
+                <div class="grid grid-cols-2 gap-2 md:gap-3">
+                    {% for foto in pemeriksaan.foto_barang.all %}
+                        <!-- object-cover menjaga proporsi foto tetap pas meskipun dipaksa responsif -->
+                        <img src="{{ foto.gambar.url }}" alt="Foto Barang" class="w-full h-28 sm:h-32 md:h-40 object-cover rounded-lg border border-[#dce7de]">
+                    {% empty %}
+                        <p class="text-xs md:text-sm text-gray-500 italic col-span-2">Tidak ada foto terlampir.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- KOLOM KANAN -->
+        <div class="bg-white rounded-2xl p-5 md:p-8 shadow-sm border border-[#dce7de] flex flex-col">
+            <h2 class="font-['Plus_Jakarta_Sans'] text-lg md:text-xl font-extrabold text-[#1a2e1c] mb-4 md:mb-6 border-b border-[#dce7de] pb-3 md:pb-4">
+                Hasil Pemeriksaan
+            </h2>
+
+            <form method="POST" action="{% url 'penanganan:periksa_pengajuan' pemeriksaan.id %}" class="flex flex-col flex-grow">
+                {% csrf_token %} 
+
+                <div class="location-form mb-4 md:mb-6">
+                    <label class="block text-xs md:text-sm font-bold text-[#1a2e1c] mb-1.5 md:mb-2">Kategori Penanganan</label>
+                    <select name="kategori_penanganan" required class="bg-[#e8f5e9] border-[#81c784] font-bold text-[#1f5a23] text-sm">
+                        <option value="Menunggu" {% if pemeriksaan.kategori_penanganan == 'Menunggu' %}selected{% endif %}>Menunggu Pemeriksaan</option>
+                        <option value="Reuse" {% if pemeriksaan.kategori_penanganan == 'Reuse' %}selected{% endif %}>Reuse (Guna Ulang)</option>
+                        <option value="Recycle" {% if pemeriksaan.kategori_penanganan == 'Recycle' %}selected{% endif %}>Recycle (Daur Ulang)</option>
+                        <option value="Reduce" {% if pemeriksaan.kategori_penanganan == 'Reduce' %}selected{% endif %}>Reduce (Pengurangan)</option>
+                    </select>
+                </div>
+
+                <div class="location-form mb-4 md:mb-6">
+                    <label class="block text-xs md:text-sm font-bold text-[#1a2e1c] mb-1.5 md:mb-2">Mitra Penyaluran / Lokasi (Opsional)</label>
+                    <input type="text" name="mitra_rekomendasi" value="{{ pemeriksaan.mitra_rekomendasi|default:'' }}" placeholder="Contoh: Komunitas Ruang Tumbuh" class="text-sm">
+                    <p class="text-[10px] md:text-xs text-[#557a5b] mt-1">Isi jika barang akan disalurkan ke mitra khusus (Reuse/Recycle).</p>
+                </div>
+
+                <div class="location-form mb-6 md:mb-8">
+                    <label class="block text-xs md:text-sm font-bold text-[#1a2e1c] mb-1.5 md:mb-2">Rekomendasi / Catatan Pengelola</label>
+                    <textarea name="rekomendasi_penanganan" rows="4" placeholder="Berikan alasan atau instruksi penanganan selanjutnya..." class="text-sm">{{ pemeriksaan.rekomendasi_penanganan|default:'' }}</textarea>
+                </div>
+
+                <div class="flex flex-col-reverse sm:flex-row items-center justify-between border-t border-[#dce7de] pt-5 md:pt-6 mt-auto gap-3 sm:gap-0">
+                    <a href="{% url 'penanganan:daftar_pengajuan' %}" class="w-full sm:w-auto text-center text-sm font-bold text-[#557a5b] hover:text-[#1a2e1c] py-2 sm:py-0">Batal</a>
+                    <button type="submit" class="w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg bg-[#2e7d32] px-6 py-3 text-sm font-bold text-white hover:bg-[#1f5a23] transition">
+                        <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        Simpan Hasil
+                    </button>
+                </div>
+            </form>
+        </div>
+
+    </div>
+</main>
+{% endblock content %}
