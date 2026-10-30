@@ -279,6 +279,7 @@
             </p>
         </aside>
         {{ availability|json_script:"availability-data" }}
+        {{ passed_sessions|json_script:"passed-sessions-data" }}
     </form>
 </main>
 
@@ -403,27 +404,31 @@
         });
     }
 
-    // --- 3. Sesi: ketersediaan slot ---
+    // --- 3. Sesi: ketersediaan slot & sesi yang sudah lewat waktunya ---
     const availability = JSON.parse(document.getElementById('availability-data').textContent);
+    const passedSessions = JSON.parse(document.getElementById('passed-sessions-data').textContent);
     const sessionInputs = Array.from(form.querySelectorAll('input[name="sesi"]'));
 
     function updateSessionAvailability() {
         const selectedDate = form.querySelector('input[name="tanggal"]:checked');
         if (!selectedDate) return;
         const remainingBySession = availability[selectedDate.value] || {};
+        const passedBySession = passedSessions[selectedDate.value] || {};
         sessionInputs.forEach((input) => {
             const remaining = remainingBySession[input.value] ?? 0;
+            const isPassed = !!passedBySession[input.value];
             const isFull = remaining <= 0;
-            input.disabled = isFull;
+            const isUnavailable = isPassed || isFull;
+            input.disabled = isUnavailable;
 
             const label = input.closest('label').querySelector(`[data-slot-label="${input.value}"]`);
             if (label) {
-                label.textContent = isFull ? 'Penuh' : `${remaining} slot tersisa`;
-                label.classList.toggle('text-[#b42318]', isFull);
-                label.classList.toggle('text-[#557a5b]', !isFull);
+                label.textContent = isPassed ? 'Sudah lewat' : (isFull ? 'Penuh' : `${remaining} slot tersisa`);
+                label.classList.toggle('text-[#b42318]', isUnavailable);
+                label.classList.toggle('text-[#557a5b]', !isUnavailable);
             }
 
-            if (isFull && input.checked) {
+            if (isUnavailable && input.checked) {
                 input.checked = false;
                 const firstAvailable = sessionInputs.find((s) => !s.disabled);
                 if (firstAvailable) {
