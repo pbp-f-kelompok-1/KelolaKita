@@ -478,3 +478,121 @@ class CancelScheduleViewTests(TestCase):
         response = self.client.post(reverse("cancel_schedule", args=[other_booking.pk]))
         self.assertEqual(response.status_code, 404)
         self.assertTrue(Penjadwalan.objects.filter(pk=other_booking.pk).exists())
+
+
+class EditScheduleViewTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="budi", password="pass12345")
+        self.client.force_login(self.user)
+        self.item = Pemeriksaan.objects.create(
+            pengguna=self.user,
+            nama_barang="Botol plastik",
+            jenis_barang="Plastik",
+            kondisi_barang="Baik",
+            kategori_penanganan="recycle",
+        )
+        self.booking = Penjadwalan.objects.create(
+            metode=Penjadwalan.Metode.kurir,
+            tanggal=datetime.date.today() + datetime.timedelta(days=5),
+            sesi=Penjadwalan.Sesi.pagi,
+            nama_penerima="Budi",
+            nomor_hp="08123456789",
+            alamat_penjemputan="Jl. Melati No. 5",
+        )
+        self.booking.barang.set([self.item])
+
+    def _valid_payload(self, **overrides):
+        payload = {
+            "metode": "kurir",
+            "tanggal": _date_offset(6),
+            "sesi": "pagi",
+            "nama_penerima": "Budi Santoso",
+            "nomor_hp": "08123456789",
+            "alamat_penjemputan": "Jl. Mawar No. 9",
+            "notes": "",
+            "barang": [str(self.item.pk)],
+        }
+        payload.update(overrides)
+        return payload
+
+    def test_get_renders_edit_form_with_existing_values(self):
+        response = self.client.get(reverse("edit_schedule", args=[self.booking.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "Schedule/schedule_edit.html")
+        self.assertEqual(response.context["nama_penerima_value"], "Budi")
+
+    def test_post_updates_booking_details(self):
+        response = self.client.post(reverse("edit_schedule", args=[self.booking.pk]), self._valid_payload())
+        self.assertRedirects(response, reverse("schedule_list"))
+        self.booking.refresh_from_db()
+        self.assertEqual(self.booking.nama_penerima, "Budi Santoso")
+        self.assertEqual(self.booking.alamat_penjemputan, "Jl. Mawar No. 9")
+        self.assertEqual(self.booking.tanggal.isoformat(), _date_offset(6))
+
+    def test_edit_rejected_within_cutoff_window(self):
+        session_date = datetime.date.today() + datetime.timedelta(days=10)
+        self.booking.tanggal = session_date
+        self.booking.save()
+
+        mocked_now = timezone.make_aware(datetime.datetime.combine(session_date, datetime.time(2, 0)))
+        with patch("django.utils.timezone.now", return_value=mocked_now):
+            response = self.client.post(reverse("edit_schedule", args=[self.booking.pk]), self._valid_payload())
+
+        self.assertRedirects(response, reverse("schedule_list"))
+        self.booking.refresh_from_db()
+        self.assertEqual(self.booking.nama_penerima, "Budi")
+
+    def test_edit_other_users_booking_returns_404(self):
+        other_user = User.objects.create_user(username="ani", password="pass12345")
+        other_item = Pemeriksaan.objects.create(
+            pengguna=other_user,
+            nama_barang="Kardus",
+            jenis_barang="Kertas",
+            kondisi_barang="Baik",
+            kategori_penanganan="recycle",
+        )
+        other_booking = Penjadwalan.objects.create(
+            metode=Penjadwalan.Metode.kurir,
+            tanggal=datetime.date.today() + datetime.timedelta(days=5),
+            sesi=Penjadwalan.Sesi.pagi,
+            nama_penerima="Ani",
+            nomor_hp="08129999999",
+            alamat_penjemputan="Jl. Kenanga No. 1",
+        )
+        other_booking.barang.set([other_item])
+
+        response = self.client.get(reverse("edit_schedule", args=[other_booking.pk]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_edit_rejected_when_target_session_is_full_by_another_booking(self):
+        other_user = User.objects.create_user(username="ani", password="pass12345")
+        other_item = Pemeriksaan.objects.create(
+            pengguna=other_user,
+            nama_barang="Kardus",
+            jenis_barang="Kertas",
+            kondisi_barang="Baik",
+            kategori_penanganan="recycle",
+        )
+        full_date = _date_offset(6)
+        Penjadwalan.objects.create(
+            metode=Penjadwalan.Metode.kurir,
+            tanggal=full_date,
+            sesi=Penjadwalan.Sesi.siang,
+            nama_penerima="Ani",
+            nomor_hp="08129999999",
+            alamat_penjemputan="Jl. Kenanga No. 1",
+        ).barang.set([other_item])
+
+        payload = self._valid_payload(tanggal=full_date, sesi="siang")
+        response = self.client.post(reverse("edit_schedule", args=[self.booking.pk]), payload)
+
+        self.assertEqual(response.status_code, 200)
+        self.booking.refresh_from_db()
+        self.assertEqual(self.booking.sesi, Penjadwalan.Sesi.pagi)
+
+    def test_edit_without_changing_session_does_not_count_itself_as_full(self):
+        payload = self._valid_payload(tanggal=self.booking.tanggal.isoformat(), sesi="pagi")
+        response = self.client.post(reverse("edit_schedule", args=[self.booking.pk]), payload)
+        self.assertRedirects(response, reverse("schedule_list"))
+        self.booking.refresh_from_db()
+        self.assertEqual(self.booking.nama_penerima, "Budi Santoso")

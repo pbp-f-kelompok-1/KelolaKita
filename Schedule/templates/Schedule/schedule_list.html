@@ -63,6 +63,12 @@
             </div>
 
             <div class="flex shrink-0 flex-col items-stretch gap-1.5 sm:items-end">
+                {% if row.can_edit %}
+                <a href="{% url 'edit_schedule' booking.pk %}"
+                   class="h-9 w-full rounded-lg border border-[#dce7de] px-4 text-center text-xs font-bold leading-9 text-[#2e7d32] hover:bg-[#e8f5e9] sm:w-auto">
+                    Ubah
+                </a>
+                {% endif %}
                 {% if row.can_cancel %}
                 <form method="post" action="{% url 'cancel_schedule' booking.pk %}"
                       onsubmit="return confirm('Batalkan jadwal ini?');">
