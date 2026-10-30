@@ -96,9 +96,10 @@ def _availability_for_dates(dates):
     return availability
 
 
-def _approved_items():
+def _approved_items(user):
     return (
         Pemeriksaan.objects
+        .filter(pengguna=user)
         .exclude(kategori_penanganan="menunggu")
         .exclude(penjadwalan_set__isnull=False)
         .select_related("pengguna")
@@ -136,7 +137,7 @@ def show_schedule(request):
     today = datetime.date.today()
     current_month_label = f"{MONTH_FULL_ID[today.month - 1]} {today.year}"
 
-    items = _approved_items()
+    items = _approved_items(request.user)
     locations = _active_locations()
     form_kwargs = {
         "approved_items": items,

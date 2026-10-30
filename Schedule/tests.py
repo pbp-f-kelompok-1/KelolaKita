@@ -179,6 +179,20 @@ class ShowScheduleGetTests(TestCase):
         items = list(response.context["items"])
         self.assertEqual(items, [self.ready_item])
 
+    def test_other_users_items_are_not_listed(self):
+        other_user = User.objects.create_user(username="ani", password="pass12345")
+        other_item = Pemeriksaan.objects.create(
+            pengguna=other_user,
+            nama_barang="Kardus",
+            jenis_barang="Kertas",
+            kondisi_barang="Baik",
+            kategori_penanganan="recycle",
+        )
+        response = self.client.get(reverse("show_schedule"))
+        items = list(response.context["items"])
+        self.assertNotIn(other_item, items)
+        self.assertEqual(items, [self.ready_item])
+
     def test_item_disappears_once_scheduled(self):
         booking = Penjadwalan.objects.create(
             metode=Penjadwalan.Metode.kurir,
