@@ -45,7 +45,7 @@ def is_pengelola(user):
     return user.groups.filter(name='Pengelola').exists()
 
 # Membuat data pemeriksaan
-@login_required(login_url="/login/")
+@login_required
 def tambah_pengajuan(request):
     if request.method == "POST":
         # Mengambil input
@@ -92,7 +92,7 @@ def tambah_pengajuan(request):
     })
 
 # Melihat hasil pemeriksaan dan kategori penanganan
-@login_required(login_url="/login/")
+@login_required
 def daftar_pengajuan(request):
     # Jika Pengelola, tampilkan semua data pengajuan untuk diperiksa
     if is_pengelola(request.user):
@@ -109,7 +109,7 @@ def daftar_pengajuan(request):
 
 
 # Mengubah hasil pemeriksaan apabila diperlukan
-@login_required(login_url="/login/")
+@login_required
 def periksa_pengajuan(request, pk):
     # Cek apakah akun yang sedang login adalah pengelola; kalau bukan, hentikan permintaannya dengan 403
     if not is_pengelola(request.user):
@@ -134,7 +134,7 @@ def periksa_pengajuan(request, pk):
     return render(request, "penanganan/update_pemeriksaan.html", context)
 
 # Menghapus data pemeriksaan sesuai kewenangan
-@login_required(login_url="/login/")
+@login_required
 def hapus_pengajuan(request, pk):
     # Ambil objek pemeriksaan berdasarkan ID-nya
     pemeriksaan = get_object_or_404(Pemeriksaan, pk=pk)
@@ -159,7 +159,7 @@ def hapus_pengajuan(request, pk):
         
     return redirect("penanganan:daftar_pengajuan")
 
-@login_required(login_url="/login/")
+@login_required
 def edit_pengajuan(request, pk):
     pemeriksaan = get_object_or_404(Pemeriksaan, pk=pk)
 

@@ -12,6 +12,15 @@ from penanganan.views import PENANGANAN_IMAGE_STORAGE
 
 
 class DaftarPengajuanNavigationTests(TestCase):
+    def test_anonymous_user_is_redirected_to_accounts_login(self):
+        response = self.client.get(reverse("penanganan:daftar_pengajuan"))
+
+        self.assertRedirects(
+            response,
+            f"{reverse('accounts:login')}?next={reverse('penanganan:daftar_pengajuan')}",
+            fetch_redirect_response=False,
+        )
+
     def test_authenticated_user_sees_penanganan_as_current_navigation(self):
         user = User.objects.create_user(username="warga")
         self.client.force_login(user)
