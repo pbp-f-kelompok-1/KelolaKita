@@ -23,50 +23,52 @@
         </p>
     </div>
 
+    <div id="schedule-flash" class="flex w-full flex-col gap-2" aria-live="polite"></div>
+
     <form method="post" action="{% url 'show_schedule' %}" id="schedule-form"
           class="flex w-full flex-col items-start gap-[22px] lg:flex-row">
         {% csrf_token %}
 
         <div class="flex min-w-0 flex-1 flex-col gap-6 rounded-2xl bg-white p-[26px] shadow-[0px_8px_24px_0px_rgba(23,53,28,0.07)]">
 
-            <section class="flex flex-col gap-3.5">
+            <section class="flex flex-col gap-3.5" id="items-section">
                 <h2 class="font-['Plus_Jakarta_Sans'] text-lg font-extrabold text-[#1a2e1c]">0. Pilih barang</h2>
-                {% if items %}
-                <p class="text-xs text-[#557a5b]">Bisa pilih lebih dari satu barang untuk dijadwalkan sekaligus.</p>
-                <div class="flex flex-col gap-3">
-                    {% for item in items %}
-                    <label class="item-card group flex cursor-pointer items-center gap-3 rounded-xl border border-[#dce7de] bg-white p-3.5 has-[:checked]:border-[#2e7d32] has-[:checked]:bg-[#e8f5e9]">
-                        <input type="checkbox" name="barang" value="{{ item.pk }}" class="sr-only"
-                               {% if item.pk|stringformat:"s" in selected_item_ids %}checked{% endif %}
-                               data-nama="{{ item.nama_barang }}"
-                               data-jenis="{{ item.jenis_barang }}"
-                               data-kondisi="{{ item.kondisi_barang }}"
-                               data-kategori="{{ item.get_kategori_penanganan_display }}"
-                               data-kategori-slug="{{ item.kategori_penanganan }}"
-                               data-owner="{{ item.pengguna.get_full_name|default:item.pengguna.username }}">
-                        <span aria-hidden="true"
-                              class="flex size-11 shrink-0 items-center justify-center rounded-lg text-base font-extrabold
-                                     {% if item.kategori_penanganan == 'recycle' %}bg-[#e3f2fd] text-[#1565c0]
-                                     {% elif item.kategori_penanganan == 'reduce' %}bg-[#fff3e0] text-[#ef6c00]
-                                     {% else %}bg-[#e8f5e9] text-[#2e7d32]{% endif %}">
-                            {{ item.jenis_barang|first|upper }}
-                        </span>
-                        <span class="flex flex-col gap-0.5">
-                            <span class="text-sm font-extrabold text-[#1a2e1c]">{{ item.nama_barang }}</span>
-                            <span class="text-xs text-[#557a5b]">{{ item.jenis_barang }}</span>
-                        </span>
-                        <span class="ml-auto shrink-0 rounded-full bg-[#e7f6ee] px-2.5 py-1.5 text-xs font-bold text-[#237b4b]">
-                            {{ item.get_kategori_penanganan_display }}
-                        </span>
-                    </label>
-                    {% endfor %}
+                <div id="items-picker" class="{% if not items %}hidden{% endif %} flex flex-col gap-3">
+                    <p class="text-xs text-[#557a5b]">Bisa pilih lebih dari satu barang untuk dijadwalkan sekaligus.</p>
+                    <div id="items-list" class="flex flex-col gap-3">
+                        {% for item in items %}
+                        <label class="item-card group flex cursor-pointer items-center gap-3 rounded-xl border border-[#dce7de] bg-white p-3.5 has-[:checked]:border-[#2e7d32] has-[:checked]:bg-[#e8f5e9]">
+                            <input type="checkbox" name="barang" value="{{ item.pk }}" class="sr-only"
+                                   {% if item.pk|stringformat:"s" in selected_item_ids %}checked{% endif %}
+                                   data-nama="{{ item.nama_barang }}"
+                                   data-jenis="{{ item.jenis_barang }}"
+                                   data-kondisi="{{ item.kondisi_barang }}"
+                                   data-kategori="{{ item.get_kategori_penanganan_display }}"
+                                   data-kategori-slug="{{ item.kategori_penanganan }}"
+                                   data-owner="{{ item.pengguna.get_full_name|default:item.pengguna.username }}">
+                            <span aria-hidden="true"
+                                  class="flex size-11 shrink-0 items-center justify-center rounded-lg text-base font-extrabold
+                                         {% if item.kategori_penanganan == 'recycle' %}bg-[#e3f2fd] text-[#1565c0]
+                                         {% elif item.kategori_penanganan == 'reduce' %}bg-[#fff3e0] text-[#ef6c00]
+                                         {% else %}bg-[#e8f5e9] text-[#2e7d32]{% endif %}">
+                                {{ item.jenis_barang|first|upper }}
+                            </span>
+                            <span class="flex flex-col gap-0.5">
+                                <span class="text-sm font-extrabold text-[#1a2e1c]">{{ item.nama_barang }}</span>
+                                <span class="text-xs text-[#557a5b]">{{ item.jenis_barang }}</span>
+                            </span>
+                            <span class="ml-auto shrink-0 rounded-full bg-[#e7f6ee] px-2.5 py-1.5 text-xs font-bold text-[#237b4b]">
+                                {{ item.get_kategori_penanganan_display }}
+                            </span>
+                        </label>
+                        {% endfor %}
+                    </div>
                 </div>
-                {% else %}
-                <p class="rounded-lg bg-[#f4f6f5] px-3.5 py-3 text-sm text-[#557a5b]">
+                <p id="items-empty"
+                   class="{% if items %}hidden{% endif %} rounded-lg bg-[#f4f6f5] px-3.5 py-3 text-sm text-[#557a5b]">
                     Belum ada barang yang disetujui untuk dijadwalkan. Ajukan dan tunggu barangmu
                     diperiksa terlebih dahulu sebelum bisa mengatur jadwal penyerahan.
                 </p>
-                {% endif %}
             </section>
 
             <section class="flex flex-col gap-3.5">
@@ -266,15 +268,14 @@
                     class="flex h-11 w-full items-center justify-center rounded-lg bg-[#2e7d32] px-[18px] text-sm font-bold text-white transition hover:bg-[#1f5a23] active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[#a9bdac] disabled:hover:bg-[#a9bdac] disabled:active:scale-100">
                 Konfirmasi jadwal
             </button>
-            {% if items %}
-            <p class="text-center text-[11px] leading-relaxed text-[#557a5b]">
+            <p id="aside-hint-has-items"
+               class="{% if not items %}hidden{% endif %} text-center text-[11px] leading-relaxed text-[#557a5b]">
                 Bisa dibatalkan hingga 12 jam sebelum sesi lewat halaman riwayat jadwal.
             </p>
-            {% else %}
-            <p class="text-center text-[11px] leading-relaxed text-[#b42318]">
+            <p id="aside-hint-no-items"
+               class="{% if items %}hidden{% endif %} text-center text-[11px] leading-relaxed text-[#b42318]">
                 Belum ada barang untuk dijadwalkan.
             </p>
-            {% endif %}
         </aside>
         {{ availability|json_script:"availability-data" }}
     </form>
@@ -302,6 +303,12 @@
     const infoTitle = document.getElementById('info-title');
     const infoBody = document.getElementById('info-body');
     const submitBtn = document.getElementById('submit-btn');
+    const itemsPicker = document.getElementById('items-picker');
+    const itemsList = document.getElementById('items-list');
+    const itemsEmpty = document.getElementById('items-empty');
+    const asideHintHasItems = document.getElementById('aside-hint-has-items');
+    const asideHintNoItems = document.getElementById('aside-hint-no-items');
+    const scheduleFlash = document.getElementById('schedule-flash');
 
     const CATEGORY_STYLES = {
         recycle: { bg: '#e3f2fd', fg: '#1565c0' },
@@ -478,5 +485,99 @@
     });
 
     renderDatePage();
+
+    // --- Submit via AJAX: konfirmasi jadwal tanpa reload halaman ---
+    function escapeHtml(value) {
+        const div = document.createElement('div');
+        div.textContent = value ?? '';
+        return div.innerHTML;
+    }
+
+    function showFlash(message, type) {
+        if (!scheduleFlash || !message) return;
+        scheduleFlash.innerHTML = `<p class="flash flash--${type}">${escapeHtml(message)}</p>`;
+    }
+
+    function renderItemCard(item) {
+        const label = document.createElement('label');
+        label.className = 'item-card group flex cursor-pointer items-center gap-3 rounded-xl border '
+            + 'border-[#dce7de] bg-white p-3.5 has-[:checked]:border-[#2e7d32] has-[:checked]:bg-[#e8f5e9]';
+        const style = CATEGORY_STYLES[item.kategori_slug] || CATEGORY_STYLES.reuse;
+        label.innerHTML = `
+            <input type="checkbox" name="barang" value="${item.pk}" class="sr-only"
+                   data-nama="${escapeHtml(item.nama_barang)}"
+                   data-jenis="${escapeHtml(item.jenis_barang)}"
+                   data-kondisi="${escapeHtml(item.kondisi_barang)}"
+                   data-kategori="${escapeHtml(item.kategori_label)}"
+                   data-kategori-slug="${item.kategori_slug}"
+                   data-owner="${escapeHtml(item.owner)}">
+            <span aria-hidden="true" class="flex size-11 shrink-0 items-center justify-center rounded-lg text-base font-extrabold"
+                  style="background-color:${style.bg};color:${style.fg}">
+                ${escapeHtml((item.jenis_barang || '?').charAt(0).toUpperCase())}
+            </span>
+            <span class="flex flex-col gap-0.5">
+                <span class="text-sm font-extrabold text-[#1a2e1c]">${escapeHtml(item.nama_barang)}</span>
+                <span class="text-xs text-[#557a5b]">${escapeHtml(item.jenis_barang)}</span>
+            </span>
+            <span class="ml-auto shrink-0 rounded-full bg-[#e7f6ee] px-2.5 py-1.5 text-xs font-bold text-[#237b4b]">
+                ${escapeHtml(item.kategori_label)}
+            </span>
+        `;
+        return label;
+    }
+
+    function rebuildItems(items) {
+        if (!itemsList) return;
+        itemsList.innerHTML = '';
+        items.forEach((item) => itemsList.appendChild(renderItemCard(item)));
+        const hasItems = items.length > 0;
+        itemsPicker.classList.toggle('hidden', !hasItems);
+        itemsEmpty.classList.toggle('hidden', hasItems);
+        asideHintHasItems.classList.toggle('hidden', !hasItems);
+        asideHintNoItems.classList.toggle('hidden', hasItems);
+        if (submitBtn) submitBtn.disabled = !hasItems;
+        updateItemSummary();
+    }
+
+    if (window.fetch && window.FormData) {
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (submitBtn.disabled) return;
+
+            const originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Memproses...';
+
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: new FormData(form),
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                    },
+                    credentials: 'same-origin',
+                });
+                const payload = await response.json();
+
+                if (response.ok && payload.success) {
+                    showFlash(payload.message, 'success');
+                    rebuildItems(payload.items || []);
+                    if (payload.availability) {
+                        Object.keys(availability).forEach((key) => delete availability[key]);
+                        Object.assign(availability, payload.availability);
+                        updateSessionAvailability();
+                    }
+                } else {
+                    showFlash(payload.message || 'Jadwal penyetoran gagal disimpan.', 'error');
+                }
+            } catch {
+                showFlash('Jadwal penyetoran gagal disimpan. Periksa koneksi, lalu coba lagi.', 'error');
+            } finally {
+                submitBtn.disabled = itemsList && itemsList.children.length === 0;
+                submitBtn.textContent = originalText;
+            }
+        });
+    }
 </script>
 {% endblock content %}

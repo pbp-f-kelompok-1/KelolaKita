@@ -3,6 +3,7 @@ import datetime
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
@@ -125,6 +126,22 @@ def _owner_display_name(user):
     return user.get_full_name() or user.username
 
 
+def _is_ajax(request):
+    return request.headers.get("X-Requested-With") == "XMLHttpRequest"
+
+
+def _serialize_item(item):
+    return {
+        "pk": item.pk,
+        "nama_barang": item.nama_barang,
+        "jenis_barang": item.jenis_barang,
+        "kondisi_barang": item.kondisi_barang,
+        "kategori_slug": item.kategori_penanganan,
+        "kategori_label": item.get_kategori_penanganan_display(),
+        "owner": _owner_display_name(item.pengguna),
+    }
+
+
 def _active_locations():
     return Location.objects.filter(is_active=True).order_by("name")
 
@@ -157,6 +174,8 @@ def show_schedule(request):
         "active_locations": locations,
     }
 
+    is_ajax = _is_ajax(request)
+
     if request.method == "POST":
         form = PenjadwalanForm(request.POST, **form_kwargs)
         if form.is_valid():
@@ -164,17 +183,31 @@ def show_schedule(request):
             sesi = form.cleaned_data["sesi"]
             remaining = SESSION_QUOTAS[sesi] - Penjadwalan.objects.filter(tanggal=tanggal, sesi=sesi).count()
             if remaining <= 0:
-                messages.error(request, "Sesi yang dipilih sudah penuh, silakan pilih sesi lain.")
+                message = "Sesi yang dipilih sudah penuh, silakan pilih sesi lain."
+                if is_ajax:
+                    return JsonResponse({"success": False, "message": message}, status=400)
+                messages.error(request, message)
             else:
                 form.save()
-                messages.success(request, "Jadwal penyetoran berhasil dikonfirmasi.")
+                message = "Jadwal penyetoran berhasil dikonfirmasi."
+                if is_ajax:
+                    remaining_items = _approved_items(request.user)
+                    return JsonResponse({
+                        "success": True,
+                        "message": message,
+                        "items": [_serialize_item(item) for item in remaining_items],
+                        "availability": _availability_for_dates(dates),
+                    })
+                messages.success(request, message)
                 return redirect("show_schedule")
         else:
-            messages.error(
-                request,
+            message = (
                 "Lengkapi barang, metode, tanggal, sesi, nama & nomor HP penerima, "
-                "serta alamat/lokasi penjemputan terlebih dahulu.",
+                "serta alamat/lokasi penjemputan terlebih dahulu."
             )
+            if is_ajax:
+                return JsonResponse({"success": False, "message": message}, status=400)
+            messages.error(request, message)
     else:
         initial = {
             "metode": PICKUP_METHODS[0]["value"],
@@ -249,14 +282,21 @@ def schedule_list(request):
 @login_required
 def cancel_schedule(request, pk):
     booking = get_object_or_404(_owned_bookings(request.user), pk=pk)
+    is_ajax = _is_ajax(request)
     if request.method == "POST":
         start_dt = _session_datetime(booking.tanggal, booking.sesi, "start")
         cutoff_dt = start_dt - datetime.timedelta(hours=CANCEL_CUTOFF_HOURS)
         if timezone.now() > cutoff_dt:
-            messages.error(request, "Jadwal ini sudah melewati batas waktu pembatalan (12 jam sebelum sesi).")
+            message = "Jadwal ini sudah melewati batas waktu pembatalan (12 jam sebelum sesi)."
+            if is_ajax:
+                return JsonResponse({"success": False, "message": message}, status=400)
+            messages.error(request, message)
         else:
             booking.delete()
-            messages.success(request, "Jadwal berhasil dibatalkan.")
+            message = "Jadwal berhasil dibatalkan."
+            if is_ajax:
+                return JsonResponse({"success": True, "message": message})
+            messages.success(request, message)
     return redirect("schedule_list")
 
 

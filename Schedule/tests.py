@@ -327,6 +327,53 @@ class ShowSchedulePostTests(TestCase):
         messages = list(response.context["messages"])
         self.assertTrue(any("penuh" in str(m) for m in messages))
 
+    def test_ajax_valid_submission_returns_json_with_remaining_items(self):
+        response = self.client.post(
+            reverse("show_schedule"),
+            self._valid_kurir_payload(barang=[str(self.item.pk)]),
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload["success"])
+        self.assertEqual(Penjadwalan.objects.count(), 1)
+        remaining_pks = [item["pk"] for item in payload["items"]]
+        self.assertNotIn(self.item.pk, remaining_pks)
+        self.assertIn(self.item2.pk, remaining_pks)
+
+    def test_ajax_invalid_submission_returns_json_error_without_creating(self):
+        response = self.client.post(
+            reverse("show_schedule"),
+            self._valid_kurir_payload(nama_penerima=""),
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        self.assertEqual(response.status_code, 400)
+        payload = response.json()
+        self.assertFalse(payload["success"])
+        self.assertEqual(Penjadwalan.objects.count(), 0)
+
+    def test_ajax_full_session_returns_json_error_without_creating(self):
+        date_iso = _date_offset(3)
+        Penjadwalan.objects.create(
+            metode=Penjadwalan.Metode.titik,
+            tanggal=date_iso,
+            sesi=Penjadwalan.Sesi.siang,
+            nama_penerima="Lain",
+            nomor_hp="08129999999",
+            lokasi_mitra=self.location,
+        )
+
+        response = self.client.post(
+            reverse("show_schedule"),
+            self._valid_kurir_payload(tanggal=date_iso, sesi="siang"),
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        self.assertEqual(response.status_code, 400)
+        payload = response.json()
+        self.assertFalse(payload["success"])
+        self.assertIn("penuh", payload["message"])
+        self.assertEqual(Penjadwalan.objects.count(), 1)
+
 
 class ScheduleListViewTests(TestCase):
     def setUp(self):
@@ -478,6 +525,33 @@ class CancelScheduleViewTests(TestCase):
         response = self.client.post(reverse("cancel_schedule", args=[other_booking.pk]))
         self.assertEqual(response.status_code, 404)
         self.assertTrue(Penjadwalan.objects.filter(pk=other_booking.pk).exists())
+
+    def test_ajax_cancel_before_cutoff_returns_json_success(self):
+        booking = self._create_booking(datetime.date.today() + datetime.timedelta(days=5))
+        response = self.client.post(
+            reverse("cancel_schedule", args=[booking.pk]),
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload["success"])
+        self.assertFalse(Penjadwalan.objects.filter(pk=booking.pk).exists())
+
+    def test_ajax_cancel_within_cutoff_returns_json_error_and_keeps_booking(self):
+        session_date = datetime.date.today() + datetime.timedelta(days=10)
+        booking = self._create_booking(session_date)
+
+        mocked_now = timezone.make_aware(datetime.datetime.combine(session_date, datetime.time(2, 0)))
+        with patch("django.utils.timezone.now", return_value=mocked_now):
+            response = self.client.post(
+                reverse("cancel_schedule", args=[booking.pk]),
+                HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+            )
+
+        self.assertEqual(response.status_code, 400)
+        payload = response.json()
+        self.assertFalse(payload["success"])
+        self.assertTrue(Penjadwalan.objects.filter(pk=booking.pk).exists())
 
 
 class EditScheduleViewTests(TestCase):
