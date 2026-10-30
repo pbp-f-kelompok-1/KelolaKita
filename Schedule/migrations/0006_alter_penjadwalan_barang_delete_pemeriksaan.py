@@ -11,7 +11,16 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterField(
+        # Pemeriksaan pindah dari Schedule (pk bigint) ke penanganan (pk uuid).
+        # AlterField langsung gagal di Postgres karena tidak ada cast bigint->uuid
+        # untuk kolom FK tabel through M2M-nya, jadi tabel through lama di-drop
+        # dan dibuat ulang mengarah ke penanganan.pemeriksaan (mengikuti pola yang
+        # sama dipakai saat field ini pertama kali diubah dari FK ke M2M).
+        migrations.RemoveField(
+            model_name='penjadwalan',
+            name='barang',
+        ),
+        migrations.AddField(
             model_name='penjadwalan',
             name='barang',
             field=models.ManyToManyField(related_name='penjadwalan_set', to='penanganan.pemeriksaan'),
