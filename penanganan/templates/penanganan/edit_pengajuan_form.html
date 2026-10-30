@@ -22,7 +22,7 @@
                 {% csrf_token %}
                 
                 <div class="mb-5 md:mb-6 rounded-xl border border-dashed border-yellow-400 bg-[#fffdf0] p-5 md:p-8 text-center relative hover:bg-[#fff9c4] transition min-h-[200px] md:min-h-[240px] flex items-center justify-center">
-                    <input type="file" name="foto_barang" id="foto_barang" multiple accept="image/png, image/jpeg" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" onchange="previewImages(event)">
+                    {{ form.foto_barang }}
                     
                     <div id="upload-placeholder" class="flex flex-col items-center pointer-events-none z-10 transition-opacity duration-300">
                         <span class="flex size-10 items-center justify-center rounded-full bg-white mb-3 shadow-sm border border-yellow-200">
@@ -33,49 +33,38 @@
                     </div>
                     <div id="image-preview-container" class="hidden absolute inset-0 w-full h-full p-3 md:p-4 grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 z-10 bg-[#fff9c4] rounded-xl overflow-hidden items-center"></div>
                 </div>
+                {{ form.foto_barang.errors }}
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-5 md:mb-6">
                     <div class="location-form">
                         <label class="block text-xs md:text-sm font-bold text-[#1a2e1c] mb-1.5 md:mb-2">Nama barang</label>
-                        <input type="text" name="nama_barang" value="{{ pemeriksaan.nama_barang }}" required>
+                        {{ form.nama_barang }}
+                        {{ form.nama_barang.errors }}
                     </div>
                     <div class="location-form">
                         <label class="block text-xs md:text-sm font-bold text-[#1a2e1c] mb-1.5 md:mb-2">Kategori</label>
-                        <select name="kategori_barang" required>
-                            <option value="Furnitur rumah" {% if pemeriksaan.kategori_barang == 'Furnitur rumah' %}selected{% endif %}>Furnitur rumah</option>
-                            <option value="Elektronik" {% if pemeriksaan.kategori_barang == 'Elektronik' %}selected{% endif %}>Elektronik</option>
-                            <option value="Pakaian" {% if pemeriksaan.kategori_barang == 'Pakaian' %}selected{% endif %}>Pakaian</option>
-                            <option value="Lainnya" {% if pemeriksaan.kategori_barang == 'Lainnya' %}selected{% endif %}>Lainnya</option>
-                        </select>
+                        {{ form.kategori_barang }}
+                        {{ form.kategori_barang.errors }}
                     </div>
                 </div>
 
                 <div class="mb-5 md:mb-6">
                     <label class="block text-xs md:text-sm font-bold text-[#1a2e1c] mb-1.5 md:mb-2">Kondisi barang</label>
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
-                        <!-- Format radio sama dengan form tambah di atas, diubah class responsive-nya -->
+                        {% for radio in form.kondisi_barang %}
                         <label class="flex items-center justify-center gap-2 rounded-lg border border-[#dce7de] py-2.5 md:py-3 cursor-pointer hover:bg-gray-50 has-[:checked]:bg-[#e8f5e9] has-[:checked]:border-[#81c784] has-[:checked]:text-[#1f5a23]">
-                            <input type="radio" name="kondisi_barang" value="Sangat baik" class="w-3.5 h-3.5 md:w-4 md:h-4 text-[#2e7d32]" {% if pemeriksaan.kondisi_barang == 'Sangat baik' %}checked{% endif %} required>
-                            <span class="text-xs md:text-sm font-medium">Sangat baik</span>
+                            {{ radio.tag }}
+                            <span class="text-xs md:text-sm font-medium">{{ radio.choice_label }}</span>
                         </label>
-                        <label class="flex items-center justify-center gap-2 rounded-lg border border-[#dce7de] py-2.5 md:py-3 cursor-pointer hover:bg-gray-50 has-[:checked]:bg-[#e8f5e9] has-[:checked]:border-[#81c784] has-[:checked]:text-[#1f5a23]">
-                            <input type="radio" name="kondisi_barang" value="Layak pakai" class="w-3.5 h-3.5 md:w-4 md:h-4 text-[#2e7d32]" {% if pemeriksaan.kondisi_barang == 'Layak pakai' %}checked{% endif %}>
-                            <span class="text-xs md:text-sm font-medium">Layak pakai</span>
-                        </label>
-                        <label class="flex items-center justify-center gap-2 rounded-lg border border-[#dce7de] py-2.5 md:py-3 cursor-pointer hover:bg-gray-50 has-[:checked]:bg-[#e8f5e9] has-[:checked]:border-[#81c784] has-[:checked]:text-[#1f5a23]">
-                            <input type="radio" name="kondisi_barang" value="Perlu perbaikan" class="w-3.5 h-3.5 md:w-4 md:h-4 text-[#2e7d32]" {% if pemeriksaan.kondisi_barang == 'Perlu perbaikan' %}checked{% endif %}>
-                            <span class="text-xs md:text-sm font-medium">Perlu perbaikan</span>
-                        </label>
-                        <label class="flex items-center justify-center gap-2 rounded-lg border border-[#dce7de] py-2.5 md:py-3 cursor-pointer hover:bg-gray-50 has-[:checked]:bg-[#e8f5e9] has-[:checked]:border-[#81c784] has-[:checked]:text-[#1f5a23]">
-                            <input type="radio" name="kondisi_barang" value="Rusak" class="w-3.5 h-3.5 md:w-4 md:h-4 text-[#2e7d32]" {% if pemeriksaan.kondisi_barang == 'Rusak' %}checked{% endif %}>
-                            <span class="text-xs md:text-sm font-medium">Rusak</span>
-                        </label>
+                        {% endfor %}
                     </div>
+                    {{ form.kondisi_barang.errors }}
                 </div>
 
                 <div class="location-form mb-6 md:mb-8">
                     <label class="block text-xs md:text-sm font-bold text-[#1a2e1c] mb-1.5 md:mb-2">Catatan tambahan</label>
-                    <textarea name="catatan_tambahan" rows="2">{{ pemeriksaan.catatan_tambahan }}</textarea>
+                    {{ form.catatan_tambahan }}
+                    {{ form.catatan_tambahan.errors }}
                 </div>
 
                 <div class="flex flex-col-reverse sm:flex-row items-center justify-between border-t border-[#dce7de] pt-5 md:pt-6 mt-4 md:mt-6 gap-3 sm:gap-0">

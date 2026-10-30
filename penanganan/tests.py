@@ -64,6 +64,102 @@ class ManagerRolePermissionTests(TestCase):
         self.client.force_login(self.user)
         self.assertEqual(self.client.get(review_url).status_code, 403)
 
+    def test_invalid_review_form_does_not_update_submission(self):
+        self.client.force_login(self.manager)
+        review_url = reverse(
+            "penanganan:periksa_pengajuan",
+            args=[self.user_submission.pk],
+        )
+
+        response = self.client.post(
+            review_url,
+            {"kategori_penanganan": "invalid", "mitra_rekomendasi": "", "rekomendasi_penanganan": ""},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.user_submission.refresh_from_db()
+        self.assertEqual(self.user_submission.kategori_penanganan, "Recycle")
+        self.assertTrue(response.context["form"].errors)
+
+    def test_valid_review_form_updates_submission(self):
+        self.client.force_login(self.manager)
+        review_url = reverse(
+            "penanganan:periksa_pengajuan",
+            args=[self.user_submission.pk],
+        )
+
+        response = self.client.post(
+            review_url,
+            {
+                "kategori_penanganan": "Reuse",
+                "mitra_rekomendasi": "Mitra lokal",
+                "rekomendasi_penanganan": "Dapat digunakan kembali",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("penanganan:daftar_pengajuan"),
+            fetch_redirect_response=False,
+        )
+        self.user_submission.refresh_from_db()
+        self.assertEqual(self.user_submission.kategori_penanganan, "Reuse")
+        self.assertEqual(self.user_submission.mitra_rekomendasi, "Mitra lokal")
+        self.assertEqual(
+            self.user_submission.rekomendasi_penanganan,
+            "Dapat digunakan kembali",
+        )
+
+
+class EditPengajuanFormTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="pengaju_edit")
+        self.pemeriksaan = Pemeriksaan.objects.create(
+            pengguna=self.user,
+            nama_barang="Barang awal",
+            kategori_barang="Elektronik",
+            kondisi_barang="Layak pakai",
+        )
+        self.client.force_login(self.user)
+        self.url = reverse("penanganan:edit_pengajuan", args=[self.pemeriksaan.pk])
+
+    def test_edit_form_updates_submission_without_requiring_new_photos(self):
+        response = self.client.post(
+            self.url,
+            {
+                "nama_barang": "Barang diperbarui",
+                "kategori_barang": "Pakaian",
+                "kondisi_barang": "Sangat baik",
+                "catatan_tambahan": "Catatan baru",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("penanganan:daftar_pengajuan"),
+            fetch_redirect_response=False,
+        )
+        self.pemeriksaan.refresh_from_db()
+        self.assertEqual(self.pemeriksaan.nama_barang, "Barang diperbarui")
+        self.assertEqual(self.pemeriksaan.kategori_barang, "Pakaian")
+        self.assertEqual(self.pemeriksaan.catatan_tambahan, "Catatan baru")
+
+    def test_invalid_edit_form_does_not_update_submission(self):
+        response = self.client.post(
+            self.url,
+            {
+                "nama_barang": "Barang diperbarui",
+                "kategori_barang": "Pakaian",
+                "kondisi_barang": "invalid",
+                "catatan_tambahan": "Catatan baru",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.pemeriksaan.refresh_from_db()
+        self.assertEqual(self.pemeriksaan.nama_barang, "Barang awal")
+        self.assertIn("kondisi_barang", response.context["form"].errors)
+
 
 class DaftarPengajuanNavigationTests(TestCase):
     def test_anonymous_user_is_redirected_to_accounts_login(self):
@@ -88,6 +184,31 @@ class DaftarPengajuanNavigationTests(TestCase):
 
 
 class FotoBarangUploadTests(TestCase):
+    def test_submission_requires_two_images(self):
+        user = User.objects.create_user(username="pengaju_satu_foto")
+        self.client.force_login(user)
+        image_data = BytesIO()
+        Image.new("RGB", (4, 4), color="green").save(image_data, format="PNG")
+
+        response = self.client.post(
+            reverse("penanganan:tambah_pengajuan"),
+            {
+                "nama_barang": "Barang uji",
+                "kategori_barang": "Lainnya",
+                "kondisi_barang": "Layak pakai",
+                "catatan_tambahan": "",
+                "foto_barang": SimpleUploadedFile(
+                    "depan.png",
+                    image_data.getvalue(),
+                    content_type="image/png",
+                ),
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Pemeriksaan.objects.count(), 0)
+        self.assertIn("Minimal harus mengunggah 2 foto.", response.context["form"].errors["foto_barang"])
+
     def test_uploaded_images_are_saved_in_project_static_folder(self):
         user = User.objects.create_user(username="pengaju")
         self.client.force_login(user)
