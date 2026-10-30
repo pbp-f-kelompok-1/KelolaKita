@@ -1,40 +1,10 @@
-from pathlib import Path
-from uuid import uuid4
-
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.core.files.storage import FileSystemStorage
-from django.core.files.storage import default_storage
 from django.shortcuts import render, redirect, get_object_or_404
-from PIL import Image
 from accounts.models import Profile
 from penanganan.forms import EditPengajuanForm, HasilPemeriksaanForm, PengajuanForm
 from penanganan.models import Pemeriksaan, FotoBarang
-
-
-LEGACY_PENANGANAN_IMAGE_STORAGE = FileSystemStorage(
-    location=Path(__file__).resolve().parent.parent / "static" / "img" / "penanganan",
-)
-
-
-def _store_foto_barang(upload):
-    with Image.open(upload) as image:
-        image_format = image.format
-    upload.seek(0)
-    extensions = {"JPEG": ".jpg", "PNG": ".png"}
-    return default_storage.save(
-        f"foto_pemeriksaan/{uuid4().hex}{extensions[image_format]}",
-        upload,
-    )
-
-
-def _delete_foto_barang_files(fotos):
-    for foto in fotos:
-        if foto.gambar.name.startswith("foto_pemeriksaan/"):
-            default_storage.delete(foto.gambar.name)
-        elif "/" not in foto.gambar.name and "\\" not in foto.gambar.name:
-            LEGACY_PENANGANAN_IMAGE_STORAGE.delete(foto.gambar.name)
 
 
 def is_pengelola(user):
@@ -56,10 +26,11 @@ def tambah_pengajuan(request):
         pemeriksaan.pengguna = request.user
         pemeriksaan.save()
 
-        for foto in form.cleaned_data["foto_barang"]:
+        foto = form.cleaned_data["foto_barang"]
+        if foto:
             FotoBarang.objects.create(
                 pemeriksaan=pemeriksaan,
-                gambar=_store_foto_barang(foto),
+                gambar=foto,
             )
 
         messages.success(request, "Pengajuan barang berhasil ditambahkan!")
@@ -133,7 +104,6 @@ def hapus_pengajuan(request, pk):
     
     # Proses Hapus
     if request.method == "POST":
-        _delete_foto_barang_files(pemeriksaan.foto_barang.all())
         pemeriksaan.delete()
         messages.success(request, "Data pengajuan berhasil dihapus!")
         return redirect("penanganan:daftar_pengajuan")
@@ -159,22 +129,11 @@ def edit_pengajuan(request, pk):
     )
     if request.method == "POST" and form.is_valid():
         pemeriksaan = form.save()
-        fotos_nuevas = form.cleaned_data["foto_barang"]
+        foto_nueva = form.cleaned_data["foto_barang"]
 
-        if fotos_nuevas:
-            foto_lama = pemeriksaan.foto_barang.all()
-            stored_names = [
-                _store_foto_barang(foto)
-                for foto in fotos_nuevas
-            ]
-            _delete_foto_barang_files(foto_lama)
-            foto_lama.delete()
-
-            for stored_name in stored_names:
-                FotoBarang.objects.create(
-                    pemeriksaan=pemeriksaan,
-                    gambar=stored_name,
-                )
+        if foto_nueva:
+            pemeriksaan.foto_barang.all().delete()
+            FotoBarang.objects.create(pemeriksaan=pemeriksaan, gambar=foto_nueva)
 
         messages.success(request, "Pengajuan barang berhasil diperbarui!")
         return redirect("penanganan:daftar_pengajuan")

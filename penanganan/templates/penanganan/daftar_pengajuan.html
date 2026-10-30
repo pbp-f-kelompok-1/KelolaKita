@@ -47,7 +47,7 @@
                 <!-- Tampilkan Gambar Pertama -->
                 {% if pemeriksaan.foto_barang.first %}
                 <div class="mb-4">
-                    {% if "foto_pemeriksaan/" in pemeriksaan.foto_barang.first.gambar.name %}
+                    {% if "static/img/" in pemeriksaan.foto_barang.first.gambar.name or "foto_pemeriksaan/" in pemeriksaan.foto_barang.first.gambar.name %}
                     <img src="{{ pemeriksaan.foto_barang.first.gambar.url }}" alt="Foto {{ pemeriksaan.nama_barang }}" class="w-full h-36 md:h-40 object-cover rounded-lg border border-[#dce7de]">
                     {% else %}
                     <img src="{% static 'img/penanganan/' %}{{ pemeriksaan.foto_barang.first.gambar.name }}" alt="Foto {{ pemeriksaan.nama_barang }}" class="w-full h-36 md:h-40 object-cover rounded-lg border border-[#dce7de]">

@@ -1,64 +1,15 @@
 from django import forms
-from django.core.exceptions import ValidationError
-from PIL import Image, UnidentifiedImageError
 
 from .models import Pemeriksaan
 
 
-class MultipleImageInput(forms.ClearableFileInput):
-    allow_multiple_selected = True
-
-
-class MultipleImageField(forms.ImageField):
-    widget = MultipleImageInput
-    default_error_messages = {
-        **forms.ImageField.default_error_messages,
-        "required": "Unggah minimal 2 foto.",
-    }
-
-    def clean(self, data, initial=None):
-        if not data:
-            if self.required:
-                return super().clean(data, initial)
-            return []
-
-        uploads = data if isinstance(data, (list, tuple)) else [data]
-        cleaned_uploads = [
-            super(MultipleImageField, self).clean(upload, None)
-            for upload in uploads
-        ]
-        for upload in cleaned_uploads:
-            try:
-                with Image.open(upload) as image:
-                    image_format = image.format
-                    image.verify()
-            except (
-                UnidentifiedImageError,
-                OSError,
-                ValueError,
-                Image.DecompressionBombError,
-            ) as error:
-                raise ValidationError(
-                    "File harus berupa gambar JPG atau PNG yang valid."
-                ) from error
-            finally:
-                upload.seek(0)
-
-            if image_format not in {"JPEG", "PNG"}:
-                raise ValidationError("Format foto harus JPG atau PNG.")
-
-        return cleaned_uploads
-
-
 class PengajuanForm(forms.ModelForm):
-    require_multiple_photos = True
-    foto_barang = MultipleImageField(
+    foto_barang = forms.ImageField(
         label="Foto barang",
-        widget=MultipleImageInput(
+        widget=forms.ClearableFileInput(
             attrs={
                 "id": "foto_barang",
-                "multiple": True,
-                "accept": "image/png, image/jpeg",
+                "accept": "image/*",
                 "class": "absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20",
                 "onchange": "previewImages(event)",
             }
@@ -79,12 +30,6 @@ class PengajuanForm(forms.ModelForm):
             attrs={"class": "w-3.5 h-3.5 md:w-4 md:h-4 text-[#2e7d32]"}
         ),
     )
-
-    def clean_foto_barang(self):
-        fotos = self.cleaned_data["foto_barang"]
-        if len(fotos) < 2 and (self.require_multiple_photos or fotos):
-            raise ValidationError("Minimal harus mengunggah 2 foto.")
-        return fotos
 
     class Meta:
         model = Pemeriksaan
@@ -111,15 +56,13 @@ class PengajuanForm(forms.ModelForm):
 
 
 class EditPengajuanForm(PengajuanForm):
-    require_multiple_photos = False
-    foto_barang = MultipleImageField(
+    foto_barang = forms.ImageField(
         label="Foto barang",
         required=False,
-        widget=MultipleImageInput(
+        widget=forms.ClearableFileInput(
             attrs={
                 "id": "foto_barang",
-                "multiple": True,
-                "accept": "image/png, image/jpeg",
+                "accept": "image/*",
                 "class": "absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20",
                 "onchange": "previewImages(event)",
             }

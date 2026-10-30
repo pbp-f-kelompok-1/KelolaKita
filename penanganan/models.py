@@ -44,7 +44,7 @@ class Pemeriksaan(models.Model):
 
 class FotoBarang(models.Model):
     pemeriksaan = models.ForeignKey(Pemeriksaan, related_name='foto_barang', on_delete=models.CASCADE)
-    gambar = models.ImageField(upload_to='foto_pemeriksaan/')
+    gambar = models.ImageField(upload_to='static/img/')
     diunggah_pada = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
