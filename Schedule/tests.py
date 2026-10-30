@@ -568,6 +568,37 @@ class ScheduleListViewTests(TestCase):
         self.assertTrue(response.context["has_bookings"])
         self.assertContains(response, "Tidak ada jadwal dengan status ini.")
 
+    def test_ajax_request_returns_json_html_fragment(self):
+        past_booking = self._create_booking(datetime.date.today() - datetime.timedelta(days=1), Penjadwalan.Sesi.pagi)
+        future_booking = self._create_booking(datetime.date.today() + datetime.timedelta(days=5), Penjadwalan.Sesi.pagi)
+
+        response = self.client.get(
+            reverse("schedule_list"), HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload["success"])
+        self.assertIn(f'booking-row-{past_booking.pk}', payload["html"])
+        self.assertIn(f'booking-row-{future_booking.pk}', payload["html"])
+        # Respons AJAX cuma fragmen baris, bukan halaman penuh dengan navbar.
+        self.assertNotIn("Riwayat jadwal", payload["html"])
+        # csrf_token harus tetap valid di fragmen ini supaya form Batalkan
+        # yang disuntikkan lewat innerHTML masih bisa POST tanpa ditolak CSRF.
+        self.assertIn("csrfmiddlewaretoken", payload["html"])
+
+    def test_ajax_request_with_filter_only_includes_matching_rows(self):
+        past_booking = self._create_booking(datetime.date.today() - datetime.timedelta(days=1), Penjadwalan.Sesi.pagi)
+        future_booking = self._create_booking(datetime.date.today() + datetime.timedelta(days=5), Penjadwalan.Sesi.pagi)
+
+        response = self.client.get(
+            reverse("schedule_list"),
+            {"status": "terjadwal"},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        payload = response.json()
+        self.assertIn(f'booking-row-{future_booking.pk}', payload["html"])
+        self.assertNotIn(f'booking-row-{past_booking.pk}', payload["html"])
+
 
 class CancelScheduleViewTests(TestCase):
     def setUp(self):

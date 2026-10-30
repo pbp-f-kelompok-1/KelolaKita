@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
 from django.utils import timezone
 
 from Location.models import Location
@@ -320,6 +321,12 @@ def schedule_list(request):
     if filter_status:
         group = STATUS_FILTER_GROUPS[filter_status]
         rows = [row for row in rows if row["status"] in group]
+
+    if _is_ajax(request):
+        html = render_to_string(
+            "Schedule/_schedule_rows.html", {"rows": rows, "filter_status": filter_status}, request=request,
+        )
+        return JsonResponse({"success": True, "html": html})
 
     context = {
         "active_nav": "jadwal",
