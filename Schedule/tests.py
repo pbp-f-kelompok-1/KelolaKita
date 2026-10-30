@@ -9,7 +9,8 @@ from django.urls import reverse
 from django.utils import timezone
 
 from Location.models import Location
-from Schedule.models import Pemeriksaan, Penjadwalan, phone_validator
+from penanganan.models import Pemeriksaan
+from Schedule.models import Penjadwalan, phone_validator
 from Schedule.views import SESSION_QUOTAS, _is_session_passed
 
 
@@ -31,30 +32,6 @@ class PhoneValidatorTests(TestCase):
     def test_rejects_too_short(self):
         with self.assertRaises(ValidationError):
             phone_validator("08123")
-
-
-class PemeriksaanModelTests(TestCase):
-    def setUp(self):
-        self.user = User.objects.create_user(username="budi", password="pass12345")
-
-    def test_str_shows_nama_dan_kategori(self):
-        item = Pemeriksaan.objects.create(
-            pengguna=self.user,
-            nama_barang="Botol plastik",
-            jenis_barang="Plastik",
-            kondisi_barang="Masih bagus",
-            kategori_penanganan="recycle",
-        )
-        self.assertEqual(str(item), "Botol plastik (Recycle)")
-
-    def test_default_kategori_is_menunggu(self):
-        item = Pemeriksaan.objects.create(
-            pengguna=self.user,
-            nama_barang="Baju lama",
-            jenis_barang="Tekstil",
-            kondisi_barang="Sobek",
-        )
-        self.assertEqual(item.kategori_penanganan, "menunggu")
 
 
 class PenjadwalanModelTests(TestCase):
@@ -113,9 +90,9 @@ class PenjadwalanModelTests(TestCase):
         item = Pemeriksaan.objects.create(
             pengguna=self.user,
             nama_barang="Kardus",
-            jenis_barang="Kertas",
-            kondisi_barang="Baik",
-            kategori_penanganan="recycle",
+            kategori_barang="Kertas",
+            kondisi_barang="Layak pakai",
+            kategori_penanganan="Recycle",
         )
         booking = Penjadwalan.objects.create(**self._base_kwargs(
             metode=Penjadwalan.Metode.kurir,
@@ -177,16 +154,16 @@ class ShowScheduleGetTests(TestCase):
         self.ready_item = Pemeriksaan.objects.create(
             pengguna=self.user,
             nama_barang="Botol plastik",
-            jenis_barang="Plastik",
-            kondisi_barang="Baik",
-            kategori_penanganan="recycle",
+            kategori_barang="Plastik",
+            kondisi_barang="Layak pakai",
+            kategori_penanganan="Recycle",
         )
         Pemeriksaan.objects.create(
             pengguna=self.user,
             nama_barang="Baju bekas",
-            jenis_barang="Tekstil",
-            kondisi_barang="Sobek",
-            kategori_penanganan="menunggu",
+            kategori_barang="Tekstil",
+            kondisi_barang="Perlu perbaikan",
+            kategori_penanganan="Menunggu",
         )
 
     def test_get_status_ok_and_uses_correct_template(self):
@@ -204,9 +181,9 @@ class ShowScheduleGetTests(TestCase):
         other_item = Pemeriksaan.objects.create(
             pengguna=other_user,
             nama_barang="Kardus",
-            jenis_barang="Kertas",
-            kondisi_barang="Baik",
-            kategori_penanganan="recycle",
+            kategori_barang="Kertas",
+            kondisi_barang="Layak pakai",
+            kategori_penanganan="Recycle",
         )
         response = self.client.get(reverse("show_schedule"))
         items = list(response.context["items"])
@@ -235,16 +212,16 @@ class ShowSchedulePostTests(TestCase):
         self.item = Pemeriksaan.objects.create(
             pengguna=self.user,
             nama_barang="Botol plastik",
-            jenis_barang="Plastik",
-            kondisi_barang="Baik",
-            kategori_penanganan="recycle",
+            kategori_barang="Plastik",
+            kondisi_barang="Layak pakai",
+            kategori_penanganan="Recycle",
         )
         self.item2 = Pemeriksaan.objects.create(
             pengguna=self.user,
             nama_barang="Kardus",
-            jenis_barang="Kertas",
-            kondisi_barang="Baik",
-            kategori_penanganan="reuse",
+            kategori_barang="Kertas",
+            kondisi_barang="Layak pakai",
+            kategori_penanganan="Reuse",
         )
         self.location = Location.objects.create(
             name="Bank Sampah Sejahtera",
@@ -360,8 +337,8 @@ class ShowSchedulePostTests(TestCase):
         self.assertTrue(payload["success"])
         self.assertEqual(Penjadwalan.objects.count(), 1)
         remaining_pks = [item["pk"] for item in payload["items"]]
-        self.assertNotIn(self.item.pk, remaining_pks)
-        self.assertIn(self.item2.pk, remaining_pks)
+        self.assertNotIn(str(self.item.pk), remaining_pks)
+        self.assertIn(str(self.item2.pk), remaining_pks)
 
     def test_ajax_invalid_submission_returns_json_error_without_creating(self):
         response = self.client.post(
@@ -444,9 +421,9 @@ class ScheduleListViewTests(TestCase):
         item = Pemeriksaan.objects.create(
             pengguna=self.user,
             nama_barang="Botol plastik",
-            jenis_barang="Plastik",
-            kondisi_barang="Baik",
-            kategori_penanganan="recycle",
+            kategori_barang="Plastik",
+            kondisi_barang="Layak pakai",
+            kategori_penanganan="Recycle",
         )
         booking = Penjadwalan.objects.create(
             metode=Penjadwalan.Metode.kurir,
@@ -494,9 +471,9 @@ class ScheduleListViewTests(TestCase):
         other_item = Pemeriksaan.objects.create(
             pengguna=other_user,
             nama_barang="Kardus",
-            jenis_barang="Kertas",
-            kondisi_barang="Baik",
-            kategori_penanganan="recycle",
+            kategori_barang="Kertas",
+            kondisi_barang="Layak pakai",
+            kategori_penanganan="Recycle",
         )
         other_booking = Penjadwalan.objects.create(
             metode=Penjadwalan.Metode.kurir,
@@ -607,9 +584,9 @@ class CancelScheduleViewTests(TestCase):
         self.item = Pemeriksaan.objects.create(
             pengguna=self.user,
             nama_barang="Botol plastik",
-            jenis_barang="Plastik",
-            kondisi_barang="Baik",
-            kategori_penanganan="recycle",
+            kategori_barang="Plastik",
+            kondisi_barang="Layak pakai",
+            kategori_penanganan="Recycle",
         )
 
     def _create_booking(self, tanggal, sesi=Penjadwalan.Sesi.pagi):
@@ -670,9 +647,9 @@ class CancelScheduleViewTests(TestCase):
         other_item = Pemeriksaan.objects.create(
             pengguna=other_user,
             nama_barang="Kardus",
-            jenis_barang="Kertas",
-            kondisi_barang="Baik",
-            kategori_penanganan="recycle",
+            kategori_barang="Kertas",
+            kondisi_barang="Layak pakai",
+            kategori_penanganan="Recycle",
         )
         other_booking = Penjadwalan.objects.create(
             metode=Penjadwalan.Metode.kurir,
@@ -723,9 +700,9 @@ class EditScheduleViewTests(TestCase):
         self.item = Pemeriksaan.objects.create(
             pengguna=self.user,
             nama_barang="Botol plastik",
-            jenis_barang="Plastik",
-            kondisi_barang="Baik",
-            kategori_penanganan="recycle",
+            kategori_barang="Plastik",
+            kondisi_barang="Layak pakai",
+            kategori_penanganan="Recycle",
         )
         self.booking = Penjadwalan.objects.create(
             metode=Penjadwalan.Metode.kurir,
@@ -790,9 +767,9 @@ class EditScheduleViewTests(TestCase):
         other_item = Pemeriksaan.objects.create(
             pengguna=other_user,
             nama_barang="Kardus",
-            jenis_barang="Kertas",
-            kondisi_barang="Baik",
-            kategori_penanganan="recycle",
+            kategori_barang="Kertas",
+            kondisi_barang="Layak pakai",
+            kategori_penanganan="Recycle",
         )
         other_booking = Penjadwalan.objects.create(
             metode=Penjadwalan.Metode.kurir,
@@ -812,9 +789,9 @@ class EditScheduleViewTests(TestCase):
         other_item = Pemeriksaan.objects.create(
             pengguna=other_user,
             nama_barang="Kardus",
-            jenis_barang="Kertas",
-            kondisi_barang="Baik",
-            kategori_penanganan="recycle",
+            kategori_barang="Kertas",
+            kondisi_barang="Layak pakai",
+            kategori_penanganan="Recycle",
         )
         full_date = _date_offset(6)
         for _ in range(SESSION_QUOTAS["siang"]):

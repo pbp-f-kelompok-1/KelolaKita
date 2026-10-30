@@ -1,32 +1,13 @@
-from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models
+
+from penanganan.models import Pemeriksaan
 
 phone_validator = RegexValidator(
     regex=r"^(\+62|0)8[0-9]{7,11}$",
     message="Gunakan format nomor HP Indonesia, contoh: 08123456789 atau +628123456789.",
 )
-
-
-class Pemeriksaan(models.Model):
-    KATEGORI_CHOICES = [
-        ('menunggu', 'Menunggu'),
-        ('recycle', 'Recycle'),
-        ('reduce', 'Reduce'),
-        ('reuse', 'Reuse'),
-    ]
-
-    pengguna = models.ForeignKey(User, on_delete=models.CASCADE)
-    nama_barang = models.CharField(max_length=255)
-    jenis_barang = models.CharField(max_length=100)
-    kondisi_barang = models.TextField()
-    kategori_penanganan = models.CharField(max_length=20, choices=KATEGORI_CHOICES, default='menunggu')
-    rekomendasi_penanganan = models.TextField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.nama_barang} ({self.get_kategori_penanganan_display()})"
 
 
 class Penjadwalan(models.Model):

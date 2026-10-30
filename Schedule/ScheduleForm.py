@@ -52,7 +52,8 @@ import re
 
 from django import forms
 
-from Schedule.models import Pemeriksaan, Penjadwalan, phone_validator
+from penanganan.models import Pemeriksaan
+from Schedule.models import Penjadwalan, phone_validator
 
 
 class PenjadwalanForm(forms.ModelForm):

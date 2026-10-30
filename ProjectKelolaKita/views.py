@@ -11,7 +11,7 @@ from education.models import Article
 from education.views import public_distributions
 from Location.models import Location
 from Location.forms import LocationForm
-from Schedule.models import Pemeriksaan
+from penanganan.models import Pemeriksaan
 
 
 def staff_required(view_func):

@@ -9,7 +9,7 @@ from django.utils import timezone
 
 from education.models import Article, Distribution
 from Location.models import Location
-from Schedule.models import Pemeriksaan
+from penanganan.models import Pemeriksaan
 
 BUSINESS_TIMEZONE = ZoneInfo("Asia/Jakarta")
 
@@ -74,9 +74,9 @@ class LandingPageStatsTests(TestCase):
             Pemeriksaan.objects.create(
                 pengguna=user,
                 nama_barang="Botol plastik",
-                jenis_barang="Plastik",
-                kondisi_barang="Masih bersih",
-                kategori_penanganan="recycle",
+                kategori_barang="Plastik",
+                kondisi_barang="Sangat baik",
+                kategori_penanganan="Recycle",
             )
 
         Article.objects.create(

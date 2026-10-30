@@ -9,7 +9,8 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 
 from Location.models import Location
-from Schedule.models import Pemeriksaan, Penjadwalan
+from penanganan.models import Pemeriksaan
+from Schedule.models import Penjadwalan
 from Schedule.ScheduleForm import PenjadwalanForm
 
 
@@ -128,7 +129,7 @@ def _approved_items(user):
     return (
         Pemeriksaan.objects
         .filter(pengguna=user)
-        .exclude(kategori_penanganan="menunggu")
+        .exclude(kategori_penanganan="Menunggu")
         .exclude(penjadwalan_set__isnull=False)
         .select_related("pengguna")
         .order_by("-created_at")
@@ -161,7 +162,7 @@ def _serialize_item(item):
     return {
         "pk": item.pk,
         "nama_barang": item.nama_barang,
-        "jenis_barang": item.jenis_barang,
+        "jenis_barang": item.kategori_barang,
         "kondisi_barang": item.kondisi_barang,
         "kategori_slug": item.kategori_penanganan,
         "kategori_label": item.get_kategori_penanganan_display(),
@@ -369,7 +370,7 @@ def _editable_items(user, booking):
     return (
         Pemeriksaan.objects
         .filter(pengguna=user)
-        .exclude(kategori_penanganan="menunggu")
+        .exclude(kategori_penanganan="Menunggu")
         .filter(Q(penjadwalan_set__isnull=True) | Q(penjadwalan_set=booking))
         .select_related("pengguna")
         .distinct()
