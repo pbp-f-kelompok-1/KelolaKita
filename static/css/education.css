@@ -152,6 +152,81 @@
     font-size: 0.88rem;
 }
 
+.article-filter {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px 16px;
+    margin: 0 0 14px;
+}
+
+.article-filter__field {
+    display: flex;
+    flex: 1 1 220px;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
+
+.article-filter__field label {
+    color: var(--kk-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.article-filter__field input,
+.article-filter__field select {
+    width: 100%;
+    min-height: 42px;
+    padding: 9px 12px;
+    border: 1px solid var(--kk-line);
+    border-radius: var(--kk-radius-sm);
+    background: var(--kk-surface);
+    color: var(--kk-text);
+    font: inherit;
+    font-size: 0.88rem;
+}
+
+.article-filter__field input:focus-visible,
+.article-filter__field select:focus-visible {
+    outline: 2px solid var(--kk-brand);
+    outline-offset: 2px;
+}
+
+.article-filter__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 3px;
+}
+
+.article-filter__status {
+    margin: 0 0 14px;
+    color: var(--kk-muted);
+    font-size: 0.82rem;
+}
+
+[data-article-results][aria-busy="true"] {
+    opacity: 0.55;
+}
+
+.dash-feedback {
+    margin: 0 0 10px;
+    color: var(--kk-brand-dark);
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.dash-feedback:empty {
+    display: none;
+}
+
+.dash-action--danger[aria-busy="true"] {
+    opacity: 0.55;
+    pointer-events: none;
+}
+
 .edu-section--partners,
 .edu-section--records {
     padding: 30px;

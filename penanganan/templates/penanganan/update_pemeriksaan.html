@@ -58,7 +58,11 @@
                 <div class="grid grid-cols-2 gap-2 md:gap-3">
                     {% for foto in pemeriksaan.foto_barang.all %}
                         <!-- object-cover menjaga proporsi foto tetap pas meskipun dipaksa responsif -->
+                        {% if "foto_pemeriksaan/" in foto.gambar.name %}
                         <img src="{{ foto.gambar.url }}" alt="Foto Barang" class="w-full h-28 sm:h-32 md:h-40 object-cover rounded-lg border border-[#dce7de]">
+                        {% else %}
+                        <img src="{% static 'img/penanganan/' %}{{ foto.gambar.name }}" alt="Foto Barang" class="w-full h-28 sm:h-32 md:h-40 object-cover rounded-lg border border-[#dce7de]">
+                        {% endif %}
                     {% empty %}
                         <p class="text-xs md:text-sm text-gray-500 italic col-span-2">Tidak ada foto terlampir.</p>
                     {% endfor %}
@@ -77,23 +81,21 @@
 
                 <div class="location-form mb-4 md:mb-6">
                     <label class="block text-xs md:text-sm font-bold text-[#1a2e1c] mb-1.5 md:mb-2">Kategori Penanganan</label>
-                    <select name="kategori_penanganan" required class="bg-[#e8f5e9] border-[#81c784] font-bold text-[#1f5a23] text-sm">
-                        <option value="Menunggu" {% if pemeriksaan.kategori_penanganan == 'Menunggu' %}selected{% endif %}>Menunggu Pemeriksaan</option>
-                        <option value="Reuse" {% if pemeriksaan.kategori_penanganan == 'Reuse' %}selected{% endif %}>Reuse (Guna Ulang)</option>
-                        <option value="Recycle" {% if pemeriksaan.kategori_penanganan == 'Recycle' %}selected{% endif %}>Recycle (Daur Ulang)</option>
-                        <option value="Reduce" {% if pemeriksaan.kategori_penanganan == 'Reduce' %}selected{% endif %}>Reduce (Pengurangan)</option>
-                    </select>
+                    {{ form.kategori_penanganan }}
+                    {{ form.kategori_penanganan.errors }}
                 </div>
 
                 <div class="location-form mb-4 md:mb-6">
                     <label class="block text-xs md:text-sm font-bold text-[#1a2e1c] mb-1.5 md:mb-2">Mitra Penyaluran / Lokasi (Opsional)</label>
-                    <input type="text" name="mitra_rekomendasi" value="{{ pemeriksaan.mitra_rekomendasi|default:'' }}" placeholder="Contoh: Komunitas Ruang Tumbuh" class="text-sm">
+                    {{ form.mitra_rekomendasi }}
+                    {{ form.mitra_rekomendasi.errors }}
                     <p class="text-[10px] md:text-xs text-[#557a5b] mt-1">Isi jika barang akan disalurkan ke mitra khusus (Reuse/Recycle).</p>
                 </div>
 
                 <div class="location-form mb-6 md:mb-8">
                     <label class="block text-xs md:text-sm font-bold text-[#1a2e1c] mb-1.5 md:mb-2">Rekomendasi / Catatan Pengelola</label>
-                    <textarea name="rekomendasi_penanganan" rows="4" placeholder="Berikan alasan atau instruksi penanganan selanjutnya..." class="text-sm">{{ pemeriksaan.rekomendasi_penanganan|default:'' }}</textarea>
+                    {{ form.rekomendasi_penanganan }}
+                    {{ form.rekomendasi_penanganan.errors }}
                 </div>
 
                 <div class="flex flex-col-reverse sm:flex-row items-center justify-between border-t border-[#dce7de] pt-5 md:pt-6 mt-auto gap-3 sm:gap-0">

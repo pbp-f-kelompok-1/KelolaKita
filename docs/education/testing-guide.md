@@ -13,7 +13,8 @@ python manage.py makemigrations --check --dry-run
 git diff --check
 ```
 
-Tes memakai database test sementara; data `db.sqlite3` tidak diubah.
+Tes memakai database test sementara; data `db.sqlite3` tidak diubah. Hasil terakhir
+pada audit implementasi: **103 tes Education** dan **199 tes total**.
 
 ## 2. Menjalankan satu kelas/metode
 
@@ -21,6 +22,7 @@ Tes memakai database test sementara; data `db.sqlite3` tidak diubah.
 python manage.py test education.tests.ManagementAccessTests
 python manage.py test education.tests.CrudTests.test_article_create_update_and_post_only_delete
 python manage.py test education.tests.ArticleImageTests
+python manage.py test education.tests.ArticleFilterTests
 python manage.py test education.tests_import
 ```
 
@@ -71,6 +73,15 @@ Menguji validasi form dan queryset:
 - `delivered` tanpa tanggal ditolak;
 - lokasi/tujuan nonaktif tetap tersedia saat edit.
 
+### `ArticleFilterTests`
+
+- pencarian judul case-insensitive;
+- kategori valid/tidak valid;
+- kombinasi query + kategori;
+- draft dan artikel terjadwal tetap tersembunyi;
+- empty state;
+- response AJAX hanya partial `_article_results.html`.
+
 ### `ManagementAccessTests`
 
 - anonymous → redirect login;
@@ -86,7 +97,8 @@ Menguji validasi form dan queryset:
 - delete hanya lewat POST;
 - create event dan distribution;
 - invalid form tidak menulis;
-- CSRF delete wajib.
+- CSRF delete wajib;
+- async delete mengembalikan JSON dan menghapus record.
 
 ### `PublicPagesTests` dan `PublicDistributionTests`
 
@@ -162,6 +174,8 @@ CRUD, dan import; angka coverage belum tersedia.
 - Belum ada test untuk seluruh kombinasi status/transition distribusi.
 - Belum ada test untuk semua endpoint delete event/distribution secara terpisah
   (mixin dan pola sama dengan artikel).
+- Belum ada test browser/functional untuk filter async dan delete async.
 - Belum ada load/concurrency test untuk upload dan slug.
+- Create/update async belum diimplementasikan; belum ada test untuk alur tersebut.
 
 Gap ini lebih baik disebutkan saat demo daripada mengklaim coverage 90% tanpa alat ukur.

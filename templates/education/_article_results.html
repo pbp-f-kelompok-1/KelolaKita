@@ -1,0 +1,40 @@
+{% load static %}
+<p class="article-filter__status" role="status">
+    Menampilkan {{ articles|length }} artikel{% if article_query %} untuk “{{ article_query }}”{% endif %}{% if selected_category_label %} dalam kategori {{ selected_category_label }}{% endif %}.
+</p>
+
+{% if articles %}
+<div class="article-grid">
+    {% for article in articles %}
+    <article class="article-card">
+        <div class="article-card__media">
+            <img src="{{ article.cover.src }}" alt="{{ article.cover.alt }}" loading="lazy"
+                decoding="async">
+        </div>
+        <div class="article-card__body">
+            <div class="meta article-meta">
+                <span class="article-meta__category">{{ article.category_label }}</span>
+                <time class="article-meta__detail" datetime="{{ article.published_at|date:'c' }}">{{ article.published_at|date:"j M Y" }}</time>
+                <span class="article-meta__detail">{{ article.read_minutes }} menit baca</span>
+            </div>
+            <h2><a href="{% url 'article_detail' article.slug %}">{{ article.title }}</a></h2>
+            <p class="article-card__summary">{{ article.summary }}</p>
+            <a class="text-link" href="{% url 'article_detail' article.slug %}">
+                Baca panduan <span aria-hidden="true">→</span>
+            </a>
+        </div>
+    </article>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-box">
+    {% if has_active_filter %}
+    <p class="empty-box__title">Tidak ada artikel yang cocok</p>
+    <p class="empty-box__text">Coba kata kunci atau kategori lain.</p>
+    <a class="text-link" href="{% url 'article_list' %}">Reset filter</a>
+    {% else %}
+    <p class="empty-box__title">Belum ada artikel yang terbit</p>
+    <p class="empty-box__text">Artikel baru akan tampil setelah diterbitkan pengelola.</p>
+    {% endif %}
+</div>
+{% endif %}

@@ -50,6 +50,28 @@ Browser
 → browser
 ```
 
+Filter artikel:
+
+```text
+input q/category
+→ GET /edukasi/artikel/?...
+→ ArticleListView
+→ Article.objects.published().filter(...)
+→ partial HTML (AJAX) atau halaman penuh
+→ #article-results
+```
+
+Async delete dashboard:
+
+```text
+klik Hapus
+→ konfirmasi
+→ POST delete + CSRF + X-Requested-With
+→ StaffRequiredMixin
+→ DeleteView → JSON
+→ baris dihapus / reload bila list kosong
+```
+
 Contoh create artikel:
 
 1. POST ke `article_create`.
@@ -113,8 +135,9 @@ Contoh create artikel:
     Location.
 
 15. **Trade-off HTMX?**
-    Lebih interaktif tanpa reload, tetapi menambah state/JS/partial endpoint dan test.
-    Untuk CRUD sederhana ini, full-page form lebih mudah dijelaskan dan diuji.
+    Modul ini memakai Fetch API untuk filter dan delete, bukan HTMX. Async memberi
+    pengalaman tanpa reload, tetapi menambah state/JS/error handling. Create/update
+    tetap full-page agar generic view dan validasi tidak diduplikasi.
 
 16. **Mengapa artikel draft 404?**
     `ArticleDetailView.get_queryset()` memakai `published()`; draft/terjadwal tidak

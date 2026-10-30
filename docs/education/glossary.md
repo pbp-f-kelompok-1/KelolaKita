@@ -40,6 +40,6 @@ field, fungsi, dan route tetap ditulis sesuai identifier aslinya.
 | HTTP 404 Not Found | Status bahwa resource tidak ditemukan atau tidak boleh terlihat. | Draft artikel di detail publik. |
 | Test | Kode yang memverifikasi perilaku aplikasi. | `education/tests.py`. |
 | Test coverage | Ukuran bagian kode yang dijalankan tes; bukan jaminan semua perilaku benar. | Belum diukur pada audit ini. |
-| AJAX | Pertukaran data asynchronous tanpa reload penuh. | Tidak dipakai untuk CRUD Education. |
-| HTMX | Library untuk interaksi HTML partial/asynchronous. | Tidak dipakai pada modul ini. |
+| AJAX | Pertukaran data asynchronous tanpa reload penuh. | Filter artikel dan hapus data dashboard memakai `fetch`. |
+| HTMX | Library untuk interaksi HTML partial/asynchronous. | Tidak dipakai; modul memakai fetch API vanilla. |
 | Progressive enhancement | Fitur tambahan yang tidak menghilangkan fungsi dasar saat JS tidak tersedia. | `static/js/education.js`. |

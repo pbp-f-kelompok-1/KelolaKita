@@ -9,10 +9,10 @@ Semua route mutasi memakai `StaffRequiredMixin` (`is_authenticated`, `is_active`
 |---|---|---|---|---|---|---|---|
 | Artikel | Baca daftar (staff) | `education_manage` `/edukasi/kelola/` | GET | `ManageDashboard` | `Article`, `Event`, `Distribution` | Staff aktif | 200 dashboard |
 | Artikel | Buat | `article_create` `/edukasi/kelola/artikel/tambah/` | GET/POST | `ArticleCreateView` | `ArticleForm` | Staff aktif | Redirect `education_manage` + pesan flash |
-| Artikel | Baca daftar publik | `article_list` `/edukasi/artikel/` | GET | `ArticleListView` | `Article.objects.published()` | Publik | 200 |
+| Artikel | Baca daftar publik | `article_list` `/edukasi/artikel/?q=&category=` | GET | `ArticleListView` | `published()` + `q`/`category` | Publik | 200; partial HTML bila async |
 | Artikel | Baca detail | `article_detail` `/edukasi/artikel/<slug>/` | GET | `ArticleDetailView` | queryset `published()` | Publik | 200 / 404 |
 | Artikel | Ubah | `article_update` `/edukasi/kelola/artikel/<pk>/ubah/` | GET/POST | `ArticleUpdateView` | `ArticleForm` | Staff aktif | Redirect + pesan flash |
-| Artikel | Hapus | `article_delete` `/edukasi/kelola/artikel/<pk>/hapus/` | GET/POST | `ArticleDeleteView` | `Article` | Staff aktif | GET konfirmasi; POST redirect + pesan flash |
+| Artikel | Hapus | `article_delete` `/edukasi/kelola/artikel/<pk>/hapus/` | GET/POST | `ArticleDeleteView` | `Article` | Staff aktif | GET konfirmasi; POST redirect/JSON async |
 | Agenda | Buat | `event_create` `/edukasi/kelola/agenda/tambah/` | GET/POST | `EventCreateView` | `EventForm` | Staff aktif | Redirect + pesan flash |
 | Agenda | Baca daftar publik | `event_list` `/edukasi/agenda/` | GET | `EventListView` | agenda terbit + mendatang | Publik | 200 |
 | Agenda | Detail publik | `event_detail` `/edukasi/agenda/<pk>/` | GET | `EventDetailView` | `published_events()` | Publik | 200 / 404 |
@@ -23,6 +23,32 @@ Semua route mutasi memakai `StaffRequiredMixin` (`is_authenticated`, `is_active`
 | Penyaluran | Ubah | `distribution_update` `/edukasi/kelola/penyaluran/<pk>/ubah/` | GET/POST | `DistributionUpdateView` | `DistributionForm` | Staff aktif | Redirect + pesan flash |
 | Penyaluran | Hapus | `distribution_delete` `/edukasi/kelola/penyaluran/<pk>/hapus/` | GET/POST | `DistributionDeleteView` | `Distribution` | Staff aktif | Redirect + pesan flash |
 | Media artikel | Baca | `/media/education/articles/<path>` | GET | `article_image` | `Article.image` + storage | Publik untuk artikel terbit; staff untuk draft | `FileResponse` / 404 |
+
+## Filter artikel
+
+`ArticleListView` membaca query string:
+
+```text
+/edukasi/artikel/
+/edukasi/artikel/?q=plastik
+/edukasi/artikel/?category=reduce
+/edukasi/artikel/?q=plastik&category=reduce
+```
+
+- `q` di-trim dan dibatasi 100 karakter; pencarian memakai `title__icontains`.
+- `category` hanya diterima jika ada di `Article.Category.values`.
+- Selalu dimulai dari `Article.objects.published()`, sehingga draf/terjadwal tidak
+  ikut walaupun cocok dengan kata kunci.
+- Request dengan `X-Requested-With: XMLHttpRequest` merender partial
+  `_article_results.html`; request biasa merender halaman lengkap.
+- Tanpa JavaScript, form GET tetap mengirim filter dan merender halaman penuh.
+
+## Async delete dashboard
+
+Tautan hapus dashboard memakai URL konfirmasi biasa. JavaScript menambahkan
+`fetch` POST dengan `X-Requested-With` dan CSRF token; server menghapus objek dan
+mengembalikan JSON. Tanpa JavaScript, pengguna tetap memakai halaman konfirmasi
+POST. Create/update tetap memakai halaman form penuh.
 
 ## Alur pembuatan artikel
 

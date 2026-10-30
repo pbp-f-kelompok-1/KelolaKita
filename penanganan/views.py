@@ -1,49 +1,77 @@
+from pathlib import Path
+from uuid import uuid4
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.core.files.storage import FileSystemStorage
+from django.core.files.storage import default_storage
 from django.shortcuts import render, redirect, get_object_or_404
+from PIL import Image
+from accounts.models import Profile
+from penanganan.forms import EditPengajuanForm, HasilPemeriksaanForm, PengajuanForm
 from penanganan.models import Pemeriksaan, FotoBarang
 
+
+LEGACY_PENANGANAN_IMAGE_STORAGE = FileSystemStorage(
+    location=Path(__file__).resolve().parent.parent / "static" / "img" / "penanganan",
+)
+
+
+def _store_foto_barang(upload):
+    with Image.open(upload) as image:
+        image_format = image.format
+    upload.seek(0)
+    extensions = {"JPEG": ".jpg", "PNG": ".png"}
+    return default_storage.save(
+        f"foto_pemeriksaan/{uuid4().hex}{extensions[image_format]}",
+        upload,
+    )
+
+
+def _delete_foto_barang_files(fotos):
+    for foto in fotos:
+        if foto.gambar.name.startswith("foto_pemeriksaan/"):
+            default_storage.delete(foto.gambar.name)
+        elif "/" not in foto.gambar.name and "\\" not in foto.gambar.name:
+            LEGACY_PENANGANAN_IMAGE_STORAGE.delete(foto.gambar.name)
+
+
 def is_pengelola(user):
-    return user.groups.filter(name='Pengelola').exists()
+    return Profile.objects.filter(
+        user=user,
+        role=Profile.Role.MANAGER,
+    ).exists()
 
 # Membuat data pemeriksaan
-@login_required(login_url="/login/")
+@login_required
 def tambah_pengajuan(request):
-    if request.method == "POST":
-        # Mengambil input
-        nama_barang = request.POST.get('nama_barang')
-        kategori_barang = request.POST.get('kategori_barang')
-        kondisi_barang = request.POST.get('kondisi_barang')
-        catatan_tambahan = request.POST.get('catatan_tambahan')
+    form = (
+        PengajuanForm(request.POST, request.FILES)
+        if request.method == "POST"
+        else PengajuanForm()
+    )
+    if request.method == "POST" and form.is_valid():
+        pemeriksaan = form.save(commit=False)
+        pemeriksaan.pengguna = request.user
+        pemeriksaan.save()
 
-        # Mengambil input file gambar
-        fotos = request.FILES.getlist('foto_barang')
-
-        # Validasi minimal 2 foto
-        if len(fotos) < 2:
-            messages.error(request, "Minimal harus mengunggah 2 foto agar pemeriksaan lebih akurat.")
-        else:
-            # Simpan data Pemeriksaan ke database
-            pemeriksaan = Pemeriksaan.objects.create(
-                pengguna=request.user,
-                nama_barang=nama_barang,
-                kategori_barang=kategori_barang,
-                kondisi_barang=kondisi_barang,
-                catatan_tambahan=catatan_tambahan
+        for foto in form.cleaned_data["foto_barang"]:
+            FotoBarang.objects.create(
+                pemeriksaan=pemeriksaan,
+                gambar=_store_foto_barang(foto),
             )
-            
-            # Simpan setiap foto yang diunggah
-            for foto in fotos:
-                FotoBarang.objects.create(pemeriksaan=pemeriksaan, gambar=foto)
-                
-            messages.success(request, "Pengajuan barang berhasil ditambahkan!")
-            return redirect("penanganan:daftar_pengajuan")
-            
-    return render(request, "penanganan/pengajuan_form.html")
+
+        messages.success(request, "Pengajuan barang berhasil ditambahkan!")
+        return redirect("penanganan:daftar_pengajuan")
+
+    return render(request, "penanganan/pengajuan_form.html", {
+        "form": form,
+        "active_nav": "penanganan",
+    })
 
 # Melihat hasil pemeriksaan dan kategori penanganan
-@login_required(login_url="/login/")
+@login_required
 def daftar_pengajuan(request):
     # Jika Pengelola, tampilkan semua data pengajuan untuk diperiksa
     if is_pengelola(request.user):
@@ -53,13 +81,14 @@ def daftar_pengajuan(request):
         daftar_pemeriksaan = Pemeriksaan.objects.filter(pengguna=request.user).order_by('-created_at')
         
     context = {
-        "daftar_pemeriksaan": daftar_pemeriksaan
+        "daftar_pemeriksaan": daftar_pemeriksaan,
+        "active_nav": "penanganan",
     }
     return render(request, "penanganan/daftar_pengajuan.html", context)
 
 
 # Mengubah hasil pemeriksaan apabila diperlukan
-@login_required(login_url="/login/")
+@login_required
 def periksa_pengajuan(request, pk):
     # Cek apakah akun yang sedang login adalah pengelola; kalau bukan, hentikan permintaannya dengan 403
     if not is_pengelola(request.user):
@@ -68,22 +97,25 @@ def periksa_pengajuan(request, pk):
     # Ambil objek pemeriksaan berdasarkan ID-nya
     pemeriksaan = get_object_or_404(Pemeriksaan, pk=pk) 
     
-    if request.method == "POST":
-        pemeriksaan.kategori_penanganan = request.POST.get('kategori_penanganan')
-        pemeriksaan.rekomendasi_penanganan = request.POST.get('rekomendasi_penanganan')
-        pemeriksaan.mitra_rekomendasi = request.POST.get('mitra_rekomendasi')
-        
-        pemeriksaan.save() # Menyimpan perubahan ke database
+    form = (
+        HasilPemeriksaanForm(request.POST, instance=pemeriksaan)
+        if request.method == "POST"
+        else HasilPemeriksaanForm(instance=pemeriksaan)
+    )
+    if request.method == "POST" and form.is_valid():
+        form.save()
         messages.success(request, "Hasil pemeriksaan berhasil disimpan!")
         return redirect("penanganan:daftar_pengajuan")
         
     context = {
-        "pemeriksaan": pemeriksaan
+        "pemeriksaan": pemeriksaan,
+        "form": form,
+        "active_nav": "penanganan",
     }
     return render(request, "penanganan/update_pemeriksaan.html", context)
 
 # Menghapus data pemeriksaan sesuai kewenangan
-@login_required(login_url="/login/")
+@login_required
 def hapus_pengajuan(request, pk):
     # Ambil objek pemeriksaan berdasarkan ID-nya
     pemeriksaan = get_object_or_404(Pemeriksaan, pk=pk)
@@ -101,13 +133,14 @@ def hapus_pengajuan(request, pk):
     
     # Proses Hapus
     if request.method == "POST":
+        _delete_foto_barang_files(pemeriksaan.foto_barang.all())
         pemeriksaan.delete()
         messages.success(request, "Data pengajuan berhasil dihapus!")
         return redirect("penanganan:daftar_pengajuan")
         
     return redirect("penanganan:daftar_pengajuan")
 
-@login_required(login_url="/login/")
+@login_required
 def edit_pengajuan(request, pk):
     pemeriksaan = get_object_or_404(Pemeriksaan, pk=pk)
 
@@ -117,33 +150,39 @@ def edit_pengajuan(request, pk):
     
     if pemeriksaan.kategori_penanganan != 'Menunggu':
         messages.error(request, "Data yang sudah diproses tidak dapat diubah lagi.")
-        return redirect("pengajuan:daftar_pengajuan")
+        return redirect("penanganan:daftar_pengajuan")
 
-    # Proses Simpan Data (POST)
-    if request.method == "POST":
-        # Ambil data teks baru (jika kosong, gunakan data lama sebagai fallback)
-        pemeriksaan.nama_barang = request.POST.get('nama_barang', pemeriksaan.nama_barang)
-        pemeriksaan.kategori_barang = request.POST.get('kategori_barang', pemeriksaan.kategori_barang)
-        pemeriksaan.kondisi_barang = request.POST.get('kondisi_barang', pemeriksaan.kondisi_barang)
-        pemeriksaan.catatan_tambahan = request.POST.get('catatan_tambahan', pemeriksaan.catatan_tambahan)
-        
-        pemeriksaan.save()
+    form = (
+        EditPengajuanForm(request.POST, request.FILES, instance=pemeriksaan)
+        if request.method == "POST"
+        else EditPengajuanForm(instance=pemeriksaan)
+    )
+    if request.method == "POST" and form.is_valid():
+        pemeriksaan = form.save()
+        fotos_nuevas = form.cleaned_data["foto_barang"]
 
-        # Update foto
-        fotos_baru = request.FILES.getlist('foto_barang')
-        if fotos_baru: 
-            # Hapus foto lama dari database
-            pemeriksaan.foto_barang.all().delete()
-            
-            # Simpan foto-foto baru
-            for foto in fotos_baru:
-                FotoBarang.objects.create(pemeriksaan=pemeriksaan, gambar=foto)
+        if fotos_nuevas:
+            foto_lama = pemeriksaan.foto_barang.all()
+            stored_names = [
+                _store_foto_barang(foto)
+                for foto in fotos_nuevas
+            ]
+            _delete_foto_barang_files(foto_lama)
+            foto_lama.delete()
+
+            for stored_name in stored_names:
+                FotoBarang.objects.create(
+                    pemeriksaan=pemeriksaan,
+                    gambar=stored_name,
+                )
 
         messages.success(request, "Pengajuan barang berhasil diperbarui!")
         return redirect("penanganan:daftar_pengajuan")
 
     # Tampilkan Form Edit (GET)
     context = {
-        "pemeriksaan": pemeriksaan
+        "pemeriksaan": pemeriksaan,
+        "form": form,
+        "active_nav": "penanganan",
     }
     return render(request, "penanganan/edit_pengajuan_form.html", context)

@@ -53,6 +53,10 @@ Buka `/edukasi/`:
 - Mitra penyaluran dan catatan penyaluran.
 - Produk guna ulang (static, bukan database).
 
+Buka `/edukasi/artikel/`, coba pencarian `plastik` dan kategori `Pengurangan sampah`.
+Tunjukkan URL query berubah dan hasil diperbarui tanpa reload penuh. Jelaskan bahwa
+form GET tetap bekerja jika JavaScript dimatikan.
+
 Buka satu detail artikel:
 
 - `published()` menyaring artikel;
@@ -75,7 +79,9 @@ Jelaskan satu edge case: draf/terjadwal tidak bisa dibuka publik.
 4. Tunjukkan dashboard menampilkan draf.
 5. Edit judul; simpan; tunjukkan slug artikel lama tidak berubah.
 6. Buka halaman detail (jika masih draf, tunjukkan 404), lalu terbitkan dan buka.
-7. Hapus artikel sementara; konfirmasi form POST.
+7. Hapus artikel sementara; tunjukkan bahwa tautan Hapus memakai konfirmasi dan
+   fetch async pada dashboard. Bila JavaScript gagal, fallback konfirmasi POST tetap
+   tersedia.
 
 Jangan menghapus artikel seed. Jika waktu sempit, cukup create + delete satu artikel
 sementara; edit gambar/preview dapat dijelaskan dari artikel seed.
@@ -118,13 +124,15 @@ Jelaskan:
 Urutan yang disarankan:
 
 1. `education/urls.py` — URL name → view.
-2. `education/views.py` — `StaffRequiredMixin.test_func`.
-3. `ManageFormMixin.form_valid` — messages + redirect.
-4. `education/forms.py` — fields dan queryset.
-5. `education/models.py` — validator, `published()`, `clean()`.
-6. `templates/education/manage_form.html` — `csrf_token`, `multipart/form-data`,
+2. `education/views.py` — `ArticleListView` filter GET/partial.
+3. `education/views.py` — `StaffRequiredMixin.test_func` dan async delete JSON.
+4. `ManageFormMixin.form_valid` — messages + redirect.
+5. `education/forms.py` — fields dan queryset.
+6. `education/models.py` — validator, `published()`, `clean()`.
+7. `templates/education/manage_form.html` — `csrf_token`, `multipart/form-data`,
    error rendering.
-7. `article_image` — media endpoint sempit.
+8. `static/js/education.js` — filter fetch dan delete fetch.
+9. `article_image` — media endpoint sempit.
 
 Kalimat kunci:
 
@@ -150,7 +158,7 @@ Jangan mengubah permission agar demo lebih mudah.
 Pilih satu tantangan dari `live-coding-playbook.md`:
 
 - Level 1: tambah validasi `min_length` pada summary artikel.
-- Level 2: filter daftar artikel berdasarkan kategori.
+- Level 2: tambahkan filter status draf/terbit pada dashboard staff.
 - Level 3 (hanya jika siap): tangani slug race/`IntegrityError` atau optimasi query
   setelah membuktikan N+1.
 

@@ -48,27 +48,29 @@ event yang memilikinya.
 
 ## Level 2 — Menengah
 
-### Tantangan 2.1 — Filter kategori artikel publik
+### Tantangan 2.1 — Filter status di dashboard staff
 
-**Kebutuhan:** `/edukasi/artikel/?kategori=reduce` hanya menampilkan artikel
-`reduce`; nilai tidak dikenal diabaikan atau menghasilkan empty state yang jelas.
+**Kebutuhan:** dashboard `/edukasi/kelola/?status=draft` hanya menampilkan artikel
+draf; `?status=published` menampilkan artikel terbit; nilai tidak valid diabaikan.
 
-**File:** `education/views.py`, `templates/education/public_article_list.html`,
+**File:** `education/views.py` (`ManageDashboard`), `templates/education/manage_list.html`,
 `education/tests.py`.
 
-**Petunjuk:** override `ArticleListView.get_queryset()`, baca
-`self.request.GET.get("kategori")`, validasi terhadap `Article.Category.values`.
+**Petunjuk:** baca `self.request.GET.get("status")`, validasi ke nilai yang
+diizinkan, lalu filter `Article.objects.all()`. Filter hanya untuk daftar artikel;
+jangan mengubah daftar agenda/penyaluran pada halaman yang sama.
 
-**Batasan:** jangan mengubah route atau model; tetap memakai `published()`.
+**Batasan:** jangan mengubah route/model; tetap tampilkan semua artikel jika
+parameter kosong/invalid.
 
 **Tes:**
 
 ```bash
-python manage.py test education.tests.PublicPagesTests
+python manage.py test education.tests.ManageDashboardTests
 ```
 
-**Kriteria berhasil:** filter valid bekerja; draf/terjadwal tetap tersembunyi; tanpa
-parameter tampil semua; test positive + invalid query.
+**Kriteria berhasil:** filter status bekerja; state tabel lain tidak berubah;
+test parameter valid/invalid; staff-only tetap berlaku.
 
 ### Tantangan 2.2 — Tes direct POST non-staff
 
@@ -155,24 +157,24 @@ def clean_summary(self):
 Tes: form dengan summary pendek `assertFalse`, `assertIn("summary", form.errors)`;
 POST create dengan summary pendek tidak menambah count.
 
-### Solusi 2.1
+### Solusi 2.1 (garis besar)
 
 ```python
-def get_queryset(self):
-    queryset = super().get_queryset()
-    category = self.request.GET.get("kategori")
-    if category in Article.Category.values:
-        queryset = queryset.filter(category=category)
-    return queryset
+def get_context_data(self, **kwargs):
+    context = super().get_context_data(**kwargs)
+    status = self.request.GET.get("status")
+    articles = Article.objects.all()
+    if status == "draft":
+        articles = articles.filter(is_published=False)
+    elif status == "published":
+        articles = articles.filter(is_published=True, published_at__lte=timezone.now())
+    context["articles"] = articles
+    context["selected_status"] = status if status in {"draft", "published"} else ""
+    return context
 ```
 
-Tambahkan link filter di template dan tes:
-
-```python
-response = self.client.get(reverse("article_list"), {"kategori": Article.Category.reduce})
-self.assertContains(response, article_reduce.title)
-self.assertNotContains(response, article_reuse.title)
-```
+Tambahkan pilihan filter di template dashboard dan test parameter valid/invalid.
+Pastikan tidak mengubah queryset agenda/penyaluran.
 
 ### Solusi 2.2
 

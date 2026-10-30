@@ -33,7 +33,7 @@
                 
                 <!-- Input Foto (Responsif Tinggi) -->
                 <div class="mb-5 md:mb-6 rounded-xl border border-dashed border-[#81c784] bg-[#e8f5e9] p-5 md:p-8 text-center relative hover:bg-[#dce7de] transition min-h-[200px] md:min-h-[240px] flex items-center justify-center">
-                    <input type="file" name="foto_barang" id="foto_barang" multiple accept="image/png, image/jpeg" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" onchange="previewImages(event)" required>
+                    {{ form.foto_barang }}
                     
                     <div id="upload-placeholder" class="flex flex-col items-center pointer-events-none z-10 transition-opacity duration-300">
                         <span class="flex size-10 items-center justify-center rounded-full bg-white mb-3 shadow-sm border border-yellow-200">
@@ -47,22 +47,19 @@
                     <div id="image-preview-container" class="hidden absolute inset-0 w-full h-full p-3 md:p-4 grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 z-10 bg-[#e8f5e9] rounded-xl overflow-hidden items-center">
                     </div>
                 </div>
+                {{ form.foto_barang.errors }}
 
                 <!-- Grid Input: Nama & Kategori (Responsif Grid 1 Kolom di HP) -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-5 md:mb-6">
                     <div class="location-form">
                         <label class="block text-xs md:text-sm font-bold text-[#1a2e1c] mb-1.5 md:mb-2">Nama barang</label>
-                        <input type="text" name="nama_barang" placeholder="Meja belajar kayu" required>
+                        {{ form.nama_barang }}
+                        {{ form.nama_barang.errors }}
                     </div>
                     <div class="location-form">
                         <label class="block text-xs md:text-sm font-bold text-[#1a2e1c] mb-1.5 md:mb-2">Kategori</label>
-                        <select name="kategori_barang" required>
-                            <option value="" disabled selected>Pilih Kategori</option>
-                            <option value="Furnitur rumah">Furnitur rumah</option>
-                            <option value="Elektronik">Elektronik</option>
-                            <option value="Pakaian">Pakaian</option>
-                            <option value="Lainnya">Lainnya</option>
-                        </select>
+                        {{ form.kategori_barang }}
+                        {{ form.kategori_barang.errors }}
                     </div>
                 </div>
 
@@ -71,28 +68,20 @@
                     <label class="block text-xs md:text-sm font-bold text-[#1a2e1c] mb-1.5 md:mb-2">Kondisi barang</label>
                     <!-- grid-cols-1 di HP sangat sempit, grid-cols-2 di HP lebar, grid-cols-4 di laptop -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+                        {% for radio in form.kondisi_barang %}
                         <label class="flex items-center justify-center gap-2 rounded-lg border border-[#dce7de] py-2.5 md:py-3 cursor-pointer hover:bg-gray-50 has-[:checked]:bg-[#e8f5e9] has-[:checked]:border-[#81c784] has-[:checked]:text-[#1f5a23]">
-                            <input type="radio" name="kondisi_barang" value="Sangat baik" class="w-3.5 h-3.5 md:w-4 md:h-4 text-[#2e7d32]" required>
-                            <span class="text-xs md:text-sm font-medium">Sangat baik</span>
+                            {{ radio.tag }}
+                            <span class="text-xs md:text-sm font-medium">{{ radio.choice_label }}</span>
                         </label>
-                        <label class="flex items-center justify-center gap-2 rounded-lg border border-[#dce7de] py-2.5 md:py-3 cursor-pointer hover:bg-gray-50 has-[:checked]:bg-[#e8f5e9] has-[:checked]:border-[#81c784] has-[:checked]:text-[#1f5a23]">
-                            <input type="radio" name="kondisi_barang" value="Layak pakai" class="w-3.5 h-3.5 md:w-4 md:h-4 text-[#2e7d32]">
-                            <span class="text-xs md:text-sm font-medium">Layak pakai</span>
-                        </label>
-                        <label class="flex items-center justify-center gap-2 rounded-lg border border-[#dce7de] py-2.5 md:py-3 cursor-pointer hover:bg-gray-50 has-[:checked]:bg-[#e8f5e9] has-[:checked]:border-[#81c784] has-[:checked]:text-[#1f5a23]">
-                            <input type="radio" name="kondisi_barang" value="Perlu perbaikan" class="w-3.5 h-3.5 md:w-4 md:h-4 text-[#2e7d32]">
-                            <span class="text-xs md:text-sm font-medium">Perlu perbaikan</span>
-                        </label>
-                        <label class="flex items-center justify-center gap-2 rounded-lg border border-[#dce7de] py-2.5 md:py-3 cursor-pointer hover:bg-gray-50 has-[:checked]:bg-[#e8f5e9] has-[:checked]:border-[#81c784] has-[:checked]:text-[#1f5a23]">
-                            <input type="radio" name="kondisi_barang" value="Rusak" class="w-3.5 h-3.5 md:w-4 md:h-4 text-[#2e7d32]">
-                            <span class="text-xs md:text-sm font-medium">Rusak</span>
-                        </label>
+                        {% endfor %}
                     </div>
+                    {{ form.kondisi_barang.errors }}
                 </div>
 
                 <div class="location-form mb-6 md:mb-8">
                     <label class="block text-xs md:text-sm font-bold text-[#1a2e1c] mb-1.5 md:mb-2">Catatan tambahan</label>
-                    <textarea name="catatan_tambahan" rows="2" placeholder="Kokoh, ada goresan ringan..."></textarea>
+                    {{ form.catatan_tambahan }}
+                    {{ form.catatan_tambahan.errors }}
                 </div>
 
                 <!-- Action Buttons (Responsif Susun di HP) -->
@@ -107,10 +96,9 @@
         </div>
     </div>
 </main>
-{% endblock content %}
 
 <script>
-function previewImages(event) {
+    function previewImages(event) {
     const placeholder = document.getElementById('upload-placeholder');
     const previewContainer = document.getElementById('image-preview-container');
     const files = event.target.files;
@@ -137,3 +125,4 @@ function previewImages(event) {
     }
 }
 </script>
+{% endblock content %}
