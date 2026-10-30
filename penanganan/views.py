@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.core.files.storage import FileSystemStorage
+from django.core.files.storage import default_storage
 from django.shortcuts import render, redirect, get_object_or_404
 from PIL import Image
 from accounts.models import Profile
@@ -12,7 +13,7 @@ from penanganan.forms import EditPengajuanForm, HasilPemeriksaanForm, PengajuanF
 from penanganan.models import Pemeriksaan, FotoBarang
 
 
-PENANGANAN_IMAGE_STORAGE = FileSystemStorage(
+LEGACY_PENANGANAN_IMAGE_STORAGE = FileSystemStorage(
     location=Path(__file__).resolve().parent.parent / "static" / "img" / "penanganan",
 )
 
@@ -22,16 +23,18 @@ def _store_foto_barang(upload):
         image_format = image.format
     upload.seek(0)
     extensions = {"JPEG": ".jpg", "PNG": ".png"}
-    return PENANGANAN_IMAGE_STORAGE.save(
-        f"{uuid4().hex}{extensions[image_format]}",
+    return default_storage.save(
+        f"foto_pemeriksaan/{uuid4().hex}{extensions[image_format]}",
         upload,
     )
 
 
 def _delete_foto_barang_files(fotos):
     for foto in fotos:
-        if "/" not in foto.gambar.name and "\\" not in foto.gambar.name:
-            PENANGANAN_IMAGE_STORAGE.delete(foto.gambar.name)
+        if foto.gambar.name.startswith("foto_pemeriksaan/"):
+            default_storage.delete(foto.gambar.name)
+        elif "/" not in foto.gambar.name and "\\" not in foto.gambar.name:
+            LEGACY_PENANGANAN_IMAGE_STORAGE.delete(foto.gambar.name)
 
 
 def is_pengelola(user):
