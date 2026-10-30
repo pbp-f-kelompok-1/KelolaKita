@@ -40,7 +40,9 @@ def tambah_pengajuan(request):
             messages.success(request, "Pengajuan barang berhasil ditambahkan!")
             return redirect("penanganan:daftar_pengajuan")
             
-    return render(request, "penanganan/pengajuan_form.html")
+    return render(request, "penanganan/pengajuan_form.html", {
+        "active_nav": "penanganan",
+    })
 
 # Melihat hasil pemeriksaan dan kategori penanganan
 @login_required(login_url="/login/")
@@ -53,7 +55,8 @@ def daftar_pengajuan(request):
         daftar_pemeriksaan = Pemeriksaan.objects.filter(pengguna=request.user).order_by('-created_at')
         
     context = {
-        "daftar_pemeriksaan": daftar_pemeriksaan
+        "daftar_pemeriksaan": daftar_pemeriksaan,
+        "active_nav": "penanganan",
     }
     return render(request, "penanganan/daftar_pengajuan.html", context)
 
@@ -78,7 +81,8 @@ def periksa_pengajuan(request, pk):
         return redirect("penanganan:daftar_pengajuan")
         
     context = {
-        "pemeriksaan": pemeriksaan
+        "pemeriksaan": pemeriksaan,
+        "active_nav": "penanganan",
     }
     return render(request, "penanganan/update_pemeriksaan.html", context)
 
@@ -144,6 +148,7 @@ def edit_pengajuan(request, pk):
 
     # Tampilkan Form Edit (GET)
     context = {
-        "pemeriksaan": pemeriksaan
+        "pemeriksaan": pemeriksaan,
+        "active_nav": "penanganan",
     }
     return render(request, "penanganan/edit_pengajuan_form.html", context)

@@ -45,6 +45,9 @@
                 <a class="nav__link{% if active_nav == 'beranda' %} is-active{% endif %}"
                     href="{% url 'landing_page' %}"
                     {% if active_nav == 'beranda' %}aria-current="page"{% endif %}>Beranda</a>
+                <a class="nav__link{% if active_nav == 'penanganan' %} is-active{% endif %}"
+                    href="{% url 'penanganan:daftar_pengajuan' %}"
+                    {% if active_nav == 'penanganan' %}aria-current="page"{% endif %}>Penanganan</a>
                 <a class="nav__link{% if active_nav == 'peta' %} is-active{% endif %}"
                     href="{% url 'show_location' %}"
                     {% if active_nav == 'peta' %}aria-current="page"{% endif %}>Peta Setoran</a>
@@ -74,6 +77,9 @@
                     <a class="nav-mobile__panel-link{% if active_nav == 'beranda' %} is-active{% endif %}"
                         href="{% url 'landing_page' %}"
                         {% if active_nav == 'beranda' %}aria-current="page"{% endif %}>Beranda</a>
+                    <a class="nav-mobile__panel-link{% if active_nav == 'penanganan' %} is-active{% endif %}"
+                        href="{% url 'penanganan:daftar_pengajuan' %}"
+                        {% if active_nav == 'penanganan' %}aria-current="page"{% endif %}>Penanganan</a>
                     <a class="nav-mobile__panel-link{% if active_nav == 'peta' %} is-active{% endif %}"
                         href="{% url 'show_location' %}"
                         {% if active_nav == 'peta' %}aria-current="page"{% endif %}>Peta Setoran</a>
