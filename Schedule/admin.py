@@ -12,8 +12,8 @@ class PemeriksaanAdmin(admin.ModelAdmin):
 
 @admin.register(Penjadwalan)
 class PenjadwalanAdmin(admin.ModelAdmin):
-    list_display = ("barang_list", "metode", "tanggal", "sesi", "status", "nama_penerima", "nomor_hp", "created_at")
-    list_filter = ("status", "metode", "sesi", "tanggal")
+    list_display = ("barang_list", "metode", "tanggal", "sesi", "nama_penerima", "nomor_hp", "created_at")
+    list_filter = ("metode", "sesi", "tanggal")
     search_fields = ("barang__nama_barang", "nama_penerima", "nomor_hp")
 
     @admin.display(description="Barang")

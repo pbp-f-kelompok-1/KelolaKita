@@ -512,18 +512,6 @@ class ScheduleListViewTests(TestCase):
         bookings_shown = [row["booking"] for row in response.context["rows"]]
         self.assertNotIn(other_booking, bookings_shown)
 
-    def test_cancelled_booking_still_listed_with_dibatalkan_status(self):
-        booking = self._create_booking(datetime.date.today() + datetime.timedelta(days=5), Penjadwalan.Sesi.pagi)
-        booking.status = Penjadwalan.Status.dibatalkan
-        booking.dibatalkan_pada = timezone.now()
-        booking.save()
-
-        response = self.client.get(reverse("schedule_list"))
-        row = response.context["rows"][0]
-        self.assertEqual(row["status"], "dibatalkan")
-        self.assertFalse(row["can_cancel"])
-        self.assertFalse(row["can_edit"])
-
 
 class CancelScheduleViewTests(TestCase):
     def setUp(self):
@@ -549,15 +537,11 @@ class CancelScheduleViewTests(TestCase):
         booking.barang.set([self.item])
         return booking
 
-    def test_cancel_soft_cancels_booking_before_cutoff(self):
+    def test_cancel_deletes_booking_before_cutoff(self):
         booking = self._create_booking(datetime.date.today() + datetime.timedelta(days=5))
         response = self.client.post(reverse("cancel_schedule", args=[booking.pk]))
         self.assertRedirects(response, reverse("schedule_list"))
-
-        booking.refresh_from_db()
-        self.assertTrue(Penjadwalan.objects.filter(pk=booking.pk).exists())
-        self.assertEqual(booking.status, Penjadwalan.Status.dibatalkan)
-        self.assertIsNotNone(booking.dibatalkan_pada)
+        self.assertFalse(Penjadwalan.objects.filter(pk=booking.pk).exists())
 
     def test_cancel_rejected_within_cutoff_window(self):
         session_date = datetime.date.today() + datetime.timedelta(days=10)
@@ -568,28 +552,12 @@ class CancelScheduleViewTests(TestCase):
             response = self.client.post(reverse("cancel_schedule", args=[booking.pk]))
 
         self.assertRedirects(response, reverse("schedule_list"))
-        booking.refresh_from_db()
-        self.assertEqual(booking.status, Penjadwalan.Status.terjadwal)
+        self.assertTrue(Penjadwalan.objects.filter(pk=booking.pk).exists())
 
-    def test_get_request_does_not_cancel_booking(self):
+    def test_get_request_does_not_delete_booking(self):
         booking = self._create_booking(datetime.date.today() + datetime.timedelta(days=5))
         self.client.get(reverse("cancel_schedule", args=[booking.pk]))
-        booking.refresh_from_db()
-        self.assertEqual(booking.status, Penjadwalan.Status.terjadwal)
-
-    def test_cancelling_already_cancelled_booking_is_rejected(self):
-        booking = self._create_booking(datetime.date.today() + datetime.timedelta(days=5))
-        self.client.post(reverse("cancel_schedule", args=[booking.pk]))
-        booking.refresh_from_db()
-        first_dibatalkan_pada = booking.dibatalkan_pada
-
-        response = self.client.post(reverse("cancel_schedule", args=[booking.pk]), follow=True)
-        self.assertEqual(response.status_code, 200)
-        page_messages = list(response.context["messages"])
-        self.assertTrue(any("sudah dibatalkan" in str(m) for m in page_messages))
-
-        booking.refresh_from_db()
-        self.assertEqual(booking.dibatalkan_pada, first_dibatalkan_pada)
+        self.assertTrue(Penjadwalan.objects.filter(pk=booking.pk).exists())
 
     def test_cancelled_booking_frees_up_its_item_for_rescheduling(self):
         booking = self._create_booking(datetime.date.today() + datetime.timedelta(days=5))
@@ -642,10 +610,7 @@ class CancelScheduleViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         payload = response.json()
         self.assertTrue(payload["success"])
-        self.assertTrue(payload["dibatalkan_pada_display"])
-
-        booking.refresh_from_db()
-        self.assertEqual(booking.status, Penjadwalan.Status.dibatalkan)
+        self.assertFalse(Penjadwalan.objects.filter(pk=booking.pk).exists())
 
     def test_ajax_cancel_within_cutoff_returns_json_error_and_keeps_booking(self):
         session_date = datetime.date.today() + datetime.timedelta(days=10)
@@ -661,8 +626,7 @@ class CancelScheduleViewTests(TestCase):
         self.assertEqual(response.status_code, 400)
         payload = response.json()
         self.assertFalse(payload["success"])
-        booking.refresh_from_db()
-        self.assertEqual(booking.status, Penjadwalan.Status.terjadwal)
+        self.assertTrue(Penjadwalan.objects.filter(pk=booking.pk).exists())
 
 
 class EditScheduleViewTests(TestCase):
@@ -728,14 +692,11 @@ class EditScheduleViewTests(TestCase):
         self.assertEqual(self.booking.nama_penerima, "Budi")
 
     def test_edit_rejected_for_already_cancelled_booking(self):
-        self.booking.status = Penjadwalan.Status.dibatalkan
-        self.booking.dibatalkan_pada = timezone.now()
-        self.booking.save()
+        booking_pk = self.booking.pk
+        self.booking.delete()
 
-        response = self.client.post(reverse("edit_schedule", args=[self.booking.pk]), self._valid_payload())
-        self.assertRedirects(response, reverse("schedule_list"))
-        self.booking.refresh_from_db()
-        self.assertEqual(self.booking.nama_penerima, "Budi")
+        response = self.client.post(reverse("edit_schedule", args=[booking_pk]), self._valid_payload())
+        self.assertEqual(response.status_code, 404)
 
     def test_edit_other_users_booking_returns_404(self):
         other_user = User.objects.create_user(username="ani", password="pass12345")
