@@ -83,6 +83,60 @@ class ManagerRolePermissionTests(TestCase):
         self.client.force_login(self.user)
         self.assertEqual(self.client.get(review_url).status_code, 403)
 
+    def test_manager_can_delete_processed_submission(self):
+        delete_url = reverse(
+            "penanganan:hapus_pengajuan",
+            args=[self.user_submission.pk],
+        )
+        self.client.force_login(self.manager)
+
+        response = self.client.post(delete_url)
+
+        self.assertRedirects(
+            response,
+            reverse("penanganan:daftar_pengajuan"),
+            fetch_redirect_response=False,
+        )
+        self.assertFalse(
+            Pemeriksaan.objects.filter(pk=self.user_submission.pk).exists()
+        )
+
+    def test_regular_user_cannot_delete_processed_submission(self):
+        delete_url = reverse(
+            "penanganan:hapus_pengajuan",
+            args=[self.user_submission.pk],
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.post(delete_url)
+
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(
+            Pemeriksaan.objects.filter(pk=self.user_submission.pk).exists()
+        )
+
+    def test_manager_sees_delete_button_for_processed_submission(self):
+        self.client.force_login(self.manager)
+
+        response = self.client.get(reverse("penanganan:daftar_pengajuan"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            reverse("penanganan:hapus_pengajuan", args=[self.user_submission.pk]),
+        )
+
+    def test_regular_user_does_not_see_delete_button_for_processed_submission(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("penanganan:daftar_pengajuan"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(
+            response,
+            reverse("penanganan:hapus_pengajuan", args=[self.user_submission.pk]),
+        )
+
     def test_invalid_review_form_does_not_update_submission(self):
         self.client.force_login(self.manager)
         review_url = reverse(
