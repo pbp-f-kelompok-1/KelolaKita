@@ -47,13 +47,13 @@
                     {% if active_nav == 'beranda' %}aria-current="page"{% endif %}>Beranda</a>
                 <a class="nav__link{% if active_nav == 'penanganan' %} is-active{% endif %}"
                     href="{% url 'penanganan:daftar_pengajuan' %}"
-                    {% if active_nav == 'penanganan' %}aria-current="page"{% endif %}>Penanganan</a>
+                    {% if active_nav == 'penanganan' %}aria-current="page"{% endif %}>Pengajuan</a>
                 <a class="nav__link{% if active_nav == 'peta' %} is-active{% endif %}"
                     href="{% url 'show_location' %}"
-                    {% if active_nav == 'peta' %}aria-current="page"{% endif %}>Peta Setoran</a>
+                    {% if active_nav == 'peta' %}aria-current="page"{% endif %}>Lokasi Kita</a>
                 <a class="nav__link{% if active_nav == 'jadwal' %} is-active{% endif %}"
                     href="{% url 'show_schedule' %}"
-                    {% if active_nav == 'jadwal' %}aria-current="page"{% endif %}>Jadwal</a>
+                    {% if active_nav == 'jadwal' %}aria-current="page"{% endif %}>Penyetoran</a>
                 <a class="nav__link{% if active_nav == 'edukasi' %} is-active{% endif %}"
                     href="{% url 'education_home' %}"
                     {% if active_nav == 'edukasi' %}aria-current="page"{% endif %}>Edukasi</a>
