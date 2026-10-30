@@ -32,7 +32,7 @@
         <div class="flex min-w-0 flex-1 flex-col gap-6 rounded-2xl bg-white p-[26px] shadow-[0px_8px_24px_0px_rgba(23,53,28,0.07)]">
 
             <section class="flex flex-col gap-3.5" id="items-section">
-                <h2 class="font-['Plus_Jakarta_Sans'] text-lg font-extrabold text-[#1a2e1c]">0. Pilih barang</h2>
+                <h2 class="font-['Plus_Jakarta_Sans'] text-lg font-extrabold text-[#1a2e1c]">0. Pilih barang <span class="text-[#b42318]">*</span></h2>
                 <div id="items-picker" class="{% if not items %}hidden{% endif %} flex flex-col gap-3">
                     <p class="text-xs text-[#557a5b]">Bisa pilih lebih dari satu barang untuk dijadwalkan sekaligus.</p>
                     <div id="items-list" class="flex flex-col gap-3">
@@ -72,7 +72,7 @@
             </section>
 
             <section class="flex flex-col gap-3.5">
-                <h2 class="font-['Plus_Jakarta_Sans'] text-lg font-extrabold text-[#1a2e1c]">1. Metode penyetoran</h2>
+                <h2 class="font-['Plus_Jakarta_Sans'] text-lg font-extrabold text-[#1a2e1c]">1. Metode penyetoran <span class="text-[#b42318]">*</span></h2>
                 <div class="flex flex-col gap-3 sm:flex-row">
                     {% for method in methods %}
                     <label class="method-card group relative flex flex-1 cursor-pointer flex-col gap-2.5 rounded-xl border border-[#dce7de] bg-white p-4 transition-colors has-[:checked]:border-[#2e7d32] has-[:checked]:bg-[#e8f5e9]">
@@ -101,7 +101,7 @@
                 <div id="method-detail-kurir"
                      class="{% if selected_method == 'kurir' %}flex{% else %}hidden{% endif %} flex-col gap-3">
                     <div class="flex flex-col gap-1.5">
-                        <label for="id_alamat_penjemputan" class="text-[13px] font-bold text-[#1a2e1c]">Alamat penjemputan</label>
+                        <label for="id_alamat_penjemputan" class="text-[13px] font-bold text-[#1a2e1c]">Alamat penjemputan <span class="text-[#b42318]">*</span></label>
                         <input type="text" name="alamat_penjemputan" id="id_alamat_penjemputan"
                                {% if selected_method == 'kurir' %}required{% endif %}
                                value="{{ alamat_penjemputan_value }}"
@@ -114,7 +114,7 @@
 
                 <div id="method-detail-titik"
                      class="{% if selected_method == 'titik' %}flex{% else %}hidden{% endif %} flex-col gap-1.5">
-                    <label for="id_lokasi_mitra" class="text-[13px] font-bold text-[#1a2e1c]">Lokasi mitra</label>
+                    <label for="id_lokasi_mitra" class="text-[13px] font-bold text-[#1a2e1c]">Lokasi mitra <span class="text-[#b42318]">*</span></label>
                     {% if locations %}
                     <select name="lokasi_mitra" id="id_lokasi_mitra"
                             {% if selected_method == 'titik' %}required{% endif %}
@@ -137,7 +137,7 @@
 
             <section class="flex flex-col gap-3.5">
                 <div class="flex items-center justify-between">
-                    <h2 class="font-['Plus_Jakarta_Sans'] text-lg font-extrabold text-[#1a2e1c]">2. Tanggal</h2>
+                    <h2 class="font-['Plus_Jakarta_Sans'] text-lg font-extrabold text-[#1a2e1c]">2. Tanggal <span class="text-[#b42318]">*</span></h2>
                     <div class="flex items-center gap-2">
                         <p class="text-[13px] font-bold text-[#2e7d32]">{{ current_month_label }}</p>
                         <button type="button" id="date-prev" aria-label="Tanggal sebelumnya"
@@ -162,7 +162,7 @@
             </section>
 
             <section class="flex flex-col gap-3.5">
-                <h2 class="font-['Plus_Jakarta_Sans'] text-lg font-extrabold text-[#1a2e1c]">3. Sesi penjemputan</h2>
+                <h2 class="font-['Plus_Jakarta_Sans'] text-lg font-extrabold text-[#1a2e1c]">3. Sesi penjemputan <span class="text-[#b42318]">*</span></h2>
                 <div class="flex flex-col gap-3 sm:flex-row">
                     {% for session in sessions %}
                     <label class="session-card flex flex-1 cursor-pointer items-center gap-3 rounded-xl border border-[#dce7de] p-4 has-[:checked]:border-[#2e7d32] has-[:checked]:bg-[#e8f5e9] has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-40 has-[:disabled]:pointer-events-none">
@@ -182,14 +182,14 @@
 
             <section class="flex flex-col gap-4 sm:flex-row">
                 <div class="flex flex-1 flex-col gap-1.5">
-                    <label for="id_nama_penerima" class="text-[13px] font-bold text-[#1a2e1c]">Nama penerima</label>
+                    <label for="id_nama_penerima" class="text-[13px] font-bold text-[#1a2e1c]">Nama penerima <span class="text-[#b42318]">*</span></label>
                     <input type="text" name="nama_penerima" id="id_nama_penerima" required
                            value="{{ nama_penerima_value }}"
                            placeholder="{% if contact_placeholder_name %}cth. {{ contact_placeholder_name }}{% else %}Nama lengkap{% endif %}"
                            class="h-11 w-full rounded-lg border border-[#dce7de] bg-white px-3.5 text-sm text-[#1a2e1c] focus:border-[#2e7d32] focus:outline-2 focus:outline-[#2e7d32]">
                 </div>
                 <div class="flex flex-1 flex-col gap-1.5">
-                    <label for="id_nomor_hp" class="text-[13px] font-bold text-[#1a2e1c]">Nomor HP</label>
+                    <label for="id_nomor_hp" class="text-[13px] font-bold text-[#1a2e1c]">Nomor HP <span class="text-[#b42318]">*</span></label>
                     <input type="tel" name="nomor_hp" id="id_nomor_hp" required
                            inputmode="tel" pattern="(\+62|0)8[0-9]{7,11}"
                            title="Contoh: 08123456789 atau +628123456789"
