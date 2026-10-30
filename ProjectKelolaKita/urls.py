@@ -53,6 +53,7 @@ urlpatterns = [
 
     path('jadwal/', include('Schedule.urls')),
     path('accounts/', include('accounts.urls')),
+    path('pengajuan/', include('penanganan.urls')),
     path('edukasi/', include('education.urls')),
 ]
 
