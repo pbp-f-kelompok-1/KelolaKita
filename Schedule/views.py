@@ -19,6 +19,10 @@ MONTH_FULL_ID = [
     "Januari", "Februari", "Maret", "April", "Mei", "Juni",
     "Juli", "Agustus", "September", "Oktober", "November", "Desember",
 ]
+MONTH_ABBR_ID = [
+    "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
+    "Jul", "Ags", "Sep", "Okt", "Nov", "Des",
+]
 
 PICKUP_METHODS = [
     {
@@ -62,6 +66,7 @@ SESSION_WINDOWS = {
 CANCEL_CUTOFF_HOURS = 12
 
 DATE_WINDOW_DAYS = 30
+DATES_PER_PAGE = 7
 
 
 def _upcoming_dates(days=DATE_WINDOW_DAYS):
@@ -73,8 +78,9 @@ def _upcoming_dates(days=DATE_WINDOW_DAYS):
             "iso": day.isoformat(),
             "day_abbr": DAY_ABBR_ID[day.weekday()],
             "day_num": day.day,
+            "month_abbr": MONTH_ABBR_ID[day.month - 1],
             "full_label": f"{DAY_FULL_ID[day.weekday()]}, {day.day} {MONTH_FULL_ID[day.month - 1]} {day.year}",
-            "page": offset // 6,
+            "page": offset // DATES_PER_PAGE,
         })
     return dates
 
@@ -171,8 +177,6 @@ def show_schedule(request):
     dua pengguna submit sesi yang sama hampir bersamaan.
     """
     dates = _upcoming_dates()
-    today = datetime.date.today()
-    current_month_label = f"{MONTH_FULL_ID[today.month - 1]} {today.year}"
 
     items = _approved_items(request.user)
     locations = _active_locations()
@@ -230,7 +234,6 @@ def show_schedule(request):
 
     context = {
         "active_nav": "jadwal",
-        "current_month_label": current_month_label,
         "dates": dates,
         "methods": PICKUP_METHODS,
         "sessions": PICKUP_SESSIONS,

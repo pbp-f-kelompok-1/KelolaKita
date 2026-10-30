@@ -66,8 +66,9 @@
                 </div>
                 <p id="items-empty"
                    class="{% if items %}hidden{% endif %} rounded-lg bg-[#f4f6f5] px-3.5 py-3 text-sm text-[#557a5b]">
-                    Belum ada barang yang disetujui untuk dijadwalkan. Ajukan dan tunggu barangmu
-                    diperiksa terlebih dahulu sebelum bisa mengatur jadwal penyerahan.
+                    Belum ada barang yang disetujui untuk dijadwalkan.
+                    <a href="{% url 'penanganan:tambah_pengajuan' %}" class="font-bold text-[#2e7d32] underline">Ajukan barang</a>
+                    dan tunggu barangmu diperiksa terlebih dahulu sebelum bisa mengatur jadwal penyerahan.
                 </p>
             </section>
 
@@ -139,7 +140,6 @@
                 <div class="flex items-center justify-between">
                     <h2 class="font-['Plus_Jakarta_Sans'] text-lg font-extrabold text-[#1a2e1c]">Tanggal <span class="text-[#b42318]">*</span></h2>
                     <div class="flex items-center gap-2">
-                        <p class="text-[13px] font-bold text-[#2e7d32]">{{ current_month_label }}</p>
                         <button type="button" id="date-prev" aria-label="Tanggal sebelumnya"
                                 class="flex size-7 items-center justify-center rounded-full border border-[#dce7de] text-[#557a5b] disabled:opacity-40"
                                 disabled>&larr;</button>
@@ -147,15 +147,16 @@
                                 class="flex size-7 items-center justify-center rounded-full border border-[#dce7de] text-[#557a5b]">&rarr;</button>
                     </div>
                 </div>
-                <div id="date-track" class="grid grid-cols-3 gap-2.5 sm:grid-cols-6">
+                <div id="date-track" class="grid grid-cols-4 gap-2.5 sm:grid-cols-7">
                     {% for date in dates %}
-                    <label class="date-choice group flex h-[74px] cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border border-[#dce7de] bg-white has-[:checked]:border-[#2e7d32] has-[:checked]:bg-[#2e7d32]"
+                    <label class="date-choice group flex h-[82px] cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-[#dce7de] bg-white has-[:checked]:border-[#2e7d32] has-[:checked]:bg-[#2e7d32]"
                            data-page="{{ date.page }}">
                         <input type="radio" name="tanggal" value="{{ date.iso }}" class="sr-only"
                                {% if date.iso == selected_date %}checked{% endif %}
                                data-full-label="{{ date.full_label }}">
                         <span class="text-[11px] text-[#557a5b] group-has-[:checked]:text-[#e8f5e9]">{{ date.day_abbr }}</span>
                         <span class="font-['Plus_Jakarta_Sans'] text-[19px] font-extrabold text-[#1a2e1c] group-has-[:checked]:text-white">{{ date.day_num }}</span>
+                        <span class="text-[10px] font-bold text-[#557a5b] group-has-[:checked]:text-[#e8f5e9]">{{ date.month_abbr }}</span>
                     </label>
                     {% endfor %}
                 </div>
