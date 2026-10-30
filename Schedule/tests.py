@@ -382,6 +382,29 @@ class ScheduleListViewTests(TestCase):
         self.assertEqual(row["status"], "terkunci")
         self.assertFalse(row["can_cancel"])
 
+    def test_other_users_booking_is_not_listed(self):
+        other_user = User.objects.create_user(username="ani", password="pass12345")
+        other_item = Pemeriksaan.objects.create(
+            pengguna=other_user,
+            nama_barang="Kardus",
+            jenis_barang="Kertas",
+            kondisi_barang="Baik",
+            kategori_penanganan="recycle",
+        )
+        other_booking = Penjadwalan.objects.create(
+            metode=Penjadwalan.Metode.kurir,
+            tanggal=datetime.date.today() + datetime.timedelta(days=5),
+            sesi=Penjadwalan.Sesi.pagi,
+            nama_penerima="Ani",
+            nomor_hp="08129999999",
+            alamat_penjemputan="Jl. Kenanga No. 1",
+        )
+        other_booking.barang.set([other_item])
+
+        response = self.client.get(reverse("schedule_list"))
+        bookings_shown = [row["booking"] for row in response.context["rows"]]
+        self.assertNotIn(other_booking, bookings_shown)
+
 
 class CancelScheduleViewTests(TestCase):
     def setUp(self):
@@ -432,3 +455,26 @@ class CancelScheduleViewTests(TestCase):
     def test_cancel_nonexistent_booking_returns_404(self):
         response = self.client.post(reverse("cancel_schedule", args=[999999]))
         self.assertEqual(response.status_code, 404)
+
+    def test_cancel_other_users_booking_returns_404_and_keeps_booking(self):
+        other_user = User.objects.create_user(username="ani", password="pass12345")
+        other_item = Pemeriksaan.objects.create(
+            pengguna=other_user,
+            nama_barang="Kardus",
+            jenis_barang="Kertas",
+            kondisi_barang="Baik",
+            kategori_penanganan="recycle",
+        )
+        other_booking = Penjadwalan.objects.create(
+            metode=Penjadwalan.Metode.kurir,
+            tanggal=datetime.date.today() + datetime.timedelta(days=5),
+            sesi=Penjadwalan.Sesi.pagi,
+            nama_penerima="Ani",
+            nomor_hp="08129999999",
+            alamat_penjemputan="Jl. Kenanga No. 1",
+        )
+        other_booking.barang.set([other_item])
+
+        response = self.client.post(reverse("cancel_schedule", args=[other_booking.pk]))
+        self.assertEqual(response.status_code, 404)
+        self.assertTrue(Penjadwalan.objects.filter(pk=other_booking.pk).exists())

@@ -107,6 +107,18 @@ def _approved_items(user):
     )
 
 
+def _owned_bookings(user):
+    """Penjadwalan milik `user`, ditentukan lewat kepemilikan barang di dalamnya.
+
+    `Penjadwalan` tidak punya kolom `pengguna` sendiri. Kepemilikannya
+    ditentukan lewat relasi `barang`, karena field itu di `PenjadwalanForm`
+    selalu dibatasi ke barang milik `request.user` lewat `_approved_items`,
+    sehingga satu jadwal hanya pernah berisi barang dari satu pemilik yang
+    sama.
+    """
+    return Penjadwalan.objects.filter(barang__pengguna=user).distinct()
+
+
 def _owner_display_name(user):
     if not user:
         return ""
@@ -203,7 +215,7 @@ def schedule_list(request):
     """Riwayat jadwal penyetoran yang sudah dikonfirmasi, dengan opsi pembatalan."""
     now = timezone.now()
     bookings = (
-        Penjadwalan.objects
+        _owned_bookings(request.user)
         .prefetch_related("barang")
         .select_related("lokasi_mitra")
         .order_by("tanggal", "sesi", "-created_at")
@@ -235,7 +247,7 @@ def schedule_list(request):
 
 @login_required
 def cancel_schedule(request, pk):
-    booking = get_object_or_404(Penjadwalan, pk=pk)
+    booking = get_object_or_404(_owned_bookings(request.user), pk=pk)
     if request.method == "POST":
         start_dt = _session_datetime(booking.tanggal, booking.sesi, "start")
         cutoff_dt = start_dt - datetime.timedelta(hours=CANCEL_CUTOFF_HOURS)
