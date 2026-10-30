@@ -32,7 +32,7 @@
         <div class="flex min-w-0 flex-1 flex-col gap-6 rounded-2xl bg-white p-[26px] shadow-[0px_8px_24px_0px_rgba(23,53,28,0.07)]">
 
             <section class="flex flex-col gap-3.5" id="items-section">
-                <h2 class="font-['Plus_Jakarta_Sans'] text-lg font-extrabold text-[#1a2e1c]">0. Pilih barang <span class="text-[#b42318]">*</span></h2>
+                <h2 class="font-['Plus_Jakarta_Sans'] text-lg font-extrabold text-[#1a2e1c]">Pilih barang <span class="text-[#b42318]">*</span></h2>
                 <div id="items-picker" class="{% if not items %}hidden{% endif %} flex flex-col gap-3">
                     <p class="text-xs text-[#557a5b]">Bisa pilih lebih dari satu barang untuk dijadwalkan sekaligus.</p>
                     <div id="items-list" class="flex flex-col gap-3">
@@ -72,7 +72,7 @@
             </section>
 
             <section class="flex flex-col gap-3.5">
-                <h2 class="font-['Plus_Jakarta_Sans'] text-lg font-extrabold text-[#1a2e1c]">1. Metode penyetoran <span class="text-[#b42318]">*</span></h2>
+                <h2 class="font-['Plus_Jakarta_Sans'] text-lg font-extrabold text-[#1a2e1c]">Metode penyetoran <span class="text-[#b42318]">*</span></h2>
                 <div class="flex flex-col gap-3 sm:flex-row">
                     {% for method in methods %}
                     <label class="method-card group relative flex flex-1 cursor-pointer flex-col gap-2.5 rounded-xl border border-[#dce7de] bg-white p-4 transition-colors has-[:checked]:border-[#2e7d32] has-[:checked]:bg-[#e8f5e9]">
@@ -137,7 +137,7 @@
 
             <section class="flex flex-col gap-3.5">
                 <div class="flex items-center justify-between">
-                    <h2 class="font-['Plus_Jakarta_Sans'] text-lg font-extrabold text-[#1a2e1c]">2. Tanggal <span class="text-[#b42318]">*</span></h2>
+                    <h2 class="font-['Plus_Jakarta_Sans'] text-lg font-extrabold text-[#1a2e1c]">Tanggal <span class="text-[#b42318]">*</span></h2>
                     <div class="flex items-center gap-2">
                         <p class="text-[13px] font-bold text-[#2e7d32]">{{ current_month_label }}</p>
                         <button type="button" id="date-prev" aria-label="Tanggal sebelumnya"
@@ -162,7 +162,7 @@
             </section>
 
             <section class="flex flex-col gap-3.5">
-                <h2 class="font-['Plus_Jakarta_Sans'] text-lg font-extrabold text-[#1a2e1c]">3. Sesi penjemputan <span class="text-[#b42318]">*</span></h2>
+                <h2 class="font-['Plus_Jakarta_Sans'] text-lg font-extrabold text-[#1a2e1c]">Sesi penjemputan <span class="text-[#b42318]">*</span></h2>
                 <div class="flex flex-col gap-3 sm:flex-row">
                     {% for session in sessions %}
                     <label class="session-card flex flex-1 cursor-pointer items-center gap-3 rounded-xl border border-[#dce7de] p-4 has-[:checked]:border-[#2e7d32] has-[:checked]:bg-[#e8f5e9] has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-40 has-[:disabled]:pointer-events-none">
