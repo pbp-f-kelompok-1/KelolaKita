@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Ubah Jadwal - KelolaKita{% endblock title %}
+
+{% block content %}
+<main class="mx-auto flex w-full max-w-[760px] flex-col items-start gap-7 px-16 py-[42px]">
+
+    <div class="flex w-full flex-col gap-2">
+        <a href="{% url 'schedule_list' %}" class="text-sm font-bold text-[#2e7d32] underline-offset-2 hover:underline">
+            &larr; Kembali ke riwayat jadwal
+        </a>
+        <h1 class="font-['Plus_Jakarta_Sans'] text-2xl leading-tight font-extrabold text-[#1a2e1c]">
+            Ubah jadwal penyetoran
+        </h1>
+        <p class="max-w-[48rem] text-[15px] leading-relaxed text-[#557a5b]">
+            Perubahan hanya bisa disimpan hingga 12 jam sebelum sesi {{ booking.get_sesi_display }}
+            pada {{ booking.tanggal|date:"l, j F Y" }} dimulai.
+        </p>
+    </div>
+
+    <form method="post" action="{% url 'edit_schedule' booking.pk %}" id="edit-schedule-form"
+          class="flex w-full flex-col gap-6 rounded-2xl bg-white p-[26px] shadow-[0px_8px_24px_0px_rgba(23,53,28,0.07)]">
+        {% csrf_token %}
+
+        <section class="flex flex-col gap-3.5">
+            <h2 class="font-['Plus_Jakarta_Sans'] text-lg font-extrabold text-[#1a2e1c]">Barang <span class="text-[#b42318]">*</span></h2>
+            {% if items %}
+            <div class="flex flex-col gap-3">
+                {% for item in items %}
+                <label class="group flex cursor-pointer items-center gap-3 rounded-xl border border-[#dce7de] bg-white p-3.5 has-[:checked]:border-[#2e7d32] has-[:checked]:bg-[#e8f5e9]">
+                    <input type="checkbox" name="barang" value="{{ item.pk }}" class="size-4"
+                           {% if item.pk|stringformat:"s" in selected_item_ids %}checked{% endif %}>
+                    <span class="flex flex-col gap-0.5">
+                        <span class="text-sm font-extrabold text-[#1a2e1c]">{{ item.nama_barang }}</span>
+                        <span class="text-xs text-[#557a5b]">{{ item.jenis_barang }}</span>
+                    </span>
+                    <span class="ml-auto shrink-0 rounded-full bg-[#e7f6ee] px-2.5 py-1.5 text-xs font-bold text-[#237b4b]">
+                        {{ item.get_kategori_penanganan_display }}
+                    </span>
+                </label>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="rounded-lg bg-[#f4f6f5] px-3.5 py-3 text-sm text-[#557a5b]">
+                Tidak ada barang yang bisa dipilih.
+            </p>
+            {% endif %}
+        </section>
+
+        <section class="flex flex-col gap-3.5">
+            <h2 class="font-['Plus_Jakarta_Sans'] text-lg font-extrabold text-[#1a2e1c]">Metode penyetoran <span class="text-[#b42318]">*</span></h2>
+            <div class="flex flex-col gap-3 sm:flex-row">
+                {% for method in methods %}
+                <label class="flex flex-1 cursor-pointer items-center gap-2.5 rounded-xl border border-[#dce7de] bg-white p-4 has-[:checked]:border-[#2e7d32] has-[:checked]:bg-[#e8f5e9]">
+                    <input type="radio" name="metode" value="{{ method.value }}" class="size-4" id="edit-metode-{{ method.value }}"
+                           {% if method.value == selected_method %}checked{% endif %}>
+                    <span class="text-sm font-extrabold text-[#1a2e1c]">{{ method.title }}</span>
+                </label>
+                {% endfor %}
+            </div>
+
+            <div id="edit-method-detail-kurir"
+                 class="{% if selected_method == 'kurir' %}flex{% else %}hidden{% endif %} flex-col gap-1.5">
+                <label for="id_alamat_penjemputan" class="text-[13px] font-bold text-[#1a2e1c]">Alamat penjemputan <span class="text-[#b42318]">*</span></label>
+                <input type="text" name="alamat_penjemputan" id="id_alamat_penjemputan"
+                       value="{{ alamat_penjemputan_value }}"
+                       placeholder="Jalan, nomor rumah, RT/RW, kota"
+                       class="h-11 w-full rounded-lg border border-[#dce7de] bg-white px-3.5 text-sm text-[#1a2e1c] focus:border-[#2e7d32] focus:outline-2 focus:outline-[#2e7d32]">
+            </div>
+
+            <div id="edit-method-detail-titik"
+                 class="{% if selected_method == 'titik' %}flex{% else %}hidden{% endif %} flex-col gap-1.5">
+                <label for="id_lokasi_mitra" class="text-[13px] font-bold text-[#1a2e1c]">Lokasi mitra <span class="text-[#b42318]">*</span></label>
+                {% if locations %}
+                <select name="lokasi_mitra" id="id_lokasi_mitra"
+                        class="h-11 w-full rounded-lg border border-[#dce7de] bg-white px-3.5 text-sm text-[#1a2e1c] focus:border-[#2e7d32] focus:outline-2 focus:outline-[#2e7d32]">
+                    <option value="" disabled {% if not selected_lokasi_id %}selected{% endif %}>Pilih titik setoran</option>
+                    {% for loc in locations %}
+                    <option value="{{ loc.id }}" {% if loc.id|stringformat:"s" == selected_lokasi_id %}selected{% endif %}>
+                        {{ loc.name }} &middot; {{ loc.city }}
+                    </option>
+                    {% endfor %}
+                </select>
+                {% else %}
+                <p class="rounded-lg bg-[#f4f6f5] px-3.5 py-3 text-sm text-[#557a5b]">Belum ada lokasi mitra aktif.</p>
+                {% endif %}
+            </div>
+        </section>
+
+        <section class="flex flex-col gap-4 sm:flex-row">
+            <div class="flex flex-1 flex-col gap-1.5">
+                <label for="id_tanggal" class="text-[13px] font-bold text-[#1a2e1c]">Tanggal <span class="text-[#b42318]">*</span></label>
+                <select name="tanggal" id="id_tanggal"
+                        class="h-11 w-full rounded-lg border border-[#dce7de] bg-white px-3.5 text-sm text-[#1a2e1c] focus:border-[#2e7d32] focus:outline-2 focus:outline-[#2e7d32]">
+                    {% for date in dates %}
+                    <option value="{{ date.iso }}" {% if date.iso == selected_date %}selected{% endif %}>
+                        {{ date.full_label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex flex-1 flex-col gap-1.5">
+                <label class="text-[13px] font-bold text-[#1a2e1c]">Sesi <span class="text-[#b42318]">*</span></label>
+                <div class="flex gap-3">
+                    {% for session in sessions %}
+                    <label class="flex flex-1 cursor-pointer items-center gap-2 rounded-xl border border-[#dce7de] p-3 has-[:checked]:border-[#2e7d32] has-[:checked]:bg-[#e8f5e9]">
+                        <input type="radio" name="sesi" value="{{ session.value }}" class="size-4"
+                               {% if session.value == selected_session %}checked{% endif %}>
+                        <span class="text-xs font-bold text-[#1a2e1c]">{{ session.name }} &middot; {{ session.time }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+
+        <section class="flex flex-col gap-4 sm:flex-row">
+            <div class="flex flex-1 flex-col gap-1.5">
+                <label for="id_nama_penerima" class="text-[13px] font-bold text-[#1a2e1c]">Nama penerima <span class="text-[#b42318]">*</span></label>
+                <input type="text" name="nama_penerima" id="id_nama_penerima" required
+                       value="{{ nama_penerima_value }}"
+                       class="h-11 w-full rounded-lg border border-[#dce7de] bg-white px-3.5 text-sm text-[#1a2e1c] focus:border-[#2e7d32] focus:outline-2 focus:outline-[#2e7d32]">
+            </div>
+            <div class="flex flex-1 flex-col gap-1.5">
+                <label for="id_nomor_hp" class="text-[13px] font-bold text-[#1a2e1c]">Nomor HP <span class="text-[#b42318]">*</span></label>
+                <input type="tel" name="nomor_hp" id="id_nomor_hp" required
+                       value="{{ nomor_hp_value }}"
+                       class="h-11 w-full rounded-lg border border-[#dce7de] bg-white px-3.5 text-sm text-[#1a2e1c] focus:border-[#2e7d32] focus:outline-2 focus:outline-[#2e7d32]">
+            </div>
+        </section>
+
+        <section class="flex flex-col gap-1.5">
+            <label for="id_notes" class="text-[13px] font-bold text-[#1a2e1c]">Catatan kurir</label>
+            <input type="text" name="notes" id="id_notes"
+                   value="{{ notes_value }}"
+                   placeholder="Catatan untuk kurir (opsional)"
+                   class="h-11 w-full rounded-lg border border-[#dce7de] bg-white px-3.5 text-sm text-[#1a2e1c] focus:border-[#2e7d32] focus:outline-2 focus:outline-[#2e7d32]">
+        </section>
+
+        <div class="flex items-center gap-3">
+            <button type="submit"
+                    class="flex h-11 flex-1 items-center justify-center rounded-lg bg-[#2e7d32] px-[18px] text-sm font-bold text-white transition hover:bg-[#1f5a23] active:scale-[0.98]">
+                Simpan perubahan
+            </button>
+            <a href="{% url 'schedule_list' %}"
+               class="flex h-11 items-center justify-center rounded-lg border border-[#dce7de] px-[18px] text-sm font-bold text-[#557a5b] hover:bg-[#f4f6f5]">
+                Batal
+            </a>
+        </div>
+    </form>
+</main>
+
+<script>
+    const editForm = document.getElementById('edit-schedule-form');
+    const editMethodDetailKurir = document.getElementById('edit-method-detail-kurir');
+    const editMethodDetailTitik = document.getElementById('edit-method-detail-titik');
+
+    function updateEditMethodDetailVisibility(methodValue) {
+        const isKurir = methodValue === 'kurir';
+        editMethodDetailKurir.classList.toggle('hidden', !isKurir);
+        editMethodDetailKurir.classList.toggle('flex', isKurir);
+        editMethodDetailTitik.classList.toggle('hidden', isKurir);
+        editMethodDetailTitik.classList.toggle('flex', !isKurir);
+    }
+
+    editForm.addEventListener('change', (event) => {
+        if (event.target.name === 'metode') {
+            updateEditMethodDetailVisibility(event.target.value);
+        }
+    });
+
+    updateEditMethodDetailVisibility(editForm.querySelector('input[name="metode"]:checked')?.value);
+</script>
+{% endblock content %}
