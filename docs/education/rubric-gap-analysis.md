@@ -19,10 +19,10 @@ dikarang. Rubrik penuh ada di brief PTS; tabel ini hanya memetakan kondisi.
 
 | Komponen | Bobot | Kondisi awal | Bukti | Gap / perbaikan | Kondisi akhir |
 |---|---:|---|---|---|---|
-| CRUD Module Implementation | 35% | Create/read/update/delete artikel, agenda, distribusi berjalan; validasi model/form; upload gambar | `education/views.py`, `forms.py`, `models.py`, `tests.py`; 197 tes total (lihat laporan) | Tidak ada bulk/soft-delete; delete gambar tidak menghapus file orphan; tetap dianggap gap, bukan fitur wajib | CRUD lengkap dengan validasi, error form, authorization, image handling |
+| CRUD Module Implementation | 35% | Create/read/update/delete artikel, agenda, distribusi berjalan; validasi model/form; upload gambar | `education/views.py`, `forms.py`, `models.py`, `tests.py`; 199 tes total (lihat laporan) | Tidak ada bulk/soft-delete; delete gambar tidak menghapus file orphan; tetap dianggap gap, bukan fitur wajib | CRUD lengkap dengan validasi, error form, authorization, image handling |
 | Web Interactivity & Responsiveness | 10% | Form create/update full-page; filter artikel memakai AJAX partial; delete dashboard memakai fetch; CSS responsif | `static/js/education.js`, `_article_results.html`, tests | Tidak semua CRUD asynchronous; tidak ada HTMX/optimistic UI; create/update tetap full-page | Level 3: ada AJAX bermakna pada filter dan delete, belum konsisten di seluruh CRUD |
 | Security Awareness | 10% | Staff-only mixin, active staff check, CSRF, form/model validation, media endpoint sempit | `StaffRequiredMixin`, `article_image`, tests | Tidak ada object ownership, rate limit, audit log; semua staff setara | Kontrol server-side lebih ketat; batasan didokumentasikan |
-| Testing & Coverage | 10% | Banyak unit/regression tests; image edge cases; import tests; filter/async tests | `education/tests.py`, `tests_import.py`; 197 total | `coverage` tidak terpasang; tidak ada Selenium; tidak ada angka coverage | Tes ditambah untuk filter, async delete, inactive staff, direct POST non-staff, missing record, delivered date form; coverage tetap belum diukur |
+| Testing & Coverage | 10% | Banyak unit/regression tests; image edge cases; import tests; filter/async tests | `education/tests.py`, `tests_import.py`; 199 total | `coverage` tidak terpasang; tidak ada Selenium; tidak ada angka coverage | Tes ditambah untuk filter, async delete, inactive staff, direct POST non-staff, missing record, delivered date form; coverage tetap belum diukur |
 | Git Contribution & Code Ownership | 10% | Branch `main`; repository memiliki commit fitur Education; agen tidak commit | `git log`, status working tree | Penilaian history/checkpoint tidak dapat dilakukan dari kode saja | Tidak ada commit/push dari agen; pemilik harus menyiapkan riwayat sendiri |
 | Demo & Live Coding | 25% | Modul dapat didemokan; alur kode dan tantangan belum terdokumentasi | README, architecture, walkthrough, demo script, playbook | Keberhasilan bergantung latihan mahasiswa; belum diuji sebagai presentasi nyata | Dokumentasi dan latihan tersedia; belum ada jaminan performa demo |
 
@@ -84,7 +84,7 @@ Batasan:
 ### Pengujian
 
 Angka aktual harus diambil dari output final, bukan diasumsikan. Setelah implementasi
-filter dan async delete, suite aktual adalah **103 tes Education** dan **197 tes total**.
+filter dan async delete, suite aktual adalah **103 tes Education** dan **199 tes total**.
 Verifikasi dengan command di `testing-guide.md`.
 
 Gap:

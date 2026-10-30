@@ -14,7 +14,7 @@ git diff --check
 ```
 
 Tes memakai database test sementara; data `db.sqlite3` tidak diubah. Hasil terakhir
-pada audit implementasi: **103 tes Education** dan **197 tes total**.
+pada audit implementasi: **103 tes Education** dan **199 tes total**.
 
 ## 2. Menjalankan satu kelas/metode
 
