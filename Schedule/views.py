@@ -6,6 +6,7 @@ from django.db.models import Count, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.utils.formats import date_format
 
 from Location.models import Location
 from Schedule.models import Pemeriksaan, Penjadwalan
@@ -82,7 +83,7 @@ def _availability_for_dates(dates):
     date_isos = [d["iso"] for d in dates]
     counts = (
         Penjadwalan.objects
-        .filter(tanggal__in=date_isos)
+        .filter(tanggal__in=date_isos, status=Penjadwalan.Status.terjadwal)
         .values("tanggal", "sesi")
         .annotate(booked=Count("id"))
     )
@@ -98,11 +99,18 @@ def _availability_for_dates(dates):
 
 
 def _approved_items(user):
+    """Barang milik `user` yang disetujui dan belum terpakai di jadwal aktif.
+
+    Barang yang hanya pernah dipakai di jadwal yang sudah dibatalkan
+    (soft-cancel, lihat `cancel_schedule`) tetap dianggap "belum
+    dijadwalkan" dan muncul lagi di sini, karena `Penjadwalan` yang
+    dibatalkan tidak lagi memblokir barangnya.
+    """
     return (
         Pemeriksaan.objects
         .filter(pengguna=user)
         .exclude(kategori_penanganan="menunggu")
-        .exclude(penjadwalan_set__isnull=False)
+        .exclude(penjadwalan_set__status=Penjadwalan.Status.terjadwal)
         .select_related("pengguna")
         .order_by("-created_at")
     )
@@ -181,7 +189,9 @@ def show_schedule(request):
         if form.is_valid():
             tanggal = form.cleaned_data["tanggal"]
             sesi = form.cleaned_data["sesi"]
-            remaining = SESSION_QUOTAS[sesi] - Penjadwalan.objects.filter(tanggal=tanggal, sesi=sesi).count()
+            remaining = SESSION_QUOTAS[sesi] - Penjadwalan.objects.filter(
+                tanggal=tanggal, sesi=sesi, status=Penjadwalan.Status.terjadwal,
+            ).count()
             if remaining <= 0:
                 message = "Sesi yang dipilih sudah penuh, silakan pilih sesi lain."
                 if is_ajax:
@@ -256,15 +266,18 @@ def schedule_list(request):
 
     rows = []
     for booking in bookings:
-        start_dt = _session_datetime(booking.tanggal, booking.sesi, "start")
-        end_dt = _session_datetime(booking.tanggal, booking.sesi, "end")
-        cutoff_dt = start_dt - datetime.timedelta(hours=CANCEL_CUTOFF_HOURS)
-        if now > end_dt:
-            status = "selesai"
-        elif now > cutoff_dt:
-            status = "terkunci"
+        if booking.status == Penjadwalan.Status.dibatalkan:
+            status = "dibatalkan"
         else:
-            status = "terjadwal"
+            start_dt = _session_datetime(booking.tanggal, booking.sesi, "start")
+            end_dt = _session_datetime(booking.tanggal, booking.sesi, "end")
+            cutoff_dt = start_dt - datetime.timedelta(hours=CANCEL_CUTOFF_HOURS)
+            if now > end_dt:
+                status = "selesai"
+            elif now > cutoff_dt:
+                status = "terkunci"
+            else:
+                status = "terjadwal"
         rows.append({
             "booking": booking,
             "status": status,
@@ -281,9 +294,24 @@ def schedule_list(request):
 
 @login_required
 def cancel_schedule(request, pk):
+    """Membatalkan jadwal secara soft-cancel (tidak dihapus dari basis data).
+
+    `booking` ditandai `status=dibatalkan` beserta `dibatalkan_pada`,
+    bukan dihapus lewat `.delete()`, sehingga riwayatnya tetap tersimpan
+    di server dan masih muncul di `schedule_list`. Barang yang terpasang
+    padanya otomatis bisa dijadwalkan ulang karena `_approved_items` hanya
+    memblokir barang yang terpasang ke jadwal berstatus `terjadwal`.
+    """
     booking = get_object_or_404(_owned_bookings(request.user), pk=pk)
     is_ajax = _is_ajax(request)
     if request.method == "POST":
+        if booking.status == Penjadwalan.Status.dibatalkan:
+            message = "Jadwal ini sudah dibatalkan sebelumnya."
+            if is_ajax:
+                return JsonResponse({"success": False, "message": message}, status=400)
+            messages.error(request, message)
+            return redirect("schedule_list")
+
         start_dt = _session_datetime(booking.tanggal, booking.sesi, "start")
         cutoff_dt = start_dt - datetime.timedelta(hours=CANCEL_CUTOFF_HOURS)
         if timezone.now() > cutoff_dt:
@@ -292,10 +320,18 @@ def cancel_schedule(request, pk):
                 return JsonResponse({"success": False, "message": message}, status=400)
             messages.error(request, message)
         else:
-            booking.delete()
+            booking.status = Penjadwalan.Status.dibatalkan
+            booking.dibatalkan_pada = timezone.now()
+            booking.save(update_fields=["status", "dibatalkan_pada"])
             message = "Jadwal berhasil dibatalkan."
             if is_ajax:
-                return JsonResponse({"success": True, "message": message})
+                return JsonResponse({
+                    "success": True,
+                    "message": message,
+                    "dibatalkan_pada_display": date_format(
+                        timezone.localtime(booking.dibatalkan_pada), "j M Y, H:i",
+                    ),
+                })
             messages.success(request, message)
     return redirect("schedule_list")
 
@@ -307,12 +343,14 @@ def _editable_items(user, booking):
     sudah terpasang ke `booking` ini sendiri (barang tersebut normalnya
     tersembunyi dari `_approved_items` begitu dijadwalkan), supaya barang
     yang semula dipilih tetap muncul sebagai pilihan saat form diedit.
+    Barang yang hanya terpasang ke jadwal lain yang sudah dibatalkan tetap
+    dianggap tersedia, selaras dengan `_approved_items`.
     """
     return (
         Pemeriksaan.objects
         .filter(pengguna=user)
         .exclude(kategori_penanganan="menunggu")
-        .filter(Q(penjadwalan_set__isnull=True) | Q(penjadwalan_set=booking))
+        .exclude(Q(penjadwalan_set__status=Penjadwalan.Status.terjadwal) & ~Q(penjadwalan_set=booking))
         .select_related("pengguna")
         .distinct()
         .order_by("-created_at")
@@ -331,6 +369,10 @@ def edit_schedule(request, pk):
     salah ditolak sebagai "penuh".
     """
     booking = get_object_or_404(_owned_bookings(request.user), pk=pk)
+
+    if booking.status == Penjadwalan.Status.dibatalkan:
+        messages.error(request, "Jadwal yang sudah dibatalkan tidak bisa diubah.")
+        return redirect("schedule_list")
 
     start_dt = _session_datetime(booking.tanggal, booking.sesi, "start")
     cutoff_dt = start_dt - datetime.timedelta(hours=CANCEL_CUTOFF_HOURS)
@@ -366,7 +408,9 @@ def edit_schedule(request, pk):
             sesi = form.cleaned_data["sesi"]
             remaining = (
                 SESSION_QUOTAS[sesi]
-                - Penjadwalan.objects.filter(tanggal=tanggal, sesi=sesi).exclude(pk=booking.pk).count()
+                - Penjadwalan.objects.filter(
+                    tanggal=tanggal, sesi=sesi, status=Penjadwalan.Status.terjadwal,
+                ).exclude(pk=booking.pk).count()
             )
             if remaining <= 0:
                 messages.error(request, "Sesi yang dipilih sudah penuh, silakan pilih sesi lain.")

@@ -26,11 +26,13 @@
              class="flex flex-col gap-4 rounded-2xl bg-white p-5 shadow-[0px_8px_24px_0px_rgba(23,53,28,0.07)] sm:flex-row sm:items-start sm:justify-between">
             <div class="flex flex-col gap-2">
                 <div class="flex flex-wrap items-center gap-2">
-                    <span class="rounded-full px-2.5 py-1.5 text-xs font-bold
-                        {% if row.status == 'selesai' %}bg-[#f4f6f5] text-[#557a5b]
+                    <span id="status-badge-{{ booking.pk }}" class="rounded-full px-2.5 py-1.5 text-xs font-bold
+                        {% if row.status == 'dibatalkan' %}bg-[#fdecea] text-[#b42318]
+                        {% elif row.status == 'selesai' %}bg-[#f4f6f5] text-[#557a5b]
                         {% elif row.status == 'terkunci' %}bg-[#fff4d6] text-[#8a6d1d]
                         {% else %}bg-[#e8f5e9] text-[#2e7d32]{% endif %}">
-                        {% if row.status == 'selesai' %}Selesai
+                        {% if row.status == 'dibatalkan' %}Dibatalkan
+                        {% elif row.status == 'selesai' %}Selesai
                         {% elif row.status == 'terkunci' %}Terjadwal &middot; tidak bisa dibatalkan
                         {% else %}Terjadwal{% endif %}
                     </span>
@@ -64,7 +66,7 @@
                 </dl>
             </div>
 
-            <div class="flex shrink-0 flex-col items-stretch gap-1.5 sm:items-end">
+            <div id="booking-actions-{{ booking.pk }}" class="flex shrink-0 flex-col items-stretch gap-1.5 sm:items-end">
                 {% if row.can_edit %}
                 <a href="{% url 'edit_schedule' booking.pk %}"
                    class="h-9 w-full rounded-lg border border-[#dce7de] px-4 text-center text-xs font-bold leading-9 text-[#2e7d32] hover:bg-[#e8f5e9] sm:w-auto">
@@ -85,6 +87,10 @@
                 <p class="max-w-[180px] text-right text-[11px] text-[#8a6d1d]">
                     Kurang dari 12 jam menjelang sesi, tidak bisa dibatalkan.
                 </p>
+                {% elif row.status == 'dibatalkan' %}
+                <p class="max-w-[180px] text-right text-[11px] text-[#557a5b]">
+                    Dibatalkan pada {{ booking.dibatalkan_pada|date:"j M Y, H:i" }}.
+                </p>
                 {% endif %}
             </div>
         </div>
@@ -98,8 +104,6 @@
 </main>
 
 <script>
-    const rowsList = document.getElementById('rows-list');
-    const rowsEmpty = document.getElementById('rows-empty');
     const scheduleListFlash = document.getElementById('schedule-list-flash');
 
     function escapeHtmlList(value) {
@@ -113,12 +117,27 @@
         scheduleListFlash.innerHTML = `<p class="flash flash--${type}">${escapeHtmlList(message)}</p>`;
     }
 
+    function markRowCancelled(pk, dibatalkanPadaDisplay) {
+        const badge = document.getElementById(`status-badge-${pk}`);
+        if (badge) {
+            badge.className = 'rounded-full px-2.5 py-1.5 text-xs font-bold bg-[#fdecea] text-[#b42318]';
+            badge.textContent = 'Dibatalkan';
+        }
+        const actions = document.getElementById(`booking-actions-${pk}`);
+        if (actions) {
+            actions.innerHTML = `
+                <p class="max-w-[180px] text-right text-[11px] text-[#557a5b]">
+                    Dibatalkan pada ${escapeHtmlList(dibatalkanPadaDisplay || '')}.
+                </p>
+            `;
+        }
+    }
+
     if (window.fetch) {
         document.querySelectorAll('form.cancel-form').forEach((cancelForm) => {
             cancelForm.addEventListener('submit', async (event) => {
                 event.preventDefault();
                 const pk = cancelForm.dataset.bookingPk;
-                const row = document.getElementById(`booking-row-${pk}`);
                 const button = cancelForm.querySelector('button[type="submit"]');
 
                 button.disabled = true;
@@ -136,11 +155,7 @@
 
                     if (response.ok && payload.success) {
                         showListFlash(payload.message, 'success');
-                        if (row) row.remove();
-                        if (rowsList && rowsList.children.length === 0) {
-                            rowsList.classList.add('hidden');
-                            if (rowsEmpty) rowsEmpty.classList.remove('hidden');
-                        }
+                        markRowCancelled(pk, payload.dibatalkan_pada_display);
                     } else {
                         showListFlash(payload.message || 'Jadwal gagal dibatalkan.', 'error');
                         button.disabled = false;
