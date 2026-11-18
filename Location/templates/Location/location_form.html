@@ -7,7 +7,7 @@
         width: 100% !important;
         position: relative !important;
         z-index: 1 !important;
-        border-radius: 0.5rem;
+        border-radius: var(--kk-radius);
     }
 
     #id_category {
@@ -27,42 +27,20 @@
     .custom-green-pin {
         width: 24px;
         height: 24px;
-        background-color: #15803d;
+        background-color: var(--kk-lime);
         border: 3px solid #ffffff;
         border-radius: 50%;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
         box-sizing: border-box;
     }
-    .btn-save {
-        padding: 12px 32px;
-        border: 0;
-        border-radius: 8px;
-        background: #15803d;
-        color: #fff;
-        font-size: 1rem;
-        font-weight: 600;
-        cursor: pointer;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    }
-    .btn-save:hover { background: #166534; }
 
-    .btn-search {
-        padding: 10px 20px;
-        border: 0;
-        border-radius: 8px;
-        background: #15803d;
-        color: #fff;
-        font-weight: 500;
-        cursor: pointer;
-    }
-    .btn-search:hover { background: #166534; }
 </style>
 
-<main class="mx-auto my-8 max-w-3xl rounded-xl bg-white p-6 shadow-md">
-    <h1 class="mb-2 text-2xl font-bold text-gray-800">
+<main class="container my-8 max-w-3xl rounded-panel bg-surface p-6 shadow-md">
+    <h1 class="mb-2 text-2xl font-bold text-ink">
         {% if is_edit %}Update Lokasi Setoran{% else %}Tambah Lokasi Setoran Baru{% endif %}
     </h1>
-    <p class="mb-6 text-sm text-gray-600">
+    <p class="mb-6 text-sm text-muted">
         {% if is_edit %}
             Ubah bagian yang perlu diperbarui saja. Kolom lain tetap seperti semula.
         {% else %}
@@ -71,24 +49,24 @@
     </p>
 
     <div class="mb-4">
-        <label for="form-search-input" class="mb-1 block text-sm font-medium text-gray-700">Cari Nama Tempat / Alamat</label>
+        <label for="form-search-input" class="mb-1 block text-sm font-medium text-ink">Cari Nama Tempat / Alamat</label>
         <div class="flex gap-2">
             <input
                 type="search"
                 id="form-search-input"
-                class="w-full rounded-[10px] border border-[#dfe5e0] bg-white px-3.5 py-3 text-[0.9rem] text-[#17261b] focus:border-[#2e7d32] focus:outline-2 focus:outline-[#2e7d32]"
+                class="w-full min-w-0 rounded-[10px] border border-line bg-surface px-3.5 py-3 text-[0.9rem] text-ink focus:border-lime focus:outline-2 focus:outline-lime"
                 placeholder="Contoh: Cibinong, Depok, atau Fasilkom UI"
                 autocomplete="off"
             >
             <button
                 type="button"
                 id="btn-search-loc"
-                class="cursor-pointer rounded-lg bg-[#15803d] px-5 py-2.5 font-medium text-white transition hover:bg-[#166534]"
+                class="btn btn--primary"
             >
                 Cari
             </button>
         </div>
-        <p id="search-status" class="mt-1 text-xs text-gray-500" role="status" aria-live="polite"></p>
+        <p id="search-status" class="mt-1 text-xs text-muted" role="status" aria-live="polite"></p>
     </div>
 
     <div class="mb-6">
@@ -99,31 +77,31 @@
         {% csrf_token %}
 
         {% if form.non_field_errors %}
-        <div class="rounded-[10px] border border-[#f1c0bb] bg-[#fdecea] px-3.5 py-3 text-sm font-semibold text-[#b42318]">
+        <div class="rounded-[10px] border border-danger bg-danger-soft px-3.5 py-3 text-sm font-semibold text-danger">
             {{ form.non_field_errors }}
         </div>
         {% endif %}
 
         {% for field in form %}
             <div class="mb-4">
-                <label for="{{ field.id_for_label }}" class="mb-1 block text-sm font-medium text-gray-700">
+                <label for="{{ field.id_for_label }}" class="mb-1 block text-sm font-medium text-ink">
                     {{ field.label }}
                 </label>
 
                 {{ field }}
 
                 {% if field.errors %}
-                    <p class="mt-1 text-xs text-red-500">{{ field.errors.0 }}</p>
+                    <p class="mt-1 text-xs text-danger">{{ field.errors.0 }}</p>
                 {% endif %}
             </div>
         {% endfor %}
 
         <div class="flex items-center justify-end gap-3 pt-4">
             <a href="{% url 'show_location' %}"
-            class="rounded-lg border border-[#dfe5e0] bg-white px-5 py-3 text-sm font-semibold text-[#2e7d32] transition hover:bg-[#e8f5e9]">
+            class="btn btn--secondary">
                 Batal
             </a>
-            <button type="submit" class="btn-save">
+            <button type="submit" class="btn btn--primary">
                 {% if is_edit %}Simpan Perubahan{% else %}Simpan Lokasi{% endif %}
             </button>
         </div>

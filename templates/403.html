@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}Akses ditolak — KelolaKita{% endblock %}
+
+{% block content %}
+<main class="container py-12">
+    <section class="rounded-panel border border-line bg-surface p-6 sm:p-8" aria-labelledby="access-denied-title">
+        <h1 id="access-denied-title" class="text-2xl font-extrabold">Akses ditolak</h1>
+        <p class="mt-2 text-muted">Akun ini tidak memiliki izin untuk membuka halaman atau menjalankan tindakan tersebut.</p>
+        <a class="btn btn--secondary mt-6" href="{% url 'landing_page' %}">Kembali ke Beranda</a>
+    </section>
+</main>
+{% endblock %}

@@ -26,8 +26,8 @@
                 <h1 class="edu-hero__title" id="hero-title">{{ featured.title }}</h1>
                 <p class="edu-hero__summary">{{ featured.summary }}</p>
                 <div class="edu-hero__actions">
-                    <a class="btn btn--accent" href="{% url 'article_detail' featured.slug %}">Baca panduan</a>
-                    <a class="btn btn--on-image" href="#agenda">Lihat agenda</a>
+                    <a class="btn btn--primary" href="{% url 'article_detail' featured.slug %}">Baca panduan</a>
+                    <a class="btn btn--secondary" href="#agenda">Lihat agenda</a>
                 </div>
             </div>
             {% else %}
@@ -43,8 +43,8 @@
                     langsung berakhir di tempat sampah.
                 </p>
                 <div class="edu-hero__actions">
-                    <a class="btn btn--accent" href="#agenda">Lihat agenda</a>
-                    <a class="btn btn--on-image" href="#mitra">Jelajahi mitra</a>
+                    <a class="btn btn--primary" href="#agenda">Lihat agenda</a>
+                    <a class="btn btn--secondary" href="#mitra">Jelajahi mitra</a>
                 </div>
             </div>
             {% endif %}
@@ -108,7 +108,7 @@
                         <dd>{{ events|length }}</dd>
                     </div>
                 </dl>
-                <a class="btn btn--on-dark" href="#mitra">Jelajahi mitra</a>
+                <a class="btn btn--secondary" href="#mitra">Jelajahi mitra</a>
             </div>
 
             <div class="agenda" id="agenda">

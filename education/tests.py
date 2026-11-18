@@ -161,14 +161,24 @@ class ArticlePresentationTests(TestCase):
 
         self.assertEqual(
             article.cover["src"],
-            "/static/images/education/articles/article-placeholder.svg",
+            "/static/images/education/articles/article-fallback.webp",
         )
         self.assertIn(article.title, article.cover["alt"])
 
     def test_article_placeholder_asset_exists(self):
         self.assertIsNotNone(
-            finders.find("images/education/articles/article-placeholder.svg")
+            finders.find("images/education/articles/article-fallback.webp")
         )
+
+    def test_demo_articles_use_distinct_cover_assets(self):
+        sources = set()
+        for index in range(1, 51):
+            article = Article(slug=f"pts2026-edu-art-{index:03d}")
+            source = article.cover["src"]
+            self.assertEqual(source, f"/static/images/education/articles/pts/{index:03d}.webp")
+            self.assertIsNotNone(finders.find(source.removeprefix("/static/")))
+            sources.add(source)
+        self.assertEqual(len(sources), 50)
 
     def test_category_labels_use_public_indonesian_terms(self):
         self.assertEqual(
@@ -333,7 +343,7 @@ class ArticleImageTests(TestCase):
         self.assertFalse(article.image)
         self.assertEqual(
             article.cover["src"],
-            "/static/images/education/articles/article-placeholder.svg",
+            "/static/images/education/articles/article-fallback.webp",
         )
         self.assertTrue(Article.objects.filter(pk=article.pk).exists())
 
@@ -445,7 +455,7 @@ class ArticleImageTests(TestCase):
         for name in ["education_home", "article_list"]:
             response = self.client.get(reverse(name))
             self.assertContains(
-                response, "/static/images/education/articles/article-placeholder.svg"
+                response, "/static/images/education/articles/article-fallback.webp"
             )
 
         response = self.client.get(reverse("article_detail", args=[article.slug]))
@@ -518,7 +528,7 @@ class ArticleImageTests(TestCase):
         self.assertFalse(article.image_available)
         self.assertEqual(
             article.cover["src"],
-            "/static/images/education/articles/article-placeholder.svg",
+            "/static/images/education/articles/article-fallback.webp",
         )
         self.assertEqual(
             self.client.get("/media/education/articles/2026/10/hilang.jpg").status_code,
@@ -854,7 +864,7 @@ class ManageDashboardTests(TestCase):
         response = self.client.get(reverse("education_manage"))
 
         self.assertContains(response, f'src="{article.image.url}"')
-        self.assertContains(response, "/static/images/education/articles/article-placeholder.svg")
+        self.assertContains(response, "/static/images/education/articles/article-fallback.webp")
         self.assertContains(response, "Terbit")
         self.assertContains(response, "Draf")
         self.assertContains(response, "Berkas gambar tidak ditemukan")
@@ -1348,3 +1358,55 @@ class PublicDistributionTests(TestCase):
         response = self.client.get(reverse("distribution_list"))
 
         self.assertEqual(list(response.context["distributions"]), [newer, older])
+
+
+class EducationAsyncFormTests(TestCase):
+    def test_create_update_and_invalid_submit_return_form_fragments(self):
+        staff = User.objects.create_user(username="edu-ajax-staff", is_staff=True)
+        self.client.force_login(staff)
+        headers = {"X-Requested-With": "XMLHttpRequest"}
+        location = make_location()
+        day = timezone.localdate()
+        cases = (
+            (
+                Article, "article_create", "article_update", "title",
+                {"summary": "Ringkasan", "body": "Isi artikel",
+                 "category": Article.Category.panduan, "published_at": str(day) + "T09:00"},
+            ),
+            (
+                Event, "event_create", "event_update", "title",
+                {"start_at": str(day) + "T09:00", "location": location.pk},
+            ),
+            (
+                Distribution, "distribution_create", "distribution_update", "item_name",
+                {"quantity": 3, "destination": location.pk, "status": Distribution.Status.planned},
+            ),
+        )
+        for model, create, update, field, data in cases:
+            with self.subTest(model=model.__name__):
+                invalid = self.client.post(reverse(create), data, headers=headers)
+                self.assertContains(invalid, 'aria-invalid="true"', status_code=422)
+                self.assertFalse(model.objects.exists())
+
+                created = self.client.post(reverse(create), {**data, field: "Contoh"}, headers=headers)
+                self.assertContains(created, 'role="status"', status_code=201)
+                self.assertNotContains(created, "<!DOCTYPE", status_code=201)
+                record = model.objects.get()
+                self.assertEqual(getattr(record, field), "Contoh")
+
+                updated = self.client.post(
+                    reverse(update, args=[record.pk]), {**data, field: "Disunting"}, headers=headers
+                )
+                self.assertContains(updated, 'value="Disunting"')
+                record.refresh_from_db()
+                self.assertEqual(getattr(record, field), "Disunting")
+
+    def test_async_staff_mutation_requires_csrf(self):
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(User.objects.create_user(username="edu-csrf-staff", is_staff=True))
+        response = client.post(
+            reverse("article_create"), {"title": "Tidak tersimpan"},
+            headers={"X-Requested-With": "XMLHttpRequest"},
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(Article.objects.exists())

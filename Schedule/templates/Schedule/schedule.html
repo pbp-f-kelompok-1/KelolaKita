@@ -3,22 +3,22 @@
 {% block title %}Jadwal Penyetoran - KelolaKita{% endblock title %}
 
 {% block content %}
-<main class="mx-auto flex w-full max-w-[1440px] flex-col items-start gap-7 px-16 py-[42px]">
+<main class="mx-auto flex w-full max-w-[1440px] flex-col items-start gap-7 px-4 py-8 sm:px-8 lg:px-16">
 
     <div class="flex w-full flex-col gap-2">
         <div class="flex flex-wrap items-start justify-between gap-3">
             <div class="flex flex-col gap-2">
-                <p class="text-xs font-extrabold tracking-wide text-[#2e7d32] uppercase">Atur penyerahan</p>
-                <h1 class="font-['Plus_Jakarta_Sans'] text-2xl leading-tight font-extrabold text-[#1a2e1c]">
+                <p class="text-xs font-extrabold tracking-wide text-lime uppercase">Atur penyerahan</p>
+                <h1 class="font-sans text-2xl leading-tight font-extrabold text-ink">
                     Pilih cara dan waktu yang nyaman
                 </h1>
             </div>
             <a href="{% url 'schedule_list' %}"
-               class="shrink-0 text-sm font-bold text-[#2e7d32] underline-offset-2 hover:underline">
+               class="shrink-0 text-sm font-bold text-lime underline-offset-2 hover:underline">
                 Lihat riwayat jadwal &rarr;
             </a>
         </div>
-        <p class="max-w-[60rem] text-[15px] leading-relaxed text-[#557a5b]">
+        <p class="max-w-[60rem] text-[15px] leading-relaxed text-muted">
             Antar langsung ke lokasi mitra atau jadwalkan kurir penjemputan.
         </p>
     </div>
@@ -26,18 +26,18 @@
     <div id="schedule-flash" class="flex w-full flex-col gap-2" aria-live="polite"></div>
 
     <form method="post" action="{% url 'show_schedule' %}" id="schedule-form"
-          class="flex w-full flex-col items-start gap-[22px] lg:flex-row">
+          class="flex w-full flex-col gap-6 lg:flex-row lg:items-start">
         {% csrf_token %}
 
-        <div class="flex min-w-0 flex-1 flex-col gap-6 rounded-2xl bg-white p-[26px] shadow-[0px_8px_24px_0px_rgba(23,53,28,0.07)]">
+        <div class="flex min-w-0 flex-1 flex-col gap-6 rounded-panel bg-surface p-4 sm:p-6 shadow-[0px_8px_24px_0px_rgba(23,53,28,0.07)]">
 
             <section class="flex flex-col gap-3.5" id="items-section">
-                <h2 class="font-['Plus_Jakarta_Sans'] text-lg font-extrabold text-[#1a2e1c]">Pilih barang <span class="text-[#b42318]">*</span></h2>
+                <h2 class="font-sans text-lg font-extrabold text-ink">Pilih barang <span class="text-danger">*</span></h2>
                 <div id="items-picker" class="{% if not items %}hidden{% endif %} flex flex-col gap-3">
-                    <p class="text-xs text-[#557a5b]">Bisa pilih lebih dari satu barang untuk dijadwalkan sekaligus.</p>
+                    <p class="text-xs text-muted">Bisa pilih lebih dari satu barang untuk dijadwalkan sekaligus.</p>
                     <div id="items-list" class="flex flex-col gap-3">
                         {% for item in items %}
-                        <label class="item-card group flex cursor-pointer items-center gap-3 rounded-xl border border-[#dce7de] bg-white p-3.5 has-[:checked]:border-[#2e7d32] has-[:checked]:bg-[#e8f5e9]">
+                        <label class="item-card group flex cursor-pointer items-center gap-3 rounded-panel border border-line bg-surface p-3.5 has-[:checked]:border-lime has-[:checked]:bg-raised">
                             <input type="checkbox" name="barang" value="{{ item.pk }}" class="sr-only"
                                    {% if item.pk|stringformat:"s" in selected_item_ids %}checked{% endif %}
                                    data-nama="{{ item.nama_barang }}"
@@ -48,16 +48,16 @@
                                    data-owner="{{ item.pengguna.get_full_name|default:item.pengguna.username }}">
                             <span aria-hidden="true"
                                   class="flex size-11 shrink-0 items-center justify-center rounded-lg text-base font-extrabold
-                                         {% if item.kategori_penanganan == 'Recycle' %}bg-[#e3f2fd] text-[#1565c0]
-                                         {% elif item.kategori_penanganan == 'Reduce' %}bg-[#fff3e0] text-[#ef6c00]
-                                         {% else %}bg-[#e8f5e9] text-[#2e7d32]{% endif %}">
+                                         {% if item.kategori_penanganan == 'Recycle' %}bg-raised text-muted
+                                         {% elif item.kategori_penanganan == 'Reduce' %}bg-raised text-warning
+                                         {% else %}bg-raised text-lime{% endif %}">
                                 {{ item.kategori_barang|first|upper }}
                             </span>
                             <span class="flex flex-col gap-0.5">
-                                <span class="text-sm font-extrabold text-[#1a2e1c]">{{ item.nama_barang }}</span>
-                                <span class="text-xs text-[#557a5b]">{{ item.kategori_barang }}</span>
+                                <span class="text-sm font-extrabold text-ink">{{ item.nama_barang }}</span>
+                                <span class="text-xs text-muted">{{ item.kategori_barang }}</span>
                             </span>
-                            <span class="ml-auto shrink-0 rounded-full bg-[#e7f6ee] px-2.5 py-1.5 text-xs font-bold text-[#237b4b]">
+                            <span class="ml-auto shrink-0 rounded-full bg-forest px-2.5 py-1.5 text-xs font-bold text-success">
                                 {{ item.get_kategori_penanganan_display }}
                             </span>
                         </label>
@@ -65,24 +65,24 @@
                     </div>
                 </div>
                 <p id="items-empty"
-                   class="{% if items %}hidden{% endif %} rounded-lg bg-[#f4f6f5] px-3.5 py-3 text-sm text-[#557a5b]">
+                   class="{% if items %}hidden{% endif %} rounded-lg bg-raised px-3.5 py-3 text-sm text-muted">
                     Belum ada barang yang disetujui untuk dijadwalkan.
-                    <a href="{% url 'penanganan:tambah_pengajuan' %}" class="font-bold text-[#2e7d32] underline">Ajukan barang</a>
+                    <a href="{% url 'penanganan:tambah_pengajuan' %}" class="font-bold text-lime underline">Ajukan barang</a>
                     dan tunggu barangmu diperiksa terlebih dahulu sebelum bisa mengatur jadwal penyerahan.
                 </p>
             </section>
 
             <section class="flex flex-col gap-3.5">
-                <h2 class="font-['Plus_Jakarta_Sans'] text-lg font-extrabold text-[#1a2e1c]">Metode penyetoran <span class="text-[#b42318]">*</span></h2>
+                <h2 class="font-sans text-lg font-extrabold text-ink">Metode penyetoran <span class="text-danger">*</span></h2>
                 <div class="flex flex-col gap-3 sm:flex-row">
                     {% for method in methods %}
-                    <label class="method-card group relative flex flex-1 cursor-pointer flex-col gap-2.5 rounded-xl border border-[#dce7de] bg-white p-4 transition-colors has-[:checked]:border-[#2e7d32] has-[:checked]:bg-[#e8f5e9]">
+                    <label class="method-card group relative flex flex-1 cursor-pointer flex-col gap-2.5 rounded-panel border border-line bg-surface p-4 transition-colors has-[:checked]:border-lime has-[:checked]:bg-raised">
                         <input type="radio" name="metode" value="{{ method.value }}" class="sr-only"
                                {% if method.value == selected_method %}checked{% endif %}
                                data-info-title="{{ method.info_title }}"
                                data-info-body="{{ method.info_body }}"
                                data-summary-label="{{ method.summary_label }}">
-                        <span class="flex size-[38px] items-center justify-center rounded-lg bg-[#f4f6f5] text-[#557a5b] group-has-[:checked]:bg-[#2e7d32] group-has-[:checked]:text-white">
+                        <span class="flex size-[38px] items-center justify-center rounded-lg bg-raised text-muted group-has-[:checked]:bg-lime group-has-[:checked]:text-on-accent">
                             {% if method.value == "kurir" %}
                             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-linecap="round" class="size-5">
                                 <path d="M11.6668 14.9995V6.667M11.6668 14.9995H12.5002M11.6668 14.9995H7.4998M11.6668 6.667V5.0005C11.6668 4.55852 11.4912 4.13464 11.1786 3.82211C10.866 3.50958 10.4421 3.334 10 3.334H3.3328C2.89074 3.334 2.46678 3.50958 2.15419 3.82211C1.84161 4.13464 1.666 4.55852 1.666 5.0005V14.1662C1.666 14.3872 1.7538 14.5992 1.9101 14.7554C2.06639 14.9117 2.27837 14.9995 2.4994 14.9995H4.1662M11.6668 6.667H14.6004C14.7253 6.66718 14.8485 6.69543 14.9611 6.74966C15.0736 6.80389 15.1725 6.88271 15.2504 6.9803L18.1507 10.6049C18.269 10.7524 18.3337 10.9358 18.334 11.1249V14.1662C18.334 14.3872 18.2462 14.5992 18.0899 14.7554C17.9336 14.9117 17.7216 14.9995 17.5006 14.9995H15.8338M4.1662 14.9995C4.1662 15.9199 4.91245 16.666 5.833 16.666C6.75355 16.666 7.4998 15.9199 7.4998 14.9995M4.1662 14.9995C4.1662 14.0791 4.91245 13.333 5.833 13.333C6.75355 13.333 7.4998 14.0791 7.4998 14.9995M12.5002 14.9995C12.5002 15.9199 13.2465 16.666 14.167 16.666C15.0875 16.666 15.8338 15.9199 15.8338 14.9995M12.5002 14.9995C12.5002 14.0791 13.2465 13.333 14.167 13.333C15.0875 13.333 15.8338 14.0791 15.8338 14.9995" />
@@ -93,8 +93,8 @@
                             </svg>
                             {% endif %}
                         </span>
-                        <span class="text-sm font-extrabold text-[#1a2e1c]">{{ method.title }}</span>
-                        <span class="text-xs text-[#557a5b]">{{ method.description }}</span>
+                        <span class="text-sm font-extrabold text-ink">{{ method.title }}</span>
+                        <span class="text-xs text-muted">{{ method.description }}</span>
                     </label>
                     {% endfor %}
                 </div>
@@ -102,12 +102,12 @@
                 <div id="method-detail-kurir"
                      class="{% if selected_method == 'kurir' %}flex{% else %}hidden{% endif %} flex-col gap-3">
                     <div class="flex flex-col gap-1.5">
-                        <label for="id_alamat_penjemputan" class="text-[13px] font-bold text-[#1a2e1c]">Alamat penjemputan <span class="text-[#b42318]">*</span></label>
+                        <label for="id_alamat_penjemputan" class="text-[13px] font-bold text-ink">Alamat penjemputan <span class="text-danger">*</span></label>
                         <input type="text" name="alamat_penjemputan" id="id_alamat_penjemputan"
                                {% if selected_method == 'kurir' %}required{% endif %}
                                value="{{ alamat_penjemputan_value }}"
                                placeholder="Jalan, nomor rumah, RT/RW, kota"
-                               class="h-11 w-full rounded-lg border border-[#dce7de] bg-white px-3.5 text-sm text-[#1a2e1c] focus:border-[#2e7d32] focus:outline-2 focus:outline-[#2e7d32]">
+                               class="h-11 w-full rounded-lg border border-line bg-surface px-3.5 text-sm text-ink focus:border-lime focus:outline-2 focus:outline-lime">
                     </div>
                     <input type="hidden" name="alamat_latitude" id="id_alamat_latitude" value="{{ alamat_latitude_value }}">
                     <input type="hidden" name="alamat_longitude" id="id_alamat_longitude" value="{{ alamat_longitude_value }}">
@@ -115,11 +115,11 @@
 
                 <div id="method-detail-titik"
                      class="{% if selected_method == 'titik' %}flex{% else %}hidden{% endif %} flex-col gap-1.5">
-                    <label for="id_lokasi_mitra" class="text-[13px] font-bold text-[#1a2e1c]">Lokasi mitra <span class="text-[#b42318]">*</span></label>
+                    <label for="id_lokasi_mitra" class="text-[13px] font-bold text-ink">Lokasi mitra <span class="text-danger">*</span></label>
                     {% if locations %}
                     <select name="lokasi_mitra" id="id_lokasi_mitra"
                             {% if selected_method == 'titik' %}required{% endif %}
-                            class="h-11 w-full rounded-lg border border-[#dce7de] bg-white px-3.5 text-sm text-[#1a2e1c] focus:border-[#2e7d32] focus:outline-2 focus:outline-[#2e7d32]">
+                            class="h-11 w-full rounded-lg border border-line bg-surface px-3.5 text-sm text-ink focus:border-lime focus:outline-2 focus:outline-lime">
                         <option value="" disabled {% if not selected_lokasi_id %}selected{% endif %}>Pilih titik setoran</option>
                         {% for loc in locations %}
                         <option value="{{ loc.id }}" {% if loc.id|stringformat:"s" == selected_lokasi_id %}selected{% endif %}>
@@ -128,9 +128,9 @@
                         {% endfor %}
                     </select>
                     {% else %}
-                    <p class="rounded-lg bg-[#f4f6f5] px-3.5 py-3 text-sm text-[#557a5b]">
+                    <p class="rounded-lg bg-raised px-3.5 py-3 text-sm text-muted">
                         Belum ada lokasi mitra aktif. Lihat
-                        <a href="{% url 'show_location' %}" class="font-bold text-[#2e7d32] underline">Peta Setoran</a>.
+                        <a href="{% url 'show_location' %}" class="font-bold text-lime underline">Peta Setoran</a>.
                     </p>
                     {% endif %}
                 </div>
@@ -138,44 +138,44 @@
 
             <section class="flex flex-col gap-3.5">
                 <div class="flex items-center justify-between">
-                    <h2 class="font-['Plus_Jakarta_Sans'] text-lg font-extrabold text-[#1a2e1c]">Tanggal <span class="text-[#b42318]">*</span></h2>
+                    <h2 class="font-sans text-lg font-extrabold text-ink">Tanggal <span class="text-danger">*</span></h2>
                     <div class="flex items-center gap-2">
                         <button type="button" id="date-prev" aria-label="Tanggal sebelumnya"
-                                class="flex size-7 items-center justify-center rounded-full border border-[#dce7de] text-[#557a5b] disabled:opacity-40"
+                                class="flex size-10 items-center justify-center rounded-full border border-line text-muted disabled:opacity-40"
                                 disabled>&larr;</button>
                         <button type="button" id="date-next" aria-label="Tanggal selanjutnya"
-                                class="flex size-7 items-center justify-center rounded-full border border-[#dce7de] text-[#557a5b]">&rarr;</button>
+                                class="flex size-10 items-center justify-center rounded-full border border-line text-muted">&rarr;</button>
                     </div>
                 </div>
-                <div id="date-track" class="grid grid-cols-4 gap-2.5 sm:grid-cols-7">
+                <div id="date-track" class="grid grid-cols-4 gap-2.5 min-[720px]:grid-cols-7">
                     {% for date in dates %}
-                    <label class="date-choice group flex h-[82px] cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-[#dce7de] bg-white has-[:checked]:border-[#2e7d32] has-[:checked]:bg-[#2e7d32]"
+                    <label class="date-choice group flex h-[82px] cursor-pointer flex-col items-center justify-center gap-1 rounded-panel border border-line bg-surface has-[:checked]:border-lime has-[:checked]:bg-lime"
                            data-page="{{ date.page }}">
                         <input type="radio" name="tanggal" value="{{ date.iso }}" class="sr-only"
                                {% if date.iso == selected_date %}checked{% endif %}
                                data-full-label="{{ date.full_label }}">
-                        <span class="text-[11px] text-[#557a5b] group-has-[:checked]:text-[#e8f5e9]">{{ date.day_abbr }}</span>
-                        <span class="font-['Plus_Jakarta_Sans'] text-[19px] font-extrabold text-[#1a2e1c] group-has-[:checked]:text-white">{{ date.day_num }}</span>
-                        <span class="text-[10px] font-bold text-[#557a5b] group-has-[:checked]:text-[#e8f5e9]">{{ date.month_abbr }}</span>
+                        <span class="text-[11px] text-muted group-has-[:checked]:text-on-accent">{{ date.day_abbr }}</span>
+                        <span class="font-sans text-[19px] font-extrabold text-ink group-has-[:checked]:text-on-accent">{{ date.day_num }}</span>
+                        <span class="text-[10px] font-bold text-muted group-has-[:checked]:text-on-accent">{{ date.month_abbr }}</span>
                     </label>
                     {% endfor %}
                 </div>
             </section>
 
             <section class="flex flex-col gap-3.5">
-                <h2 class="font-['Plus_Jakarta_Sans'] text-lg font-extrabold text-[#1a2e1c]">Sesi penjemputan <span class="text-[#b42318]">*</span></h2>
+                <h2 class="font-sans text-lg font-extrabold text-ink">Sesi penjemputan <span class="text-danger">*</span></h2>
                 <div class="flex flex-col gap-3 sm:flex-row">
                     {% for session in sessions %}
-                    <label class="session-card flex flex-1 cursor-pointer items-center gap-3 rounded-xl border border-[#dce7de] p-4 has-[:checked]:border-[#2e7d32] has-[:checked]:bg-[#e8f5e9] has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-40 has-[:disabled]:pointer-events-none">
+                    <label class="session-card flex flex-1 cursor-pointer items-center gap-3 rounded-xl border border-line p-4 has-[:checked]:border-lime has-[:checked]:bg-raised has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-40 has-[:disabled]:pointer-events-none">
                         <input type="radio" name="sesi" value="{{ session.value }}" class="sr-only"
                                {% if session.value == selected_session %}checked{% endif %}
                                data-summary-label="{{ session.name }} &middot; {{ session.time }}">
                         <img src="{% static session.icon %}" alt="" class="size-6 shrink-0">
                         <span class="flex flex-col gap-0.5">
-                            <span class="text-sm font-extrabold text-[#1a2e1c]">{{ session.name }}</span>
-                            <span class="text-xs text-[#557a5b]">{{ session.time }}</span>
+                            <span class="text-sm font-extrabold text-ink">{{ session.name }}</span>
+                            <span class="text-xs text-muted">{{ session.time }}</span>
                         </span>
-                        <span class="ml-auto shrink-0 text-[11px] font-bold text-[#557a5b]" data-slot-label="{{ session.value }}"></span>
+                        <span class="ml-auto shrink-0 text-[11px] font-bold text-muted" data-slot-label="{{ session.value }}"></span>
                     </label>
                     {% endfor %}
                 </div>
@@ -183,98 +183,98 @@
 
             <section class="flex flex-col gap-4 sm:flex-row">
                 <div class="flex flex-1 flex-col gap-1.5">
-                    <label for="id_nama_penerima" class="text-[13px] font-bold text-[#1a2e1c]">Nama penerima <span class="text-[#b42318]">*</span></label>
+                    <label for="id_nama_penerima" class="text-[13px] font-bold text-ink">Nama penerima <span class="text-danger">*</span></label>
                     <input type="text" name="nama_penerima" id="id_nama_penerima" required
                            value="{{ nama_penerima_value }}"
                            placeholder="{% if contact_placeholder_name %}cth. {{ contact_placeholder_name }}{% else %}Nama lengkap{% endif %}"
-                           class="h-11 w-full rounded-lg border border-[#dce7de] bg-white px-3.5 text-sm text-[#1a2e1c] focus:border-[#2e7d32] focus:outline-2 focus:outline-[#2e7d32]">
+                           class="h-11 w-full rounded-lg border border-line bg-surface px-3.5 text-sm text-ink focus:border-lime focus:outline-2 focus:outline-lime">
                 </div>
                 <div class="flex flex-1 flex-col gap-1.5">
-                    <label for="id_nomor_hp" class="text-[13px] font-bold text-[#1a2e1c]">Nomor HP <span class="text-[#b42318]">*</span></label>
+                    <label for="id_nomor_hp" class="text-[13px] font-bold text-ink">Nomor HP <span class="text-danger">*</span></label>
                     <input type="tel" name="nomor_hp" id="id_nomor_hp" required
                            inputmode="tel" pattern="(\+62|0)8[0-9]{7,11}"
                            title="Contoh: 08123456789 atau +628123456789"
                            value="{{ nomor_hp_value }}"
                            placeholder="08xxxxxxxxxx"
-                           class="h-11 w-full rounded-lg border border-[#dce7de] bg-white px-3.5 text-sm text-[#1a2e1c] focus:border-[#2e7d32] focus:outline-2 focus:outline-[#2e7d32]">
+                           class="h-11 w-full rounded-lg border border-line bg-surface px-3.5 text-sm text-ink focus:border-lime focus:outline-2 focus:outline-lime">
                 </div>
             </section>
 
             <section class="flex flex-col gap-1.5">
-                <label for="id_notes" class="text-[13px] font-bold text-[#1a2e1c]">Catatan kurir</label>
+                <label for="id_notes" class="text-[13px] font-bold text-ink">Catatan kurir</label>
                 <input type="text" name="notes" id="id_notes"
                        value="{{ notes_value }}"
                        placeholder="Catatan untuk kurir (opsional)"
-                       class="h-11 w-full rounded-lg border border-[#dce7de] bg-white px-3.5 text-sm text-[#1a2e1c] focus:border-[#2e7d32] focus:outline-2 focus:outline-[#2e7d32]">
+                       class="h-11 w-full rounded-lg border border-line bg-surface px-3.5 text-sm text-ink focus:border-lime focus:outline-2 focus:outline-lime">
             </section>
 
-            <section class="flex items-center gap-2.5 rounded-lg bg-[#eaf2fb] p-3">
+            <section class="flex items-center gap-2.5 rounded-lg bg-raised p-3">
                 <img src="{% static 'icons/info.svg' %}" alt="" class="size-[18px] shrink-0 self-start">
                 <div class="flex flex-col gap-0.5">
-                    <p id="info-title" class="text-[13px] font-bold text-[#2b6cb0]">
+                    <p id="info-title" class="text-[13px] font-bold text-muted">
                         {{ methods.0.info_title }}
                     </p>
-                    <p id="info-body" class="text-xs leading-normal text-[#557a5b]">
+                    <p id="info-body" class="text-xs leading-normal text-muted">
                         {{ methods.0.info_body }}
                     </p>
                 </div>
             </section>
         </div>
 
-        <aside class="flex w-full shrink-0 flex-col gap-[18px] rounded-2xl bg-white p-6 shadow-[0px_8px_24px_0px_rgba(23,53,28,0.07)] lg:w-[400px]">
+        <aside class="flex w-full shrink-0 flex-col gap-[18px] rounded-panel bg-surface p-6 shadow-[0px_8px_24px_0px_rgba(23,53,28,0.07)] lg:w-[400px]">
             <div class="flex items-center justify-between">
-                <h2 class="font-['Plus_Jakarta_Sans'] text-xl font-extrabold text-[#1a2e1c]">Ringkasan pemesanan</h2>
-                <span class="rounded-full bg-[#f4f6f5] px-2.5 py-1.5 text-xs font-bold text-[#557a5b]">Draf</span>
+                <h2 class="font-sans text-xl font-extrabold text-ink">Ringkasan pemesanan</h2>
+                <span class="rounded-full bg-raised px-2.5 py-1.5 text-xs font-bold text-muted">Draf</span>
             </div>
 
             <div id="summary-item-badge" aria-hidden="true"
-                 class="flex h-[150px] w-full items-center justify-center rounded-xl text-5xl font-extrabold bg-[#f4f6f5] text-[#a9bdac]">
+                 class="flex h-[150px] w-full items-center justify-center rounded-xl text-5xl font-extrabold bg-raised text-muted">
                 ?
             </div>
 
             <div class="flex flex-col gap-1.5">
-                <p id="summary-item-name" class="text-[15px] font-extrabold text-[#1a2e1c]">Belum ada barang</p>
+                <p id="summary-item-name" class="text-[15px] font-extrabold text-ink">Belum ada barang</p>
                 <div class="flex gap-2">
-                    <span id="summary-item-kategori" class="rounded-full bg-[#e7f6ee] px-2.5 py-1.5 text-xs font-bold text-[#237b4b]"></span>
-                    <span id="summary-item-jenis" class="rounded-full bg-[#f4f6f5] px-2.5 py-1.5 text-xs font-bold text-[#557a5b]"></span>
+                    <span id="summary-item-kategori" class="rounded-full bg-forest px-2.5 py-1.5 text-xs font-bold text-success"></span>
+                    <span id="summary-item-jenis" class="rounded-full bg-raised px-2.5 py-1.5 text-xs font-bold text-muted"></span>
                 </div>
             </div>
 
             <dl class="flex flex-col gap-2 text-xs">
                 <div class="flex items-start justify-between gap-3">
-                    <dt id="summary-kondisi-label" class="text-[#557a5b]">Kondisi</dt>
-                    <dd id="summary-item-kondisi" class="w-[220px] text-right font-bold text-[#1a2e1c]"></dd>
+                    <dt id="summary-kondisi-label" class="text-muted">Kondisi</dt>
+                    <dd id="summary-item-kondisi" class="min-w-0 max-w-[220px] text-right font-bold text-ink"></dd>
                 </div>
                 <div class="flex items-start justify-between gap-3">
-                    <dt class="text-[#557a5b]">Metode</dt>
-                    <dd id="summary-method" class="w-[220px] text-right font-bold text-[#1a2e1c]">{{ methods.0.summary_label }}</dd>
+                    <dt class="text-muted">Metode</dt>
+                    <dd id="summary-method" class="min-w-0 max-w-[220px] text-right font-bold text-ink">{{ methods.0.summary_label }}</dd>
                 </div>
                 <div class="flex items-start justify-between gap-3">
-                    <dt class="text-[#557a5b]">Lokasi</dt>
-                    <dd id="summary-lokasi" class="w-[220px] text-right font-bold text-[#1a2e1c]">—</dd>
+                    <dt class="text-muted">Lokasi</dt>
+                    <dd id="summary-lokasi" class="min-w-0 max-w-[220px] text-right font-bold text-ink">—</dd>
                 </div>
                 <div class="flex items-start justify-between gap-3">
-                    <dt class="text-[#557a5b]">Tanggal</dt>
-                    <dd id="summary-date" class="w-[220px] text-right font-bold text-[#1a2e1c]">{{ dates.0.full_label }}</dd>
+                    <dt class="text-muted">Tanggal</dt>
+                    <dd id="summary-date" class="min-w-0 max-w-[220px] text-right font-bold text-ink">{{ dates.0.full_label }}</dd>
                 </div>
                 <div class="flex items-start justify-between gap-3">
-                    <dt class="text-[#557a5b]">Sesi</dt>
-                    <dd id="summary-session" class="w-[220px] text-right font-bold text-[#1a2e1c]">{{ sessions.0.name }} &middot; {{ sessions.0.time }}</dd>
+                    <dt class="text-muted">Sesi</dt>
+                    <dd id="summary-session" class="min-w-0 max-w-[220px] text-right font-bold text-ink">{{ sessions.0.name }} &middot; {{ sessions.0.time }}</dd>
                 </div>
             </dl>
 
-            <div class="h-px w-full bg-[#dce7de]"></div>
+            <div class="h-px w-full bg-line"></div>
 
             <button type="submit" id="submit-btn" {% if not items %}disabled{% endif %}
-                    class="flex h-11 w-full items-center justify-center rounded-lg bg-[#2e7d32] px-[18px] text-sm font-bold text-white transition hover:bg-[#1f5a23] active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[#a9bdac] disabled:hover:bg-[#a9bdac] disabled:active:scale-100">
+                    class="btn btn--primary w-full disabled:cursor-not-allowed">
                 Konfirmasi jadwal
             </button>
             <p id="aside-hint-has-items"
-               class="{% if not items %}hidden{% endif %} text-center text-[11px] leading-relaxed text-[#557a5b]">
+               class="{% if not items %}hidden{% endif %} text-center text-[11px] leading-relaxed text-muted">
                 Bisa dibatalkan hingga 12 jam sebelum sesi lewat halaman riwayat jadwal.
             </p>
             <p id="aside-hint-no-items"
-               class="{% if items %}hidden{% endif %} text-center text-[11px] leading-relaxed text-[#b42318]">
+               class="{% if items %}hidden{% endif %} text-center text-[11px] leading-relaxed text-danger">
                 Belum ada barang untuk dijadwalkan.
             </p>
         </aside>
@@ -313,9 +313,9 @@
     const scheduleFlash = document.getElementById('schedule-flash');
 
     const CATEGORY_STYLES = {
-        Recycle: { bg: '#e3f2fd', fg: '#1565c0' },
-        Reduce: { bg: '#fff3e0', fg: '#ef6c00' },
-        Reuse: { bg: '#e8f5e9', fg: '#2e7d32' },
+        Recycle: { bg: 'var(--kk-raised)', fg: 'var(--kk-muted)' },
+        Reduce: { bg: 'var(--kk-raised)', fg: 'var(--kk-warning)' },
+        Reuse: { bg: 'var(--kk-forest)', fg: 'var(--kk-success)' },
     };
 
     // --- Kontak: strip spaces/dashes live, matching server-side normalization ---
@@ -335,8 +335,8 @@
         }
 
         if (checked.length === 0) {
-            summaryItemBadge.style.backgroundColor = '#f4f6f5';
-            summaryItemBadge.style.color = '#a9bdac';
+            summaryItemBadge.style.backgroundColor = 'var(--kk-raised)';
+            summaryItemBadge.style.color = 'var(--kk-muted)';
             summaryItemBadge.textContent = '?';
             summaryItemName.textContent = 'Belum ada barang';
             summaryItemKategori.textContent = '';
@@ -355,8 +355,8 @@
             summaryKondisiLabel.textContent = 'Kondisi';
             summaryItemKondisi.textContent = input.dataset.kondisi;
         } else {
-            summaryItemBadge.style.backgroundColor = '#e8f5e9';
-            summaryItemBadge.style.color = '#2e7d32';
+            summaryItemBadge.style.backgroundColor = 'var(--kk-forest)';
+            summaryItemBadge.style.color = 'var(--kk-success)';
             summaryItemBadge.textContent = String(checked.length);
             summaryItemName.textContent = `${checked.length} barang dipilih`;
             summaryItemKategori.textContent = '';
@@ -424,8 +424,8 @@
             const label = input.closest('label').querySelector(`[data-slot-label="${input.value}"]`);
             if (label) {
                 label.textContent = isPassed ? 'Sudah lewat' : (isFull ? 'Penuh' : `${remaining} slot tersisa`);
-                label.classList.toggle('text-[#b42318]', isUnavailable);
-                label.classList.toggle('text-[#557a5b]', !isUnavailable);
+                label.classList.toggle('text-danger', isUnavailable);
+                label.classList.toggle('text-muted', !isUnavailable);
             }
 
             if (isUnavailable && input.checked) {
@@ -507,7 +507,7 @@
     function renderItemCard(item) {
         const label = document.createElement('label');
         label.className = 'item-card group flex cursor-pointer items-center gap-3 rounded-xl border '
-            + 'border-[#dce7de] bg-white p-3.5 has-[:checked]:border-[#2e7d32] has-[:checked]:bg-[#e8f5e9]';
+            + 'border-line bg-surface p-3.5 has-[:checked]:border-lime has-[:checked]:bg-raised';
         const style = CATEGORY_STYLES[item.kategori_slug] || CATEGORY_STYLES.Reuse;
         label.innerHTML = `
             <input type="checkbox" name="barang" value="${item.pk}" class="sr-only"
@@ -522,10 +522,10 @@
                 ${escapeHtml((item.jenis_barang || '?').charAt(0).toUpperCase())}
             </span>
             <span class="flex flex-col gap-0.5">
-                <span class="text-sm font-extrabold text-[#1a2e1c]">${escapeHtml(item.nama_barang)}</span>
-                <span class="text-xs text-[#557a5b]">${escapeHtml(item.jenis_barang)}</span>
+                <span class="text-sm font-extrabold text-ink">${escapeHtml(item.nama_barang)}</span>
+                <span class="text-xs text-muted">${escapeHtml(item.jenis_barang)}</span>
             </span>
-            <span class="ml-auto shrink-0 rounded-full bg-[#e7f6ee] px-2.5 py-1.5 text-xs font-bold text-[#237b4b]">
+            <span class="ml-auto shrink-0 rounded-full bg-forest px-2.5 py-1.5 text-xs font-bold text-success">
                 ${escapeHtml(item.kategori_label)}
             </span>
         `;

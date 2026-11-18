@@ -158,7 +158,6 @@ class HeaderNavigationTests(TestCase):
         self.assertContains(response, 'class="nav-mobile__panel"', count=1)
         self.assertNotContains(response, 'id="mobile-nav"')
         self.assertNotContains(response, 'id="mobile-nav-toggle"')
-        self.assertNotContains(response, "Pengajuan")
         self.assertEqual(response.content.count(b'aria-current="page"'), 2)
         for name in (
             "landing_page",
@@ -173,14 +172,16 @@ class HeaderNavigationTests(TestCase):
         pages = (
             ("landing_page", "beranda"),
             ("show_location", "peta"),
-            ("show_schedule", "jadwal"),
             ("education_home", "edukasi"),
         )
         for name, section in pages:
             with self.subTest(page=name):
                 self.assert_header(self.client.get(reverse(name)), section)
 
-    def test_schedule_list_keeps_jadwal_active(self):
+    def test_authenticated_schedule_pages_keep_jadwal_active(self):
+        self.client.force_login(self.staff)
+
+        self.assert_header(self.client.get(reverse("show_schedule")), "jadwal")
         self.assert_header(self.client.get(reverse("schedule_list")), "jadwal")
 
     def test_education_staff_page_keeps_edukasi_active(self):

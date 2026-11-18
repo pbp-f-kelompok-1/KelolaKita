@@ -1,27 +1,32 @@
-@import "tailwindcss";
+@import "tailwindcss" source(none);
 
-/**
-  * Scan only Django templates that contain Tailwind classes.
-  * Keeping the virtualenv and other generated files out also keeps the
-  * standalone build reliable.
-  */
 @source "../../../templates";
 @source "../../../Location/templates";
+@source "../../../Location/forms.py";
 @source "../../../Schedule/templates";
+@source "../../../accounts/templates";
+@source "../../../accounts/static";
+@source "../../../accounts/forms.py";
+@source "../../../penanganan/templates";
+@source "../../../penanganan/forms.py";
+@source "../../../static/js";
 
-@theme {
-  --color-brand: #2e7d32;
-  --color-brand-dark: #1f5a23;
-  --color-brand-soft: #e8f5e9;
-  --color-brand-border: #81c784;
-  --color-ink: #17261b;
-  --color-muted: #5f6f64;
-  --color-line: #dfe5e0;
-  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
-
-  --animate-card-up: card-up 0.2s ease-out;
-  @keyframes card-up {
-    from { opacity: 0; translate: -50% 12px; }
-    to   { opacity: 1; translate: -50% 0; }
-  }
+@theme inline {
+  --color-page: var(--kk-page);
+  --color-surface: var(--kk-surface);
+  --color-raised: var(--kk-raised);
+  --color-forest: var(--kk-forest);
+  --color-ink: var(--kk-text);
+  --color-muted: var(--kk-muted);
+  --color-line: var(--kk-line);
+  --color-control: var(--kk-control);
+  --color-lime: var(--kk-lime);
+  --color-action: var(--kk-button-primary);
+  --color-on-accent: var(--kk-on-accent);
+  --color-success: var(--kk-success);
+  --color-warning: var(--kk-warning);
+  --color-danger: var(--kk-danger);
+  --color-danger-soft: var(--kk-danger-soft);
+  --radius-panel: var(--kk-radius);
+  --font-sans: var(--kk-font);
 }

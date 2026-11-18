@@ -16,57 +16,44 @@ KelolaKita hadir untuk membantu masyarakat mengelola barang dan sampah dengan le
 
 ## Menjalankan Website di Localhost
 
-Ikuti langkah berikut untuk menjalankan website KelolaKita secara lokal:
+Gunakan Python 3.14 dan jalan dari direktori proyek.
 
-1. Pastikan Python sudah terpasang, lalu buka terminal pada folder utama proyek.
+```bash
+python3 -m venv env
+source env/bin/activate
+python -m pip install -r requirements.txt
+python manage.py migrate
+python manage.py seed_pts
+python manage.py changepassword pts_demo_01
+python manage.py runserver 127.0.0.1:8765
+```
 
-2. Aktifkan virtual environment:
+Di Windows PowerShell, aktifkan environment dengan `env\Scripts\Activate.ps1`.
+Buka [KelolaKita Localhost](http://127.0.0.1:8765/) dan masuk sebagai
+`pts_demo_01` memakai password yang baru dipilih untuk melihat Pengajuan dan Jadwal.
 
-	macOS/Linux:
+CSS Tailwind hasil build tersedia di repo. Jika mengubah class Tailwind, jalankan
+`python manage.py tailwind build`. Untuk QC, jalankan `python manage.py check`,
+`python manage.py makemigrations --check --dry-run`, dan `python manage.py test --noinput`.
 
-	```bash
-	source env/bin/activate
-	```
+![Beranda KelolaKita Forest dengan data simulasi PTS](docs/design/kelolakita-pts-demo.jpg)
 
-	Windows PowerShell:
+*Tangkapan layar localhost dengan data simulasi PTS.*
 
-	```powershell
-	.\env\Scripts\Activate.ps1
-	```
+### Dataset demonstrasi
 
-	Windows Command Prompt:
+`seed_pts` hanya berjalan di SQLite pengembangan. Fixture sintetis di
+[`seed_data/`](seed_data/) menyediakan 50 akun/profil, lokasi, jadwal, artikel,
+agenda, dan penyaluran. Tersedia 51 pengajuan karena satu barang disisakan
+untuk mencoba form Jadwal. Data ini mendemonstrasikan alur KelolaKita.
+Lokasi, angka dampak, foto lampiran contoh, dan jadwal pada dataset adalah simulasi.
+Menjalankan seeder ulang dengan fixture yang sama mempertahankan baris yang sudah
+terisi. Jika akun demo sudah memiliki password, jalankan `changepassword` hanya
+saat ingin menggantinya.
 
-	```cmd
-	env\Scripts\activate.bat
-	```
-
-3. Install semua dependency proyek:
-
-	```bash
-	pip install -r requirements.txt
-	```
-
-4. Jalankan migrasi database:
-
-	```bash
-	python manage.py migrate
-	```
-
-5. Buka terminal baru pada folder utama proyek, lalu aktifkan kembali virtual environment dan jalankan Tailwind:
-
-	```bash
-	.\env\Scripts\activate
-	python manage.py tailwind start
-	```
-
-6. Pada terminal lainnya, aktifkan virtual environment dan jalankan server Django:
-
-	```bash
-	.\env\Scripts\activate
-	python manage.py runserver
-	```
-
-Tekan `Ctrl + C` pada terminal masing-masing untuk menghentikan Tailwind dan server Django.
+Akun staff diperlukan untuk panel pengelolaan Edukasi dan Lokasi.
+Peran Pengelola KelolaKita pada profil mengatur akses Pemeriksaan.
+Lihat [audit rubrik dan bukti QC PTS](docs/rubrik-pts.md).
 
 ---
 
@@ -141,7 +128,7 @@ Modul **Authentication / Profile** digunakan untuk mengelola identitas dan data 
 | Create | Membuat akun dan data profil |
 | Read | Melihat data profil |
 | Update | Mengubah informasi profil |
-| Delete | Menonaktifkan atau menghapus data akun |
+| Delete | Penghapusan akun melalui Django Admin oleh petugas yang berwenang |
 
 **Penanggung Jawab:**  
 `Rayna Kayla Rayvanka`
@@ -208,16 +195,15 @@ Modul **Titik Setoran & Lokasi** digunakan untuk mengelola lokasi penyetoran dan
 
 Modul **Penyetoran & Penjemputan** digunakan untuk mengatur proses penyetoran barang melalui kantor maupun titik setoran.
 
-Pada metode **Setor ke Kantor**, pengguna membawa barang langsung ke kantor KelolaKita untuk menjalani pemeriksaan dan pengukuran. Setelah itu, barang ditentukan kategori penanganannya sebelum diproses lebih lanjut.
-
-Pada metode **Setor ke Titik**, pengguna memilih lokasi titik setoran, menentukan kategori barang, memilih jadwal, dan melakukan konfirmasi. Setelah barang diletakkan sesuai jadwal, petugas akan melakukan penjemputan pada akhir sesi penyetoran.
+Warga dapat memilih **Dijemput kurir** dari alamat yang diisi atau
+**Antar sendiri** ke lokasi mitra aktif.
 
 Jadwal penyetoran terdiri atas dua sesi:
 
 | Sesi | Waktu |
 |---|---|
-| Sesi Pagi | 08.00–11.00 |
-| Sesi Siang | 13.00–16.00 |
+| Sesi Pagi | 08.00–11.30 |
+| Sesi Siang | 13.00–16.30 |
 
 **Operasi CRUD:**
 
@@ -341,7 +327,7 @@ Platform ini diharapkan dapat membantu masyarakat membangun kebiasaan pengelolaa
 
 | Name | Link |
 |---|---|
-| Figma Design | https://www.figma.com/design/qWvpcmwHTiBDkp8ccrIZ6m/KelolaKita?node-id=0-1&t=dVxiBbASnwhfqU7f-1 |
+| Figma Design | https://www.figma.com/design/E6eEv496fcyYML29RvCyhH/KelolaKita_ProyekAkhirSemester_PBP?node-id=215-2 |
 | Deployment | https://rafa-darussalam-kelolakita.pws.cs.ui.ac.id/ |
 
 ## AI Disclosure
@@ -368,7 +354,8 @@ AI digunakan untuk membantu kegiatan berikut:
 - membantu menemukan penyebab error dan kemungkinan solusi;
 - menyusun atau memperluas unit test;
 - membantu merapikan dokumentasi teknis;
-- memberikan masukan saat proses refactoring dan integrasi antarmodul.
+- memberikan masukan saat proses refactoring dan integrasi antarmodul;
+- membuat gambar ilustrasi cadangan untuk artikel tanpa foto, agenda, dan penyaluran. Sampul unggahan tetap diutamakan.
 
 Secara umum, kelompok memberikan konteks modul, ruang lingkup file, kebutuhan fitur, batasan keamanan, dan hasil yang diharapkan. Permintaan dipecah menjadi tugas-tugas kecil agar keluaran dapat diperiksa sebelum digabungkan ke codebase utama.
 
@@ -396,7 +383,7 @@ AI tidak diberi kewenangan untuk menentukan keputusan produk atau melakukan merg
 - Modul tertentu masih menggunakan otorisasi group-level dan dapat dikembangkan menjadi object-level permission yang lebih granular.
 - Penghapusan akun secara mandiri belum diekspos sebagai fitur publik; penghapusan `User` oleh pengelola menghapus `Profile` terkait melalui `CASCADE`.
 - Audit log, rate limiting, notifikasi, dan soft delete dapat ditambahkan pada iterasi berikutnya.
-- Pipeline CI/CD otomatis belum tersedia; deployment saat ini dilakukan secara manual setelah review dan pengujian.
+- Workflow Django CI menjalankan system check, pemeriksaan migrasi, dan tes di Pull Request serta push ke main. Deployment PWS masih manual.
 
 ---
 

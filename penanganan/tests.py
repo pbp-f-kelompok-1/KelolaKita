@@ -293,3 +293,25 @@ class FotoBarangUploadTests(TestCase):
 
     def test_edit_form_does_not_require_a_new_image(self):
         self.assertFalse(EditPengajuanForm().fields["foto_barang"].required)
+
+
+class PengajuanCategoryFilterTests(TestCase):
+    def test_category_filter_keeps_owner_scope(self):
+        owner = User.objects.create_user(username="filter-owner")
+        other = User.objects.create_user(username="filter-other")
+        expected = Pemeriksaan.objects.create(
+            pengguna=owner, nama_barang="Botol pemilik", kondisi_barang="Layak pakai",
+            kategori_penanganan="Recycle",
+        )
+        Pemeriksaan.objects.create(
+            pengguna=owner, nama_barang="Buku pemilik", kondisi_barang="Layak pakai",
+            kategori_penanganan="Reuse",
+        )
+        Pemeriksaan.objects.create(
+            pengguna=other, nama_barang="Botol orang lain", kondisi_barang="Layak pakai",
+            kategori_penanganan="Recycle",
+        )
+        self.client.force_login(owner)
+        response = self.client.get(reverse("penanganan:daftar_pengajuan"), {"category": "Recycle"})
+        self.assertEqual(list(response.context["daftar_pemeriksaan"]), [expected])
+        self.assertEqual(response.context["selected_category"], "Recycle")

@@ -6,9 +6,11 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import ProtectedError, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.views.decorators.http import require_http_methods
+
 from education.models import Article
-from education.views import public_distributions
+from education.views import public_distributions, published_events
 from Location.models import Location
 from Location.forms import LocationForm
 from penanganan.models import Pemeriksaan
@@ -37,6 +39,9 @@ def landing_page(request):
     """
     context = {
         "active_nav": "beranda",
+        "latest_article": Article.objects.published().first(),
+        "next_event": published_events().filter(start_at__gte=timezone.now()).first(),
+        "latest_distribution": public_distributions().order_by("-distributed_at", "-created_at").first(),
         "stats": {
             "distributed_items": public_distributions().aggregate(
                 total=Sum("quantity")

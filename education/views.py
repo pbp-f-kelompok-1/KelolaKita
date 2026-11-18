@@ -271,8 +271,26 @@ class ManageFormMixin(StaffRequiredMixin):
         return context
 
     def form_valid(self, form):
+        if self.request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            creating = self.object is None
+            self.object = form.save()
+            fresh_form = self.form_class(instance=None if creating else self.object)
+            return render(
+                self.request,
+                "education/_manage_form_fields.html",
+                {"form": fresh_form, "ajax_feedback": self.success_message},
+                status=201 if creating else 200,
+            )
         messages.success(self.request, self.success_message)
         return super().form_valid(form)
+
+    def form_invalid(self, form):
+        if self.request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return render(
+                self.request, "education/_manage_form_fields.html",
+                {"form": form}, status=422,
+            )
+        return super().form_invalid(form)
 
 
 class ManageCreateView(ManageFormMixin, CreateView):

@@ -2,16 +2,16 @@
 {% block title %}Riwayat Jadwal - KelolaKita{% endblock title %}
 
 {% block content %}
-<main class="mx-auto flex w-full max-w-[960px] flex-col gap-7 px-16 py-[42px]">
+<main class="mx-auto flex w-full max-w-[960px] flex-col gap-7 px-4 py-8 sm:px-8 lg:px-16">
 
     <div class="flex flex-col gap-2">
-        <a href="{% url 'show_schedule' %}" class="text-sm font-bold text-[#2e7d32] underline-offset-2 hover:underline">
+        <a href="{% url 'show_schedule' %}" class="text-sm font-bold text-lime underline-offset-2 hover:underline">
             &larr; Kembali ke jadwalkan barang
         </a>
-        <h1 class="font-['Plus_Jakarta_Sans'] text-2xl leading-tight font-extrabold text-[#1a2e1c]">
+        <h1 class="font-sans text-2xl leading-tight font-extrabold text-ink">
             Riwayat jadwal
         </h1>
-        <p class="max-w-[48rem] text-[15px] leading-relaxed text-[#557a5b]">
+        <p class="max-w-[48rem] text-[15px] leading-relaxed text-muted">
             Semua jadwal penyetoran yang sudah dikonfirmasi. Pembatalan hanya bisa dilakukan hingga
             12 jam sebelum sesi dimulai.
         </p>
@@ -19,17 +19,17 @@
 
     {% if has_bookings %}
     <div id="filter-controls" class="flex flex-wrap items-center gap-2">
-        <span class="text-xs font-bold text-[#557a5b]">Filter status:</span>
+        <span class="text-xs font-bold text-muted">Filter status:</span>
         <a href="{% url 'schedule_list' %}" data-status=""
-           class="filter-link rounded-full px-3 py-1.5 text-xs font-bold {% if not filter_status %}bg-[#2e7d32] text-white{% else %}bg-[#f4f6f5] text-[#557a5b] hover:bg-[#e8f5e9]{% endif %}">
+           class="filter-link rounded-full px-3 py-1.5 text-xs font-bold {% if not filter_status %}bg-forest text-lime{% else %}bg-raised text-muted hover:bg-raised{% endif %}">
             Semua
         </a>
         <a href="?status=terjadwal" data-status="terjadwal"
-           class="filter-link rounded-full px-3 py-1.5 text-xs font-bold {% if filter_status == 'terjadwal' %}bg-[#2e7d32] text-white{% else %}bg-[#f4f6f5] text-[#557a5b] hover:bg-[#e8f5e9]{% endif %}">
+           class="filter-link rounded-full px-3 py-1.5 text-xs font-bold {% if filter_status == 'terjadwal' %}bg-forest text-lime{% else %}bg-raised text-muted hover:bg-raised{% endif %}">
             Terjadwal
         </a>
         <a href="?status=selesai" data-status="selesai"
-           class="filter-link rounded-full px-3 py-1.5 text-xs font-bold {% if filter_status == 'selesai' %}bg-[#2e7d32] text-white{% else %}bg-[#f4f6f5] text-[#557a5b] hover:bg-[#e8f5e9]{% endif %}">
+           class="filter-link rounded-full px-3 py-1.5 text-xs font-bold {% if filter_status == 'selesai' %}bg-forest text-lime{% else %}bg-raised text-muted hover:bg-raised{% endif %}">
             Selesai
         </a>
     </div>
@@ -111,11 +111,11 @@
         if (!filterControls) return;
         filterControls.querySelectorAll('.filter-link').forEach((link) => {
             const isActive = link.dataset.status === (status || '');
-            link.classList.toggle('bg-[#2e7d32]', isActive);
-            link.classList.toggle('text-white', isActive);
-            link.classList.toggle('bg-[#f4f6f5]', !isActive);
-            link.classList.toggle('text-[#557a5b]', !isActive);
-            link.classList.toggle('hover:bg-[#e8f5e9]', !isActive);
+            link.classList.toggle('bg-forest', isActive);
+            link.classList.toggle('text-lime', isActive);
+            link.classList.toggle('bg-raised', !isActive);
+            link.classList.toggle('text-muted', !isActive);
+            link.classList.toggle('hover:bg-raised', !isActive);
         });
     }
 

@@ -209,7 +209,14 @@ class LocationPublicUITests(TestCase):
 
         self.assertNotContains(response, "1.240 poin")
         self.assertNotContains(response, "Avatar pengguna")
-        self.assertNotContains(response, "Pengajuan")
+        # Nav Pengajuan sekarang merupakan link nyata ke aplikasi penanganan.
+        self.assertContains(response, reverse("penanganan:daftar_pengajuan"))
 
-    def test_schedule_page_remains_public(self):
-        self.assertEqual(self.client.get(reverse("show_schedule")).status_code, 200)
+    def test_schedule_page_requires_login(self):
+        response = self.client.get(reverse("show_schedule"))
+
+        self.assertRedirects(
+            response,
+            f"{reverse('accounts:login')}?next={reverse('show_schedule')}",
+            fetch_redirect_response=False,
+        )

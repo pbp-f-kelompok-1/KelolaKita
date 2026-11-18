@@ -15,7 +15,11 @@ ARTICLE_IMAGE_MIN_WIDTH = 800
 ARTICLE_IMAGE_MIN_HEIGHT = 450
 ARTICLE_IMAGE_FORMATS = {"JPEG", "PNG", "WEBP"}
 ARTICLE_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
-ARTICLE_IMAGE_PLACEHOLDER = "images/education/articles/article-placeholder.svg"
+ARTICLE_IMAGE_PLACEHOLDER = "images/education/articles/article-fallback.webp"
+ARTICLE_DEMO_COVERS = {
+    f"pts2026-edu-art-{index:03d}": f"images/education/articles/pts/{index:03d}.webp"
+    for index in range(1, 51)
+}
 
 ARTICLE_CATEGORY_LABELS = {
     "reuse": "Guna ulang",
@@ -129,7 +133,7 @@ class Article(models.Model):
         if self.image_available:
             return {"src": self.image.url, "alt": f"Gambar artikel {self.title}"}
         return {
-            "src": static(ARTICLE_IMAGE_PLACEHOLDER),
+            "src": static(ARTICLE_DEMO_COVERS.get(self.slug, ARTICLE_IMAGE_PLACEHOLDER)),
             "alt": f"Ilustrasi artikel {self.title}",
         }
 

@@ -2,33 +2,33 @@
     {% for row in rows %}
     {% with booking=row.booking %}
     <div id="booking-row-{{ booking.pk }}" data-booking-row
-         class="flex flex-col gap-4 rounded-2xl bg-white p-5 shadow-[0px_8px_24px_0px_rgba(23,53,28,0.07)] sm:flex-row sm:items-start sm:justify-between">
+         class="flex flex-col gap-4 rounded-panel bg-surface p-5 shadow-[0px_8px_24px_0px_rgba(23,53,28,0.07)] sm:flex-row sm:items-start sm:justify-between">
         <div class="flex flex-col gap-2">
             <div class="flex flex-wrap items-center gap-2">
                 <span class="rounded-full px-2.5 py-1.5 text-xs font-bold
-                    {% if row.status == 'selesai' %}bg-[#f4f6f5] text-[#557a5b]
-                    {% elif row.status == 'terkunci' %}bg-[#fff4d6] text-[#8a6d1d]
-                    {% else %}bg-[#e8f5e9] text-[#2e7d32]{% endif %}">
+                    {% if row.status == 'selesai' %}bg-raised text-muted
+                    {% elif row.status == 'terkunci' %}bg-raised text-warning
+                    {% else %}bg-raised text-lime{% endif %}">
                     {% if row.status == 'selesai' %}Selesai
                     {% elif row.status == 'terkunci' %}Terjadwal &middot; tidak bisa dibatalkan
                     {% else %}Terjadwal{% endif %}
                 </span>
-                <span class="text-xs text-[#557a5b]">
+                <span class="text-xs text-muted">
                     {{ booking.get_metode_display }}
                 </span>
             </div>
 
-            <p class="text-[15px] font-extrabold text-[#1a2e1c]">
+            <p class="text-[15px] font-extrabold text-ink">
                 {% for barang in booking.barang.all %}{{ barang.nama_barang }}{% if not forloop.last %}, {% endif %}{% endfor %}
             </p>
 
-            <dl class="flex flex-col gap-1 text-xs text-[#557a5b]">
+            <dl class="flex flex-col gap-1 text-xs text-muted">
                 <div class="flex gap-1.5">
-                    <dt class="font-bold text-[#1a2e1c]">Jadwal:</dt>
+                    <dt class="font-bold text-ink">Jadwal:</dt>
                     <dd>{{ booking.tanggal|date:"l, j F Y" }} &middot; {{ booking.get_sesi_display }}</dd>
                 </div>
                 <div class="flex gap-1.5">
-                    <dt class="font-bold text-[#1a2e1c]">
+                    <dt class="font-bold text-ink">
                         {% if booking.metode == 'kurir' %}Alamat:{% else %}Lokasi:{% endif %}
                     </dt>
                     <dd>
@@ -37,7 +37,7 @@
                     </dd>
                 </div>
                 <div class="flex gap-1.5">
-                    <dt class="font-bold text-[#1a2e1c]">Penerima:</dt>
+                    <dt class="font-bold text-ink">Penerima:</dt>
                     <dd>{{ booking.nama_penerima }} &middot; {{ booking.nomor_hp }}</dd>
                 </div>
             </dl>
@@ -46,7 +46,7 @@
         <div class="flex shrink-0 flex-col items-stretch gap-1.5 sm:items-end">
             {% if row.can_edit %}
             <a href="{% url 'edit_schedule' booking.pk %}"
-               class="h-9 w-full rounded-lg border border-[#dce7de] px-4 text-center text-xs font-bold leading-9 text-[#2e7d32] hover:bg-[#e8f5e9] sm:w-auto">
+               class="btn btn--secondary btn--sm w-full sm:w-auto">
                 Ubah
             </a>
             {% endif %}
@@ -55,12 +55,12 @@
                   class="cancel-form" data-booking-pk="{{ booking.pk }}">
                 {% csrf_token %}
                 <button type="submit"
-                        class="h-9 w-full rounded-lg border border-[#f1c0bb] px-4 text-xs font-bold text-[#b42318] hover:bg-[#fdecea] sm:w-auto">
+                        class="btn btn--danger btn--sm w-full sm:w-auto">
                     Batalkan
                 </button>
             </form>
             {% elif row.status == 'terkunci' %}
-            <p class="max-w-[180px] text-right text-[11px] text-[#8a6d1d]">
+            <p class="max-w-[180px] text-right text-[11px] text-warning">
                 Kurang dari 12 jam menjelang sesi, tidak bisa dibatalkan.
             </p>
             {% endif %}
@@ -70,7 +70,7 @@
     {% endfor %}
 </div>
 <p id="rows-empty"
-   class="{% if rows %}hidden{% endif %} rounded-lg bg-[#f4f6f5] px-3.5 py-3 text-sm text-[#557a5b]">
+   class="{% if rows %}hidden{% endif %} rounded-lg bg-raised px-3.5 py-3 text-sm text-muted">
     {% if filter_status %}Tidak ada jadwal dengan status ini.
     {% else %}Belum ada jadwal penyetoran yang dikonfirmasi.{% endif %}
 </p>

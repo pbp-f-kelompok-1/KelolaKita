@@ -8,11 +8,11 @@
     
     <!-- Header -->
     <div class="mb-6 md:mb-8 text-center md:text-left">
-        <p class="text-[11px] md:text-xs font-bold text-[#2e7d32] uppercase tracking-wide mb-1 md:mb-2">Panel Pengelola</p>
-        <h1 class="font-['Plus_Jakarta_Sans'] text-2xl md:text-3xl font-extrabold text-[#1a2e1c] mb-2">
+        <p class="text-[11px] md:text-xs font-bold text-lime uppercase tracking-wide mb-1 md:mb-2">Panel Pengelola</p>
+        <h1 class="font-sans text-2xl md:text-3xl font-extrabold text-ink mb-2">
             Pemeriksaan & Evaluasi Barang
         </h1>
-        <p class="text-xs md:text-sm text-[#557a5b]">
+        <p class="text-xs md:text-sm text-muted">
             Tinjau detail barang yang diajukan pengguna dan tentukan jalur penanganan terbaiknya.
         </p>
     </div>
@@ -21,58 +21,63 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
         
         <!-- KOLOM KIRI -->
-        <div class="bg-[#f9fbf9] rounded-2xl p-5 md:p-8 border border-[#dce7de]">
-            <h2 class="font-['Plus_Jakarta_Sans'] text-lg md:text-xl font-extrabold text-[#1a2e1c] mb-4 md:mb-6 border-b border-[#dce7de] pb-3 md:pb-4">
+        <div class="bg-surface rounded-panel p-5 md:p-8 border border-line">
+            <h2 class="font-sans text-lg md:text-xl font-extrabold text-ink mb-4 md:mb-6 border-b border-line pb-3 md:pb-4">
                 Informasi Pengajuan
             </h2>
             
             <div class="flex flex-col gap-3 md:gap-4 mb-5 md:mb-6">
                 <div>
-                    <p class="text-[10px] md:text-xs font-bold text-[#557a5b] uppercase tracking-wider">Nama Barang</p>
-                    <p class="text-base md:text-lg font-bold text-[#1a2e1c]">{{ pemeriksaan.nama_barang }}</p>
+                    <p class="text-[10px] md:text-xs font-bold text-muted uppercase tracking-wider">Nama Barang</p>
+                    <p class="text-base md:text-lg font-bold text-ink">{{ pemeriksaan.nama_barang }}</p>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                     <div>
-                        <p class="text-[10px] md:text-xs font-bold text-[#557a5b] uppercase tracking-wider">Kategori</p>
-                        <p class="text-sm font-medium text-[#1a2e1c]">{{ pemeriksaan.kategori_barang }}</p>
+                        <p class="text-[10px] md:text-xs font-bold text-muted uppercase tracking-wider">Kategori</p>
+                        <p class="text-sm font-medium text-ink">{{ pemeriksaan.kategori_barang }}</p>
                     </div>
                     <div>
-                        <p class="text-[10px] md:text-xs font-bold text-[#557a5b] uppercase tracking-wider">Kondisi</p>
-                        <p class="text-sm font-medium text-[#1a2e1c]">{{ pemeriksaan.kondisi_barang }}</p>
+                        <p class="text-[10px] md:text-xs font-bold text-muted uppercase tracking-wider">Kondisi</p>
+                        <p class="text-sm font-medium text-ink">{{ pemeriksaan.kondisi_barang }}</p>
                     </div>
                 </div>
                 <div>
-                    <p class="text-[10px] md:text-xs font-bold text-[#557a5b] uppercase tracking-wider">Catatan Tambahan</p>
-                    <p class="text-sm font-medium text-[#1a2e1c]">
+                    <p class="text-[10px] md:text-xs font-bold text-muted uppercase tracking-wider">Catatan Tambahan</p>
+                    <p class="text-sm font-medium text-ink">
                         {{ pemeriksaan.catatan_tambahan|default:"Tidak ada catatan." }}
                     </p>
                 </div>
                 <div>
-                    <p class="text-[10px] md:text-xs font-bold text-[#557a5b] uppercase tracking-wider">Diajukan Pada</p>
-                    <p class="text-sm font-medium text-[#1a2e1c]">{{ pemeriksaan.created_at|date:"d F Y, H:i" }}</p>
+                    <p class="text-[10px] md:text-xs font-bold text-muted uppercase tracking-wider">Diajukan Pada</p>
+                    <p class="text-sm font-medium text-ink">{{ pemeriksaan.created_at|date:"d F Y, H:i" }}</p>
                 </div>
             </div>
 
             <div>
-                <p class="text-[10px] md:text-xs font-bold text-[#557a5b] uppercase tracking-wider mb-2 md:mb-3">Foto Lampiran</p>
+                <p class="text-[10px] md:text-xs font-bold text-muted uppercase tracking-wider mb-2 md:mb-3">Foto Lampiran</p>
                 <div class="grid grid-cols-2 gap-2 md:gap-3">
                     {% for foto in pemeriksaan.foto_barang.all %}
-                        <!-- object-cover menjaga proporsi foto tetap pas meskipun dipaksa responsif -->
-                        {% if "static/img/" in foto.gambar.name or "foto_pemeriksaan/" in foto.gambar.name %}
-                        <img src="{{ foto.gambar.url }}" alt="Foto Barang" class="w-full h-28 sm:h-32 md:h-40 object-cover rounded-lg border border-[#dce7de]">
-                        {% else %}
-                        <img src="{% static 'img/penanganan/' %}{{ foto.gambar.name }}" alt="Foto Barang" class="w-full h-28 sm:h-32 md:h-40 object-cover rounded-lg border border-[#dce7de]">
-                        {% endif %}
+                        <figure>
+                            <!-- object-cover menjaga proporsi foto tetap pas meskipun dipaksa responsif -->
+                            {% if "static/img/" in foto.gambar.name or "foto_pemeriksaan/" in foto.gambar.name %}
+                            <img src="{{ foto.gambar.url }}" alt="Foto Barang" class="w-full h-28 sm:h-32 md:h-40 object-cover rounded-lg border border-line">
+                            {% else %}
+                            <img src="{% static 'img/penanganan/' %}{{ foto.gambar.name }}" alt="Foto Barang" class="w-full h-28 sm:h-32 md:h-40 object-cover rounded-lg border border-line">
+                            {% endif %}
+                            {% if "static/img/pts-demo/items/" in foto.gambar.name %}
+                            <figcaption class="mt-1 text-xs text-muted">Ilustrasi barang demo</figcaption>
+                            {% endif %}
+                        </figure>
                     {% empty %}
-                        <p class="text-xs md:text-sm text-gray-500 italic col-span-2">Tidak ada foto terlampir.</p>
+                        <p class="text-xs md:text-sm text-muted italic col-span-2">Tidak ada foto terlampir.</p>
                     {% endfor %}
                 </div>
             </div>
         </div>
 
         <!-- KOLOM KANAN -->
-        <div class="bg-white rounded-2xl p-5 md:p-8 shadow-sm border border-[#dce7de] flex flex-col">
-            <h2 class="font-['Plus_Jakarta_Sans'] text-lg md:text-xl font-extrabold text-[#1a2e1c] mb-4 md:mb-6 border-b border-[#dce7de] pb-3 md:pb-4">
+        <div class="bg-surface rounded-panel p-5 md:p-8 shadow-sm border border-line flex flex-col">
+            <h2 class="font-sans text-lg md:text-xl font-extrabold text-ink mb-4 md:mb-6 border-b border-line pb-3 md:pb-4">
                 Hasil Pemeriksaan
             </h2>
 
@@ -80,27 +85,27 @@
                 {% csrf_token %} 
 
                 <div class="location-form mb-4 md:mb-6">
-                    <label class="block text-xs md:text-sm font-bold text-[#1a2e1c] mb-1.5 md:mb-2">Kategori Penanganan</label>
+                    <label class="block text-xs md:text-sm font-bold text-ink mb-1.5 md:mb-2">Kategori Penanganan</label>
                     {{ form.kategori_penanganan }}
                     {{ form.kategori_penanganan.errors }}
                 </div>
 
                 <div class="location-form mb-4 md:mb-6">
-                    <label class="block text-xs md:text-sm font-bold text-[#1a2e1c] mb-1.5 md:mb-2">Mitra Penyaluran / Lokasi (Opsional)</label>
+                    <label class="block text-xs md:text-sm font-bold text-ink mb-1.5 md:mb-2">Mitra Penyaluran / Lokasi (Opsional)</label>
                     {{ form.mitra_rekomendasi }}
                     {{ form.mitra_rekomendasi.errors }}
-                    <p class="text-[10px] md:text-xs text-[#557a5b] mt-1">Isi jika barang akan disalurkan ke mitra khusus (Reuse/Recycle).</p>
+                    <p class="text-[10px] md:text-xs text-muted mt-1">Isi jika barang akan disalurkan ke mitra khusus (Reuse/Recycle).</p>
                 </div>
 
                 <div class="location-form mb-6 md:mb-8">
-                    <label class="block text-xs md:text-sm font-bold text-[#1a2e1c] mb-1.5 md:mb-2">Rekomendasi / Catatan Pengelola</label>
+                    <label class="block text-xs md:text-sm font-bold text-ink mb-1.5 md:mb-2">Rekomendasi / Catatan Pengelola</label>
                     {{ form.rekomendasi_penanganan }}
                     {{ form.rekomendasi_penanganan.errors }}
                 </div>
 
-                <div class="flex flex-col-reverse sm:flex-row items-center justify-between border-t border-[#dce7de] pt-5 md:pt-6 mt-auto gap-3 sm:gap-0">
-                    <a href="{% url 'penanganan:daftar_pengajuan' %}" class="w-full sm:w-auto text-center text-sm font-bold text-[#557a5b] hover:text-[#1a2e1c] py-2 sm:py-0">Batal</a>
-                    <button type="submit" class="w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg bg-[#2e7d32] px-6 py-3 text-sm font-bold text-white hover:bg-[#1f5a23] transition">
+                <div class="flex flex-col-reverse sm:flex-row items-center justify-between border-t border-line pt-5 md:pt-6 mt-auto gap-3 sm:gap-0">
+                    <a href="{% url 'penanganan:daftar_pengajuan' %}" class="btn btn--secondary w-full sm:w-auto">Batal</a>
+                    <button type="submit" class="btn btn--primary w-full sm:w-auto">
                         <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                         Simpan Hasil
                     </button>

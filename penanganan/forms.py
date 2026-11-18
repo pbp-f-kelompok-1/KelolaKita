@@ -27,7 +27,7 @@ class PengajuanForm(forms.ModelForm):
     kondisi_barang = forms.ChoiceField(
         choices=Pemeriksaan.PILIHAN_KONDISI,
         widget=forms.RadioSelect(
-            attrs={"class": "w-3.5 h-3.5 md:w-4 md:h-4 text-[#2e7d32]"}
+            attrs={"class": "w-3.5 h-3.5 md:w-4 md:h-4 text-lime"}
         ),
     )
 
@@ -42,7 +42,7 @@ class PengajuanForm(forms.ModelForm):
         widgets = {
             "nama_barang": forms.TextInput(attrs={"placeholder": "Meja belajar kayu"}),
             "kondisi_barang": forms.RadioSelect(
-                attrs={"class": "w-3.5 h-3.5 md:w-4 md:h-4 text-[#2e7d32]"}
+                attrs={"class": "w-3.5 h-3.5 md:w-4 md:h-4 text-lime"}
             ),
             "catatan_tambahan": forms.Textarea(
                 attrs={"rows": 2, "placeholder": "Kokoh, ada goresan ringan..."}
@@ -100,7 +100,7 @@ class HasilPemeriksaanForm(forms.ModelForm):
         )
         self.fields["kategori_penanganan"].widget.attrs.update(
             {
-                "class": "bg-[#e8f5e9] border-[#81c784] font-bold text-[#1f5a23] text-sm",
+                "class": "bg-raised border-control font-bold text-lime text-sm",
             }
         )
         for field in self.fields.values():

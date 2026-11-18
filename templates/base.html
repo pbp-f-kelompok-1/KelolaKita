@@ -35,45 +35,34 @@
                 <span class="brand__mark" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none">
                         <path d="M20 4C10.5 4 4 9.5 4 16.5V20h3.5C14.5 20 20 13.5 20 4Z" fill="currentColor" />
-                        <path d="M4 20 14 10" stroke="#2e7d32" stroke-width="1.6" stroke-linecap="round" />
+                        <path d="M4 20 14 10" stroke="var(--kk-page)" stroke-width="1.6" stroke-linecap="round" />
                     </svg>
                 </span>
                 <span class="brand__name">KelolaKita</span>
             </a>
 
             <nav class="nav" aria-label="Navigasi utama">
-                <a class="nav__link{% if active_nav == 'beranda' %} is-active{% endif %}"
-                    href="{% url 'landing_page' %}"
-                    {% if active_nav == 'beranda' %}aria-current="page"{% endif %}>Beranda</a>
-                <a class="nav__link{% if active_nav == 'penanganan' %} is-active{% endif %}"
-                    href="{% url 'penanganan:daftar_pengajuan' %}"
-                    {% if active_nav == 'penanganan' %}aria-current="page"{% endif %}>Pengajuan</a>
-                <a class="nav__link{% if active_nav == 'peta' %} is-active{% endif %}"
-                    href="{% url 'show_location' %}"
-                    {% if active_nav == 'peta' %}aria-current="page"{% endif %}>Lokasi Kita</a>
-                <a class="nav__link{% if active_nav == 'jadwal' %} is-active{% endif %}"
-                    href="{% url 'show_schedule' %}"
-                    {% if active_nav == 'jadwal' %}aria-current="page"{% endif %}>Penyetoran</a>
-                <a class="nav__link{% if active_nav == 'edukasi' %} is-active{% endif %}"
-                    href="{% url 'education_home' %}"
-                    {% if active_nav == 'edukasi' %}aria-current="page"{% endif %}>Edukasi</a>
+                {% include "_nav_links.html" %}
             </nav>
 
-            <details class="relative hidden min-[761px]:block">
-                <summary class="cursor-pointer list-none rounded-lg border border-[#dfe5e0] bg-white px-3 py-2 text-sm font-semibold text-[#1a2e1c] transition hover:border-[#81c784] hover:bg-[#e8f5e9]">Akun</summary>
-                <div class="absolute right-0 top-[calc(100%+8px)] z-50 flex min-w-40 flex-col gap-1 rounded-xl border border-[#dfe5e0] bg-white p-2 shadow-lg">
-                    {% if user.is_authenticated %}
-                    <a href="{% url 'accounts:profile' %}" class="rounded-lg px-3 py-2 text-sm font-semibold text-[#1a2e1c] hover:bg-[#e8f5e9]">Profil saya</a>
+            {% if user.is_authenticated %}
+            <details class="nav-account">
+                <summary class="btn btn--secondary btn--sm">Akun</summary>
+                <div class="nav-account__panel">
+                    <a href="{% url 'accounts:profile' %}"
+                        {% if request.resolver_match.url_name == 'profile' %}class="is-active" aria-current="page"{% endif %}>Profil saya</a>
                     <form method="post" action="{% url 'accounts:logout' %}">
                         {% csrf_token %}
-                        <button type="submit" class="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-[#1a2e1c] hover:bg-[#e8f5e9]">Keluar</button>
+                        <button type="submit" class="w-full text-left">Keluar</button>
                     </form>
-                    {% else %}
-                    <a href="{% url 'accounts:login' %}" class="rounded-lg px-3 py-2 text-sm font-semibold text-[#1a2e1c] hover:bg-[#e8f5e9]">Masuk</a>
-                    <a href="{% url 'accounts:register' %}" class="rounded-lg px-3 py-2 text-sm font-semibold text-[#1a2e1c] hover:bg-[#e8f5e9]">Daftar</a>
-                    {% endif %}
                 </div>
             </details>
+            {% else %}
+            <div class="nav-account">
+                <a class="btn btn--secondary btn--sm" href="{% url 'accounts:login' %}">Masuk</a>
+                <a class="btn btn--primary btn--sm" href="{% url 'accounts:register' %}">Daftar</a>
+            </div>
+            {% endif %}
 
             <details class="nav-mobile">
                 <summary class="nav-mobile__toggle">
@@ -90,31 +79,19 @@
                     </svg>
                 </summary>
                 <nav class="nav-mobile__panel" aria-label="Navigasi utama seluler">
-                    <a class="nav-mobile__panel-link{% if active_nav == 'beranda' %} is-active{% endif %}"
-                        href="{% url 'landing_page' %}"
-                        {% if active_nav == 'beranda' %}aria-current="page"{% endif %}>Beranda</a>
-                    <a class="nav-mobile__panel-link{% if active_nav == 'penanganan' %} is-active{% endif %}"
-                        href="{% url 'penanganan:daftar_pengajuan' %}"
-                        {% if active_nav == 'penanganan' %}aria-current="page"{% endif %}>Penanganan</a>
-                    <a class="nav-mobile__panel-link{% if active_nav == 'peta' %} is-active{% endif %}"
-                        href="{% url 'show_location' %}"
-                        {% if active_nav == 'peta' %}aria-current="page"{% endif %}>Peta Setoran</a>
-                    <a class="nav-mobile__panel-link{% if active_nav == 'jadwal' %} is-active{% endif %}"
-                        href="{% url 'show_schedule' %}"
-                        {% if active_nav == 'jadwal' %}aria-current="page"{% endif %}>Jadwal</a>
-                    <a class="nav-mobile__panel-link{% if active_nav == 'edukasi' %} is-active{% endif %}"
-                        href="{% url 'education_home' %}"
-                        {% if active_nav == 'edukasi' %}aria-current="page"{% endif %}>Edukasi</a>
+                    {% include "_nav_links.html" %}
                     {% if user.is_authenticated %}
                     <a href="{% url 'accounts:profile' %}"
                         {% if request.resolver_match.url_name == 'profile' %}class="is-active" aria-current="page"{% endif %}>Profil saya</a>
                     <form method="post" action="{% url 'accounts:logout' %}">
                         {% csrf_token %}
-                        <button type="submit" class="min-h-11 w-full rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-[#1a2e1c] hover:bg-[#e8f5e9]">Keluar</button>
+                        <button type="submit" class="w-full text-left">Keluar</button>
                     </form>
                     {% else %}
-                    <a href="{% url 'accounts:login' %}">Masuk</a>
-                    <a href="{% url 'accounts:register' %}">Daftar</a>
+                    <div class="nav-mobile__actions">
+                        <a class="btn btn--secondary btn--sm" href="{% url 'accounts:login' %}">Masuk</a>
+                        <a class="btn btn--primary btn--sm" href="{% url 'accounts:register' %}">Daftar</a>
+                    </div>
                     {% endif %}
                 </nav>
             </details>
@@ -129,7 +106,7 @@
     </div>
     {% endif %}
 
-    <div id="content">
+    <div id="content" tabindex="-1">
         {% block content %} {% endblock content %}
     </div>
 
@@ -141,7 +118,7 @@
             </div>
             <nav class="footer__nav" aria-label="Navigasi footer">
                 <a href="{% url 'landing_page' %}">Beranda</a>
-                <a href="{% url 'penanganan:daftar_pengajuan' %}">Penanganan</a>
+                <a href="{% url 'penanganan:daftar_pengajuan' %}">Pengajuan</a>
                 <a href="{% url 'show_location' %}">Peta Setoran</a>
                 <a href="{% url 'show_schedule' %}">Jadwal</a>
                 <a href="{% url 'education_home' %}">Edukasi</a>

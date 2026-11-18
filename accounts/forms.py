@@ -35,12 +35,7 @@ class RegisterForm(UserCreationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        input_class = (
-            "block w-full min-w-0 rounded-xl border border-[#dfe5e0] bg-white "
-            "px-4 py-3 text-sm text-[#1a2e1c] placeholder:text-[#78907c] "
-            "outline-none transition focus:border-[#2e7d32] focus:ring-2 "
-            "focus:ring-[#2e7d32]/20"
-        )
+        input_class = "field-input block min-w-0"
         field_attrs = {
             "username": ("username", "Pilih nama pengguna"),
             "first_name": ("given-name", "Nama depan"),
@@ -78,12 +73,7 @@ class LoginForm(AuthenticationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        input_class = (
-            "block w-full min-w-0 rounded-xl border border-[#dfe5e0] bg-white "
-            "px-4 py-3 text-sm text-[#1a2e1c] placeholder:text-[#78907c] "
-            "outline-none transition focus:border-[#2e7d32] focus:ring-2 "
-            "focus:ring-[#2e7d32]/20"
-        )
+        input_class = "field-input block min-w-0"
         self.fields["username"].widget.attrs.update(
             {
                 "class": input_class,
@@ -101,8 +91,8 @@ class LoginForm(AuthenticationForm):
         self.fields["remember_me"].widget.attrs.update(
             {
                 "class": (
-                    "size-4 shrink-0 rounded border-[#b8c9bb] text-[#2e7d32] "
-                    "focus:ring-2 focus:ring-[#2e7d32]/30"
+                    "size-4 shrink-0 rounded border-control text-lime "
+                    "focus:ring-2 focus:ring-lime/30"
                 ),
             }
         )
