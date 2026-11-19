@@ -180,6 +180,26 @@ class ArticlePresentationTests(TestCase):
             sources.add(source)
         self.assertEqual(len(sources), 50)
 
+    def test_legacy_pws_demo_article_uses_cover_for_its_seed_id(self):
+        article = Article(
+            slug="simulasi-pts-art-046-mengajak-keluarga-memilah-sampah-untuk-keluarga-kecil",
+        )
+        self.assertEqual(article.cover["src"], "/static/images/education/articles/pts/046.webp")
+
+    def test_published_articles_fall_back_to_their_original_static_covers(self):
+        cases = (
+            ("cek-cepat-barang-layak-pakai-atau-perlu-diperbaiki", "barang-layak-pakai.jpg"),
+            ("7-jenis-plastik-dan-ke-mana-harus-membawanya", "plastik-rumah-tangga.jpg"),
+            ("pentingnya-membuang-sampah-pada-tempatnya", "belanja-pasar-reusable.jpg"),
+        )
+        for slug, filename in cases:
+            with self.subTest(slug=slug):
+                path = f"images/education/articles/{filename}"
+                article = Article(slug=slug, image=f"education/articles/missing/{filename}")
+                self.assertFalse(article.image_available)
+                self.assertEqual(article.cover["src"], f"/static/{path}")
+                self.assertIsNotNone(finders.find(path))
+
     def test_category_labels_use_public_indonesian_terms(self):
         self.assertEqual(
             Article(category=Article.Category.reuse).category_label, "Guna ulang"

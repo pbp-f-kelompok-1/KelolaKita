@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 from PIL import Image, UnidentifiedImageError
@@ -19,6 +20,12 @@ ARTICLE_IMAGE_PLACEHOLDER = "images/education/articles/article-fallback.webp"
 ARTICLE_DEMO_COVERS = {
     f"pts2026-edu-art-{index:03d}": f"images/education/articles/pts/{index:03d}.webp"
     for index in range(1, 51)
+}
+
+ARTICLE_PUBLISHED_COVERS = {
+    "cek-cepat-barang-layak-pakai-atau-perlu-diperbaiki": "barang-layak-pakai.jpg",
+    "7-jenis-plastik-dan-ke-mana-harus-membawanya": "plastik-rumah-tangga.jpg",
+    "pentingnya-membuang-sampah-pada-tempatnya": "belanja-pasar-reusable.jpg",
 }
 
 ARTICLE_CATEGORY_LABELS = {
@@ -132,8 +139,16 @@ class Article(models.Model):
         # jalur peningkatan: cache hasilnya atau tambahkan kolom flag bila artikel banyak.
         if self.image_available:
             return {"src": self.image.url, "alt": f"Gambar artikel {self.title}"}
+        if filename := ARTICLE_PUBLISHED_COVERS.get(self.slug):
+            return {
+                "src": static(f"images/education/articles/{filename}"),
+                "alt": f"Gambar artikel {self.title}",
+            }
+        # Slug artikel demo PWS menyimpan ID seed sebelum slug judulnya.
+        legacy = re.fullmatch(r"simulasi-pts-art-([0-9]{3})-[a-z0-9-]+", self.slug)
+        cover_key = f"pts2026-edu-art-{legacy[1]}" if legacy else self.slug
         return {
-            "src": static(ARTICLE_DEMO_COVERS.get(self.slug, ARTICLE_IMAGE_PLACEHOLDER)),
+            "src": static(ARTICLE_DEMO_COVERS.get(cover_key, ARTICLE_IMAGE_PLACEHOLDER)),
             "alt": f"Ilustrasi artikel {self.title}",
         }
 
