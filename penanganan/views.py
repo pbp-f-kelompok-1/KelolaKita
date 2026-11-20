@@ -1,7 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.db.models import Prefetch
 from django.shortcuts import render, redirect, get_object_or_404
 from accounts.models import Profile
 from penanganan.forms import EditPengajuanForm, HasilPemeriksaanForm, PengajuanForm
@@ -43,26 +42,15 @@ def tambah_pengajuan(request):
     })
 
 # Melihat hasil pemeriksaan dan kategori penanganan
-@login_required
 def daftar_pengajuan(request):
-    pengelola = is_pengelola(request.user)
-    daftar_pemeriksaan = Pemeriksaan.objects.all()
-    if not pengelola:
-        daftar_pemeriksaan = daftar_pemeriksaan.filter(pengguna=request.user)
-
-    choices = Pemeriksaan.PILIHAN_KATEGORI_PENANGANAN
-    category = request.GET.get("category", "")
-    if category in dict(choices):
-        daftar_pemeriksaan = daftar_pemeriksaan.filter(kategori_penanganan=category)
+    pengelola = request.user.is_authenticated and is_pengelola(request.user)
+    if not request.user.is_authenticated or pengelola:
+        daftar_pemeriksaan = Pemeriksaan.objects.all().order_by('-created_at')
     else:
-        category = ""
+        daftar_pemeriksaan = Pemeriksaan.objects.filter(pengguna=request.user).order_by('-created_at')
 
     context = {
-        "daftar_pemeriksaan": daftar_pemeriksaan.order_by("-created_at").prefetch_related(
-            Prefetch("foto_barang", queryset=FotoBarang.objects.order_by("pk")),
-        ),
-        "category_options": choices,
-        "selected_category": category,
+        "daftar_pemeriksaan": daftar_pemeriksaan,
         "is_pengelola": pengelola,
         "active_nav": "penanganan",
     }

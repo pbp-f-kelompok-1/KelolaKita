@@ -8,92 +8,73 @@
     <!-- Header Bagian Atas -->
     <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>
-            <p class="text-xs font-bold text-lime uppercase tracking-wide mb-2">Riwayat & Daftar</p>
-            <h1 class="font-sans text-2xl md:text-3xl font-extrabold text-ink">
+            <p class="text-xs font-bold text-[#2e7d32] uppercase tracking-wide mb-2">Riwayat & Daftar</p>
+            <h1 class="font-['Plus_Jakarta_Sans'] text-2xl md:text-3xl font-extrabold text-[#1a2e1c]">
                 Daftar Pengajuan Barang
             </h1>
         </div>
         
         <!-- Tombol Tambah Pengajuan -->
-        <a href="{% url 'penanganan:tambah_pengajuan' %}" class="btn btn--primary w-full sm:w-auto">
+        <a href="{% url 'penanganan:tambah_pengajuan' %}" class="flex items-center justify-center gap-2 rounded-lg bg-[#2e7d32] px-6 py-3 text-sm font-bold text-white hover:bg-[#1f5a23] transition w-full sm:w-auto">
             <span aria-hidden="true" class="text-lg leading-none">+</span>
             Tambah Pengajuan
         </a>
     </div>
-
-    <form method="get" class="mb-6 flex flex-wrap items-end gap-3">
-        <div class="form-field">
-            <label for="filter-penanganan">Kategori penanganan</label>
-            <select id="filter-penanganan" class="field-input" name="category">
-                <option value="">Semua kategori</option>
-                {% for value, label in category_options %}
-                <option value="{{ value }}"{% if selected_category == value %} selected{% endif %}>{{ label }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <button type="submit" class="btn btn--secondary">Terapkan filter</button>
-    </form>
 
     <!-- Grid Daftar Barang (1 Kolom di HP, 2 Kolom di Tablet, 3 Kolom di Laptop) -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         
         <!-- Looping Data Pemeriksaan -->
         {% for pemeriksaan in daftar_pemeriksaan %}
-            <div class="bg-surface rounded-panel p-5 md:p-6 shadow-sm border border-line flex flex-col hover:shadow-md transition duration-200">
+            <div class="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-[#dce7de] flex flex-col hover:shadow-md transition duration-200">
                 
                 <!-- Judul dan Badge Status -->
                 <div class="flex justify-between items-start mb-4 gap-3">
-                    <h2 class="font-bold text-base md:text-lg text-ink line-clamp-2 leading-tight">
+                    <h2 class="font-bold text-base md:text-lg text-[#1a2e1c] line-clamp-2 leading-tight">
                         {{ pemeriksaan.nama_barang }}
                     </h2>
                     
                     <span class="text-[10px] md:text-[11px] font-extrabold uppercase tracking-wider px-2.5 md:px-3 py-1 rounded-full whitespace-nowrap
-                        {% if pemeriksaan.kategori_penanganan == 'Menunggu' %} bg-raised text-warning border border-warning
-                        {% elif pemeriksaan.kategori_penanganan == 'Recycle' %} bg-raised text-muted border border-line
-                        {% elif pemeriksaan.kategori_penanganan == 'Reuse' %} bg-raised text-lime border border-control
-                        {% elif pemeriksaan.kategori_penanganan == 'Reduce' %} bg-raised text-warning border border-warning
-                        {% else %} bg-raised text-ink border border-control {% endif %}">
+                        {% if pemeriksaan.kategori_penanganan == 'Menunggu' %} bg-[#fff8e1] text-[#f57f17] border border-[#ffe082]
+                        {% elif pemeriksaan.kategori_penanganan == 'Recycle' %} bg-[#e3f2fd] text-[#1976d2] border border-[#bbdefb]
+                        {% elif pemeriksaan.kategori_penanganan == 'Reuse' %} bg-[#e8f5e9] text-[#2e7d32] border border-[#81c784]
+                        {% elif pemeriksaan.kategori_penanganan == 'Reduce' %} bg-[#fbe9e7] text-[#d84315] border border-[#ffccbc]
+                        {% else %} bg-gray-100 text-gray-700 border border-gray-300 {% endif %}">
                         {{ pemeriksaan.kategori_penanganan }}
                     </span>
                 </div>
 
                 <!-- Tampilkan Gambar Pertama -->
-                {% with foto=pemeriksaan.foto_barang.first %}
-                {% if foto %}
+                {% if pemeriksaan.foto_barang.first %}
                 <div class="mb-4">
-                    {% if "static/img/" in foto.gambar.name or "foto_pemeriksaan/" in foto.gambar.name %}
-                    <img src="{{ foto.gambar.url }}" alt="Foto {{ pemeriksaan.nama_barang }}" loading="lazy" decoding="async" class="aspect-video w-full object-cover rounded-lg border border-line">
+                    {% if "static/img/" in pemeriksaan.foto_barang.first.gambar.name or "foto_pemeriksaan/" in pemeriksaan.foto_barang.first.gambar.name %}
+                    <img src="{{ pemeriksaan.foto_barang.first.gambar.url }}" alt="Foto {{ pemeriksaan.nama_barang }}" class="w-full h-36 md:h-40 object-cover rounded-lg border border-[#dce7de]">
                     {% else %}
-                    <img src="{% static 'img/penanganan/' %}{{ foto.gambar.name }}" alt="Foto {{ pemeriksaan.nama_barang }}" loading="lazy" decoding="async" class="aspect-video w-full object-cover rounded-lg border border-line">
-                    {% endif %}
-                    {% if "static/img/pts-demo/items/" in foto.gambar.name %}
-                    <p class="mt-1 text-xs text-muted">Ilustrasi barang demo</p>
+                    <img src="{% static 'img/penanganan/' %}{{ pemeriksaan.foto_barang.first.gambar.name }}" alt="Foto {{ pemeriksaan.nama_barang }}" class="w-full h-36 md:h-40 object-cover rounded-lg border border-[#dce7de]">
                     {% endif %}
                 </div>
                 {% endif %}
-                {% endwith %}
                 
                 <!-- Detail Info -->
                 <div class="flex flex-col gap-1 mb-6">
-                    <p class="text-xs md:text-sm text-muted">
-                        <span class="font-semibold text-ink">Kategori:</span> {{ pemeriksaan.kategori_barang }}
+                    <p class="text-xs md:text-sm text-[#557a5b]">
+                        <span class="font-semibold text-[#1a2e1c]">Kategori:</span> {{ pemeriksaan.kategori_barang }}
                     </p>
-                    <p class="text-xs md:text-sm text-muted">
-                        <span class="font-semibold text-ink">Kondisi:</span> {{ pemeriksaan.kondisi_barang }}
+                    <p class="text-xs md:text-sm text-[#557a5b]">
+                        <span class="font-semibold text-[#1a2e1c]">Kondisi:</span> {{ pemeriksaan.kondisi_barang }}
                     </p>
-                    <p class="text-[11px] text-muted mt-2">Diajukan: {{ pemeriksaan.created_at|date:"d M Y, H:i" }}</p>
+                    <p class="text-[11px] text-gray-400 mt-2">Diajukan: {{ pemeriksaan.created_at|date:"d M Y, H:i" }}</p>
                 </div>
                 
                 <!-- Action Buttons -->
-                <div class="mt-auto flex flex-wrap items-center justify-end gap-2 border-t border-line pt-4">
-                    {% if is_pengelola %}
-                    <a href="{% url 'penanganan:periksa_pengajuan' pemeriksaan.id %}" class="btn btn--secondary btn--sm">
+                {% if user.is_authenticated %}
+                <div class="mt-auto pt-4 border-t border-[#dce7de] flex items-center justify-end gap-3 md:gap-4">
+                    <a href="{% url 'penanganan:periksa_pengajuan' pemeriksaan.id %}" class="text-xs md:text-sm font-bold text-blue-600 hover:text-blue-800 transition">
                         Detail / Periksa
                     </a>
-                    {% endif %}
                     
                     {% if pemeriksaan.kategori_penanganan == 'Menunggu' %}
-                    <a href="{% url 'penanganan:edit_pengajuan' pemeriksaan.id %}" class="btn btn--secondary btn--sm">
+                    <a href="{% url 'penanganan:edit_pengajuan' pemeriksaan.id %}" class="text-xs md:text-sm font-bold text-yellow-600 hover:text-yellow-800 transition">
                         Edit
                     </a>
                     {% endif %}
@@ -101,25 +82,26 @@
                     {% if is_pengelola or pemeriksaan.kategori_penanganan == 'Menunggu' %}
                     <form method="post" action="{% url 'penanganan:hapus_pengajuan' pemeriksaan.id %}" class="inline m-0 p-0">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn--danger btn--sm" onclick="return confirm('Apakah Anda yakin ingin menghapus pengajuan ini?')">
+                        <button type="submit" class="text-xs md:text-sm font-bold text-red-500 hover:text-red-700 transition" onclick="return confirm('Apakah Anda yakin ingin menghapus pengajuan ini?')">
                             Hapus
                         </button>
                     </form>
                     {% endif %}
                 </div>
+                {% endif %}
             </div>
             
         <!-- Tampilan Kosong -->
         {% empty %}
-            <div class="col-span-full bg-surface rounded-panel p-6 sm:p-12 text-center border border-line flex flex-col items-center justify-center">
-                <span class="flex size-14 sm:size-16 items-center justify-center rounded-full bg-raised mb-4">
-                    <svg class="w-7 h-7 sm:w-8 sm:h-8 text-lime" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+            <div class="col-span-full bg-white rounded-2xl p-6 sm:p-12 text-center border border-[#dce7de] flex flex-col items-center justify-center">
+                <span class="flex size-14 sm:size-16 items-center justify-center rounded-full bg-[#f4f6f5] mb-4">
+                    <svg class="w-7 h-7 sm:w-8 sm:h-8 text-[#81c784]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
                 </span>
-                <p class="text-lg sm:text-xl font-bold text-ink mb-2">{% if selected_category %}Tidak ada pengajuan dalam kategori ini{% else %}Belum ada pengajuan{% endif %}</p>
-                <p class="text-xs sm:text-sm text-muted mb-6 max-w-md">
+                <p class="text-lg sm:text-xl font-bold text-[#1a2e1c] mb-2">Belum ada pengajuan</p>
+                <p class="text-xs sm:text-sm text-[#557a5b] mb-6 max-w-md">
                     Saat ini belum ada data pengajuan barang yang ditemukan. Silakan ajukan barang pertamamu agar kami bisa menentukan jalur penanganan terbaik.
                 </p>
-                <a href="{% url 'penanganan:tambah_pengajuan' %}" class="text-lime hover:text-lime underline font-semibold text-xs sm:text-sm transition">
+                <a href="{% url 'penanganan:tambah_pengajuan' %}" class="text-blue-600 hover:text-blue-800 underline font-semibold text-xs sm:text-sm transition">
                     Buat pengajuan baru sekarang
                 </a>
             </div>

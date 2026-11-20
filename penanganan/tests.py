@@ -60,17 +60,6 @@ class ManagerRolePermissionTests(TestCase):
         self.assertContains(response, self.user_submission.nama_barang)
         self.assertNotContains(response, self.other_submission.nama_barang)
 
-    def test_only_manager_sees_detail_review_link(self):
-        list_url = reverse("penanganan:daftar_pengajuan")
-
-        self.client.force_login(self.manager)
-        manager_response = self.client.get(list_url)
-        self.assertContains(manager_response, "Detail / Periksa")
-
-        self.client.force_login(self.user)
-        user_response = self.client.get(list_url)
-        self.assertNotContains(user_response, "Detail / Periksa")
-
     def test_only_manager_role_can_review_submissions(self):
         review_url = reverse(
             "penanganan:periksa_pengajuan",
@@ -235,12 +224,31 @@ class EditPengajuanFormTests(TestCase):
 
 
 class DaftarPengajuanNavigationTests(TestCase):
-    def test_anonymous_user_is_redirected_to_accounts_login(self):
+    def test_anonymous_user_can_view_all_submissions(self):
+        user = User.objects.create_user(username="warga")
+        submission = Pemeriksaan.objects.create(
+            pengguna=user,
+            nama_barang="Barang publik",
+            kategori_barang="Elektronik",
+            kondisi_barang="Layak pakai",
+        )
+
         response = self.client.get(reverse("penanganan:daftar_pengajuan"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, submission.nama_barang)
+        self.assertContains(response, reverse("penanganan:tambah_pengajuan"))
+        self.assertNotContains(response, reverse("penanganan:periksa_pengajuan", args=[submission.pk]))
+        self.assertNotContains(response, reverse("penanganan:edit_pengajuan", args=[submission.pk]))
+
+    def test_anonymous_user_is_redirected_to_login_when_submitting_item(self):
+        submit_url = reverse("penanganan:tambah_pengajuan")
+
+        response = self.client.get(submit_url)
 
         self.assertRedirects(
             response,
-            f"{reverse('accounts:login')}?next={reverse('penanganan:daftar_pengajuan')}",
+            f"{reverse('accounts:login')}?next={submit_url}",
             fetch_redirect_response=False,
         )
 
@@ -293,25 +301,3 @@ class FotoBarangUploadTests(TestCase):
 
     def test_edit_form_does_not_require_a_new_image(self):
         self.assertFalse(EditPengajuanForm().fields["foto_barang"].required)
-
-
-class PengajuanCategoryFilterTests(TestCase):
-    def test_category_filter_keeps_owner_scope(self):
-        owner = User.objects.create_user(username="filter-owner")
-        other = User.objects.create_user(username="filter-other")
-        expected = Pemeriksaan.objects.create(
-            pengguna=owner, nama_barang="Botol pemilik", kondisi_barang="Layak pakai",
-            kategori_penanganan="Recycle",
-        )
-        Pemeriksaan.objects.create(
-            pengguna=owner, nama_barang="Buku pemilik", kondisi_barang="Layak pakai",
-            kategori_penanganan="Reuse",
-        )
-        Pemeriksaan.objects.create(
-            pengguna=other, nama_barang="Botol orang lain", kondisi_barang="Layak pakai",
-            kategori_penanganan="Recycle",
-        )
-        self.client.force_login(owner)
-        response = self.client.get(reverse("penanganan:daftar_pengajuan"), {"category": "Recycle"})
-        self.assertEqual(list(response.context["daftar_pemeriksaan"]), [expected])
-        self.assertEqual(response.context["selected_category"], "Recycle")
