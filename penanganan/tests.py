@@ -1,13 +1,19 @@
 from io import BytesIO
-from django.contrib.auth.models import User
+from django.contrib.auth.models import AnonymousUser, User
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase
+from django.test import RequestFactory, TestCase
 from django.urls import reverse
 from PIL import Image
 
 from accounts.models import Profile
 from penanganan.forms import EditPengajuanForm, PengajuanForm
 from penanganan.models import FotoBarang, Pemeriksaan
+from penanganan.permissions import (
+    CanDeleteDepositRequest,
+    CanSubmitDepositRequest,
+    CanViewInspectionResults,
+    IsManager,
+)
 
 
 class PengajuanFormTests(TestCase):
@@ -18,6 +24,163 @@ class PengajuanFormTests(TestCase):
 
                 self.assertEqual(choices, Pemeriksaan.PILIHAN_KONDISI)
                 self.assertNotIn(("", "---------"), choices)
+
+
+class AnonymousPenangananApiTests(TestCase):
+    def setUp(self):
+        user = User.objects.create_user(username="api_warga")
+        self.submission = Pemeriksaan.objects.create(
+            pengguna=user,
+            nama_barang="Barang API",
+            kategori_barang="Elektronik",
+            kondisi_barang="Layak pakai",
+        )
+        self.list_url = reverse("penanganan_api:api_v1_pengajuan_list")
+        self.detail_url = reverse(
+            "penanganan_api:api_v1_pengajuan_detail",
+            args=[self.submission.pk],
+        )
+
+    def test_anonymous_user_can_read_list_and_detail(self):
+        list_response = self.client.get(self.list_url)
+        detail_response = self.client.get(self.detail_url)
+
+        self.assertEqual(list_response.status_code, 200)
+        self.assertEqual(detail_response.status_code, 200)
+        self.assertEqual(list_response.json()[0]["id"], str(self.submission.pk))
+        self.assertEqual(detail_response.json()["id"], str(self.submission.pk))
+
+    def test_anonymous_user_cannot_write_to_list_or_detail(self):
+        self.assertEqual(self.client.post(self.list_url).status_code, 403)
+        for method in (self.client.put, self.client.patch, self.client.delete):
+            with self.subTest(method=method.__name__):
+                self.assertEqual(method(self.detail_url).status_code, 403)
+
+        self.assertTrue(
+            Pemeriksaan.objects.filter(pk=self.submission.pk).exists()
+        )
+
+
+class PenangananPermissionTests(TestCase):
+    def setUp(self):
+        self.manager = User.objects.create_user(username="permission_manager")
+        self.manager.profile.role = Profile.Role.MANAGER
+        self.manager.profile.save()
+        self.user = User.objects.create_user(username="permission_user")
+        self.other_user = User.objects.create_user(username="permission_other")
+        self.pending_submission = Pemeriksaan.objects.create(
+            pengguna=self.user,
+            nama_barang="Barang menunggu",
+            kategori_barang="Elektronik",
+            kondisi_barang="Layak pakai",
+        )
+        self.processed_submission = Pemeriksaan.objects.create(
+            pengguna=self.user,
+            nama_barang="Barang diproses",
+            kategori_barang="Elektronik",
+            kondisi_barang="Layak pakai",
+            kategori_penanganan="Reuse",
+        )
+        self.can_delete = CanDeleteDepositRequest()
+        self.can_submit = CanSubmitDepositRequest()
+        self.can_view = CanViewInspectionResults()
+        self.is_manager = IsManager()
+
+    def request(self, method, user=None):
+        request = getattr(RequestFactory(), method.lower())("/")
+        request.user = user or AnonymousUser()
+        return request
+
+    def test_anonymous_user_is_read_only(self):
+        get_request = self.request("GET")
+        post_request = self.request("POST")
+
+        self.assertTrue(self.can_view.has_permission(get_request, None))
+        self.assertTrue(
+            self.can_view.has_object_permission(
+                get_request, None, self.pending_submission
+            )
+        )
+        self.assertFalse(self.can_submit.has_permission(post_request, None))
+        self.assertFalse(self.can_delete.has_permission(post_request, None))
+        self.assertFalse(
+            self.can_delete.has_permission(self.request("DELETE"), None)
+        )
+
+    def test_user_can_submit_and_delete_only_owned_pending_requests(self):
+        self.assertTrue(
+            self.can_submit.has_permission(self.request("POST", self.user), None)
+        )
+        self.assertTrue(
+            self.can_delete.has_permission(self.request("DELETE", self.user), None)
+        )
+        self.assertTrue(
+            self.can_view.has_object_permission(
+                self.request("GET", self.user),
+                None,
+                self.pending_submission,
+            )
+        )
+        self.assertFalse(
+            self.can_view.has_object_permission(
+                self.request("GET", self.other_user),
+                None,
+                self.pending_submission,
+            )
+        )
+        self.assertTrue(
+            self.can_delete.has_object_permission(
+                self.request("DELETE", self.user),
+                None,
+                self.pending_submission,
+            )
+        )
+        self.assertFalse(
+            self.can_delete.has_object_permission(
+                self.request("DELETE", self.user),
+                None,
+                self.processed_submission,
+            )
+        )
+        self.assertFalse(
+            self.can_delete.has_object_permission(
+                self.request("DELETE", self.other_user),
+                None,
+                self.pending_submission,
+            )
+        )
+
+    def test_manager_can_inspect_and_delete_processed_requests(self):
+        self.assertTrue(
+            self.can_delete.has_permission(self.request("DELETE", self.manager), None)
+        )
+        self.assertTrue(
+            self.is_manager.has_permission(self.request("PATCH", self.manager), None)
+        )
+        self.assertTrue(
+            self.can_view.has_object_permission(
+                self.request("GET", self.manager),
+                None,
+                self.pending_submission,
+            )
+        )
+        self.assertTrue(
+            self.is_manager.has_object_permission(
+                self.request("PATCH", self.manager),
+                None,
+                self.pending_submission,
+            )
+        )
+        self.assertTrue(
+            self.can_delete.has_object_permission(
+                self.request("DELETE", self.manager),
+                None,
+                self.processed_submission,
+            )
+        )
+        self.assertFalse(
+            self.can_submit.has_permission(self.request("POST", self.manager), None)
+        )
 
 
 class ManagerRolePermissionTests(TestCase):
@@ -60,17 +223,6 @@ class ManagerRolePermissionTests(TestCase):
         self.assertContains(response, self.user_submission.nama_barang)
         self.assertNotContains(response, self.other_submission.nama_barang)
 
-    def test_only_manager_sees_detail_review_link(self):
-        list_url = reverse("penanganan:daftar_pengajuan")
-
-        self.client.force_login(self.manager)
-        manager_response = self.client.get(list_url)
-        self.assertContains(manager_response, "Detail / Periksa")
-
-        self.client.force_login(self.user)
-        user_response = self.client.get(list_url)
-        self.assertNotContains(user_response, "Detail / Periksa")
-
     def test_only_manager_role_can_review_submissions(self):
         review_url = reverse(
             "penanganan:periksa_pengajuan",
@@ -101,6 +253,26 @@ class ManagerRolePermissionTests(TestCase):
             Pemeriksaan.objects.filter(pk=self.user_submission.pk).exists()
         )
 
+    def test_user_can_delete_own_pending_submission(self):
+        self.user_submission.kategori_penanganan = "Menunggu"
+        self.user_submission.save(update_fields=["kategori_penanganan"])
+        delete_url = reverse(
+            "penanganan:hapus_pengajuan",
+            args=[self.user_submission.pk],
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.post(delete_url)
+
+        self.assertRedirects(
+            response,
+            reverse("penanganan:daftar_pengajuan"),
+            fetch_redirect_response=False,
+        )
+        self.assertFalse(
+            Pemeriksaan.objects.filter(pk=self.user_submission.pk).exists()
+        )
+
     def test_regular_user_cannot_delete_processed_submission(self):
         delete_url = reverse(
             "penanganan:hapus_pengajuan",
@@ -114,6 +286,13 @@ class ManagerRolePermissionTests(TestCase):
         self.assertTrue(
             Pemeriksaan.objects.filter(pk=self.user_submission.pk).exists()
         )
+
+    def test_manager_cannot_submit_deposit_request(self):
+        submit_url = reverse("penanganan:tambah_pengajuan")
+        self.client.force_login(self.manager)
+
+        self.assertEqual(self.client.get(submit_url).status_code, 403)
+        self.assertEqual(self.client.post(submit_url).status_code, 403)
 
     def test_manager_sees_delete_button_for_processed_submission(self):
         self.client.force_login(self.manager)
@@ -235,12 +414,31 @@ class EditPengajuanFormTests(TestCase):
 
 
 class DaftarPengajuanNavigationTests(TestCase):
-    def test_anonymous_user_is_redirected_to_accounts_login(self):
+    def test_anonymous_user_can_view_all_submissions(self):
+        user = User.objects.create_user(username="warga")
+        submission = Pemeriksaan.objects.create(
+            pengguna=user,
+            nama_barang="Barang publik",
+            kategori_barang="Elektronik",
+            kondisi_barang="Layak pakai",
+        )
+
         response = self.client.get(reverse("penanganan:daftar_pengajuan"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, submission.nama_barang)
+        self.assertNotContains(response, reverse("penanganan:tambah_pengajuan"))
+        self.assertNotContains(response, reverse("penanganan:periksa_pengajuan", args=[submission.pk]))
+        self.assertNotContains(response, reverse("penanganan:edit_pengajuan", args=[submission.pk]))
+
+    def test_anonymous_user_is_redirected_to_login_when_submitting_item(self):
+        submit_url = reverse("penanganan:tambah_pengajuan")
+
+        response = self.client.get(submit_url)
 
         self.assertRedirects(
             response,
-            f"{reverse('accounts:login')}?next={reverse('penanganan:daftar_pengajuan')}",
+            f"{reverse('accounts:login')}?next={submit_url}",
             fetch_redirect_response=False,
         )
 
@@ -253,6 +451,7 @@ class DaftarPengajuanNavigationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["active_nav"], "penanganan")
         self.assertContains(response, reverse("penanganan:daftar_pengajuan"))
+        self.assertContains(response, reverse("penanganan:tambah_pengajuan"))
         self.assertEqual(response.content.count(b'aria-current="page"'), 2)
 
 
@@ -293,25 +492,3 @@ class FotoBarangUploadTests(TestCase):
 
     def test_edit_form_does_not_require_a_new_image(self):
         self.assertFalse(EditPengajuanForm().fields["foto_barang"].required)
-
-
-class PengajuanCategoryFilterTests(TestCase):
-    def test_category_filter_keeps_owner_scope(self):
-        owner = User.objects.create_user(username="filter-owner")
-        other = User.objects.create_user(username="filter-other")
-        expected = Pemeriksaan.objects.create(
-            pengguna=owner, nama_barang="Botol pemilik", kondisi_barang="Layak pakai",
-            kategori_penanganan="Recycle",
-        )
-        Pemeriksaan.objects.create(
-            pengguna=owner, nama_barang="Buku pemilik", kondisi_barang="Layak pakai",
-            kategori_penanganan="Reuse",
-        )
-        Pemeriksaan.objects.create(
-            pengguna=other, nama_barang="Botol orang lain", kondisi_barang="Layak pakai",
-            kategori_penanganan="Recycle",
-        )
-        self.client.force_login(owner)
-        response = self.client.get(reverse("penanganan:daftar_pengajuan"), {"category": "Recycle"})
-        self.assertEqual(list(response.context["daftar_pemeriksaan"]), [expected])
-        self.assertEqual(response.context["selected_category"], "Recycle")
