@@ -5,6 +5,8 @@ from .models import Pemeriksaan
 
 
 class PemeriksaanSerializer(serializers.ModelSerializer):
+    pengguna = serializers.PrimaryKeyRelatedField(read_only=True)
+
     def validate_nama_barang(self, value):
         value = strip_tags(value).strip()
         if not value:
