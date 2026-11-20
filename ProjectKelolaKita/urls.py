@@ -57,6 +57,7 @@ urlpatterns = [
     path('jadwal/', include('Schedule.urls')),
     path('accounts/', include('accounts.urls')),
     path('pengajuan/', include('penanganan.urls')),
+    path('api/v1/', include('penanganan.api_urls')),
     path('api/education/', include('education.api_urls')),
     path('edukasi/', include('education.urls')),
 ]
