@@ -218,6 +218,26 @@ class ManagerRolePermissionTests(TestCase):
             Pemeriksaan.objects.filter(pk=self.user_submission.pk).exists()
         )
 
+    def test_user_can_delete_own_pending_submission(self):
+        self.user_submission.kategori_penanganan = "Menunggu"
+        self.user_submission.save(update_fields=["kategori_penanganan"])
+        delete_url = reverse(
+            "penanganan:hapus_pengajuan",
+            args=[self.user_submission.pk],
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.post(delete_url)
+
+        self.assertRedirects(
+            response,
+            reverse("penanganan:daftar_pengajuan"),
+            fetch_redirect_response=False,
+        )
+        self.assertFalse(
+            Pemeriksaan.objects.filter(pk=self.user_submission.pk).exists()
+        )
+
     def test_regular_user_cannot_delete_processed_submission(self):
         delete_url = reverse(
             "penanganan:hapus_pengajuan",
@@ -231,6 +251,13 @@ class ManagerRolePermissionTests(TestCase):
         self.assertTrue(
             Pemeriksaan.objects.filter(pk=self.user_submission.pk).exists()
         )
+
+    def test_manager_cannot_submit_deposit_request(self):
+        submit_url = reverse("penanganan:tambah_pengajuan")
+        self.client.force_login(self.manager)
+
+        self.assertEqual(self.client.get(submit_url).status_code, 403)
+        self.assertEqual(self.client.post(submit_url).status_code, 403)
 
     def test_manager_sees_delete_button_for_processed_submission(self):
         self.client.force_login(self.manager)
@@ -365,7 +392,7 @@ class DaftarPengajuanNavigationTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, submission.nama_barang)
-        self.assertContains(response, reverse("penanganan:tambah_pengajuan"))
+        self.assertNotContains(response, reverse("penanganan:tambah_pengajuan"))
         self.assertNotContains(response, reverse("penanganan:periksa_pengajuan", args=[submission.pk]))
         self.assertNotContains(response, reverse("penanganan:edit_pengajuan", args=[submission.pk]))
 
@@ -389,6 +416,7 @@ class DaftarPengajuanNavigationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["active_nav"], "penanganan")
         self.assertContains(response, reverse("penanganan:daftar_pengajuan"))
+        self.assertContains(response, reverse("penanganan:tambah_pengajuan"))
         self.assertEqual(response.content.count(b'aria-current="page"'), 2)
 
 

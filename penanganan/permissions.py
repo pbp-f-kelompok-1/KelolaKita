@@ -18,7 +18,7 @@ class IsManager(BasePermission):
 class CanSubmitDepositRequest(BasePermission):
     def has_permission(self, request, view):
         return (
-            request.method == "POST"
+            (request.method in SAFE_METHODS or request.method == "POST")
             and _has_role(request.user, Profile.Role.USER)
         )
 
@@ -26,7 +26,10 @@ class CanSubmitDepositRequest(BasePermission):
 class CanDeleteDepositRequest(BasePermission):
     def has_permission(self, request, view):
         return (
-            request.method == "DELETE"
+            (
+                request.method in SAFE_METHODS
+                or request.method in ("POST", "DELETE")
+            )
             and (
                 _has_role(request.user, Profile.Role.MANAGER)
                 or _has_role(request.user, Profile.Role.USER)

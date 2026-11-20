@@ -2,20 +2,27 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import render, redirect, get_object_or_404
-from accounts.models import Profile
 from penanganan.forms import EditPengajuanForm, HasilPemeriksaanForm, PengajuanForm
 from penanganan.models import Pemeriksaan, FotoBarang
+from penanganan.permissions import (
+    CanDeleteDepositRequest,
+    CanSubmitDepositRequest,
+    CanViewInspectionResults,
+    IsManager,
+)
 
 
-def is_pengelola(user):
-    return Profile.objects.filter(
-        user=user,
-        role=Profile.Role.MANAGER,
-    ).exists()
+def _enforce_permission(permission_class, request, obj=None):
+    permission = permission_class()
+    if not permission.has_permission(request, None):
+        raise PermissionDenied
+    if obj is not None and not permission.has_object_permission(request, None, obj):
+        raise PermissionDenied
 
 # Membuat data pemeriksaan
 @login_required
 def tambah_pengajuan(request):
+    _enforce_permission(CanSubmitDepositRequest, request)
     form = (
         PengajuanForm(request.POST, request.FILES)
         if request.method == "POST"
@@ -43,7 +50,9 @@ def tambah_pengajuan(request):
 
 # Melihat hasil pemeriksaan dan kategori penanganan
 def daftar_pengajuan(request):
-    pengelola = request.user.is_authenticated and is_pengelola(request.user)
+    _enforce_permission(CanViewInspectionResults, request)
+    pengelola = IsManager().has_permission(request, None)
+    can_submit = CanSubmitDepositRequest().has_permission(request, None)
     if not request.user.is_authenticated or pengelola:
         daftar_pemeriksaan = Pemeriksaan.objects.all().order_by('-created_at')
     else:
@@ -52,6 +61,7 @@ def daftar_pengajuan(request):
     context = {
         "daftar_pemeriksaan": daftar_pemeriksaan,
         "is_pengelola": pengelola,
+        "can_submit": can_submit,
         "active_nav": "penanganan",
     }
     return render(request, "penanganan/daftar_pengajuan.html", context)
@@ -60,9 +70,7 @@ def daftar_pengajuan(request):
 # Mengubah hasil pemeriksaan apabila diperlukan
 @login_required
 def periksa_pengajuan(request, pk):
-    # Cek apakah akun yang sedang login adalah pengelola; kalau bukan, hentikan permintaannya dengan 403
-    if not is_pengelola(request.user):
-        raise PermissionDenied
+    _enforce_permission(IsManager, request)
         
     # Ambil objek pemeriksaan berdasarkan ID-nya
     pemeriksaan = get_object_or_404(Pemeriksaan, pk=pk) 
@@ -89,20 +97,10 @@ def periksa_pengajuan(request, pk):
 def hapus_pengajuan(request, pk):
     # Ambil objek pemeriksaan berdasarkan ID-nya
     pemeriksaan = get_object_or_404(Pemeriksaan, pk=pk)
-    
-    # Cek apakah user adalah Pengelola
-    pengelola = is_pengelola(request.user)
-    
-    # Cek apakah user adalah pemilik barang DAN statusnya masih 'Menunggu'
-    owner = pemeriksaan.pengguna == request.user
-    menunggu = pemeriksaan.kategori_penanganan == 'Menunggu'
-    
-    # Jika bukan pengelola dan tidak memenuhi syarat sebagai pemilik, tolak aksesnya
-    if not (pengelola or (owner and menunggu)):
-        raise PermissionDenied
+    _enforce_permission(CanDeleteDepositRequest, request, pemeriksaan)
     
     # Proses Hapus
-    if request.method == "POST":
+    if request.method in ("POST", "DELETE"):
         pemeriksaan.delete()
         messages.success(request, "Data pengajuan berhasil dihapus!")
         return redirect("penanganan:daftar_pengajuan")
@@ -111,6 +109,7 @@ def hapus_pengajuan(request, pk):
 
 @login_required
 def edit_pengajuan(request, pk):
+    _enforce_permission(CanSubmitDepositRequest, request)
     pemeriksaan = get_object_or_404(Pemeriksaan, pk=pk)
 
     # Validasi Autentikasi & Kewenangan

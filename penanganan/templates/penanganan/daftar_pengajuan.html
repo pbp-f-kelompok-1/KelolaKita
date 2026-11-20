@@ -14,11 +14,12 @@
             </h1>
         </div>
         
-        <!-- Tombol Tambah Pengajuan -->
+        {% if can_submit %}
         <a href="{% url 'penanganan:tambah_pengajuan' %}" class="flex items-center justify-center gap-2 rounded-lg bg-[#2e7d32] px-6 py-3 text-sm font-bold text-white hover:bg-[#1f5a23] transition w-full sm:w-auto">
             <span aria-hidden="true" class="text-lg leading-none">+</span>
             Tambah Pengajuan
         </a>
+        {% endif %}
     </div>
 
     <!-- Grid Daftar Barang (1 Kolom di HP, 2 Kolom di Tablet, 3 Kolom di Laptop) -->
@@ -69,17 +70,19 @@
                 <!-- Action Buttons -->
                 {% if user.is_authenticated %}
                 <div class="mt-auto pt-4 border-t border-[#dce7de] flex items-center justify-end gap-3 md:gap-4">
+                    {% if is_pengelola %}
                     <a href="{% url 'penanganan:periksa_pengajuan' pemeriksaan.id %}" class="text-xs md:text-sm font-bold text-blue-600 hover:text-blue-800 transition">
                         Detail / Periksa
                     </a>
+                    {% endif %}
                     
-                    {% if pemeriksaan.kategori_penanganan == 'Menunggu' %}
+                    {% if can_submit and pemeriksaan.kategori_penanganan == 'Menunggu' %}
                     <a href="{% url 'penanganan:edit_pengajuan' pemeriksaan.id %}" class="text-xs md:text-sm font-bold text-yellow-600 hover:text-yellow-800 transition">
                         Edit
                     </a>
                     {% endif %}
 
-                    {% if is_pengelola or pemeriksaan.kategori_penanganan == 'Menunggu' %}
+                    {% if is_pengelola or can_submit and pemeriksaan.kategori_penanganan == 'Menunggu' %}
                     <form method="post" action="{% url 'penanganan:hapus_pengajuan' pemeriksaan.id %}" class="inline m-0 p-0">
                         {% csrf_token %}
                         <button type="submit" class="text-xs md:text-sm font-bold text-red-500 hover:text-red-700 transition" onclick="return confirm('Apakah Anda yakin ingin menghapus pengajuan ini?')">
@@ -101,9 +104,11 @@
                 <p class="text-xs sm:text-sm text-[#557a5b] mb-6 max-w-md">
                     Saat ini belum ada data pengajuan barang yang ditemukan. Silakan ajukan barang pertamamu agar kami bisa menentukan jalur penanganan terbaik.
                 </p>
+                {% if can_submit %}
                 <a href="{% url 'penanganan:tambah_pengajuan' %}" class="text-blue-600 hover:text-blue-800 underline font-semibold text-xs sm:text-sm transition">
                     Buat pengajuan baru sekarang
                 </a>
+                {% endif %}
             </div>
         {% endfor %}
         
