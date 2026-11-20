@@ -1,13 +1,19 @@
 from io import BytesIO
-from django.contrib.auth.models import User
+from django.contrib.auth.models import AnonymousUser, User
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase
+from django.test import RequestFactory, TestCase
 from django.urls import reverse
 from PIL import Image
 
 from accounts.models import Profile
 from penanganan.forms import EditPengajuanForm, PengajuanForm
 from penanganan.models import FotoBarang, Pemeriksaan
+from penanganan.permissions import (
+    CanDeleteDepositRequest,
+    CanSubmitDepositRequest,
+    CanViewInspectionResults,
+    IsManager,
+)
 
 
 class PengajuanFormTests(TestCase):
@@ -18,6 +24,128 @@ class PengajuanFormTests(TestCase):
 
                 self.assertEqual(choices, Pemeriksaan.PILIHAN_KONDISI)
                 self.assertNotIn(("", "---------"), choices)
+
+
+class PenangananPermissionTests(TestCase):
+    def setUp(self):
+        self.manager = User.objects.create_user(username="permission_manager")
+        self.manager.profile.role = Profile.Role.MANAGER
+        self.manager.profile.save()
+        self.user = User.objects.create_user(username="permission_user")
+        self.other_user = User.objects.create_user(username="permission_other")
+        self.pending_submission = Pemeriksaan.objects.create(
+            pengguna=self.user,
+            nama_barang="Barang menunggu",
+            kategori_barang="Elektronik",
+            kondisi_barang="Layak pakai",
+        )
+        self.processed_submission = Pemeriksaan.objects.create(
+            pengguna=self.user,
+            nama_barang="Barang diproses",
+            kategori_barang="Elektronik",
+            kondisi_barang="Layak pakai",
+            kategori_penanganan="Reuse",
+        )
+        self.can_delete = CanDeleteDepositRequest()
+        self.can_submit = CanSubmitDepositRequest()
+        self.can_view = CanViewInspectionResults()
+        self.is_manager = IsManager()
+
+    def request(self, method, user=None):
+        request = getattr(RequestFactory(), method.lower())("/")
+        request.user = user or AnonymousUser()
+        return request
+
+    def test_anonymous_user_is_read_only(self):
+        get_request = self.request("GET")
+        post_request = self.request("POST")
+
+        self.assertTrue(self.can_view.has_permission(get_request, None))
+        self.assertTrue(
+            self.can_view.has_object_permission(
+                get_request, None, self.pending_submission
+            )
+        )
+        self.assertFalse(self.can_submit.has_permission(post_request, None))
+        self.assertFalse(self.can_delete.has_permission(post_request, None))
+        self.assertFalse(
+            self.can_delete.has_permission(self.request("DELETE"), None)
+        )
+
+    def test_user_can_submit_and_delete_only_owned_pending_requests(self):
+        self.assertTrue(
+            self.can_submit.has_permission(self.request("POST", self.user), None)
+        )
+        self.assertTrue(
+            self.can_delete.has_permission(self.request("DELETE", self.user), None)
+        )
+        self.assertTrue(
+            self.can_view.has_object_permission(
+                self.request("GET", self.user),
+                None,
+                self.pending_submission,
+            )
+        )
+        self.assertFalse(
+            self.can_view.has_object_permission(
+                self.request("GET", self.other_user),
+                None,
+                self.pending_submission,
+            )
+        )
+        self.assertTrue(
+            self.can_delete.has_object_permission(
+                self.request("DELETE", self.user),
+                None,
+                self.pending_submission,
+            )
+        )
+        self.assertFalse(
+            self.can_delete.has_object_permission(
+                self.request("DELETE", self.user),
+                None,
+                self.processed_submission,
+            )
+        )
+        self.assertFalse(
+            self.can_delete.has_object_permission(
+                self.request("DELETE", self.other_user),
+                None,
+                self.pending_submission,
+            )
+        )
+
+    def test_manager_can_inspect_and_delete_processed_requests(self):
+        self.assertTrue(
+            self.can_delete.has_permission(self.request("DELETE", self.manager), None)
+        )
+        self.assertTrue(
+            self.is_manager.has_permission(self.request("PATCH", self.manager), None)
+        )
+        self.assertTrue(
+            self.can_view.has_object_permission(
+                self.request("GET", self.manager),
+                None,
+                self.pending_submission,
+            )
+        )
+        self.assertTrue(
+            self.is_manager.has_object_permission(
+                self.request("PATCH", self.manager),
+                None,
+                self.pending_submission,
+            )
+        )
+        self.assertTrue(
+            self.can_delete.has_object_permission(
+                self.request("DELETE", self.manager),
+                None,
+                self.processed_submission,
+            )
+        )
+        self.assertFalse(
+            self.can_submit.has_permission(self.request("POST", self.manager), None)
+        )
 
 
 class ManagerRolePermissionTests(TestCase):
