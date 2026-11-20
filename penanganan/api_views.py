@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 
 from .models import Pemeriksaan
@@ -11,7 +11,7 @@ from .serializers import PemeriksaanSerializer
 
 @api_view(["GET", "POST"])
 @authentication_classes([SessionAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticatedOrReadOnly])
 def pemeriksaan_list(request):
     if request.method == "GET":
         pemeriksaan = Pemeriksaan.objects.all()
@@ -27,7 +27,7 @@ def pemeriksaan_list(request):
 
 @api_view(["GET", "PUT", "PATCH", "DELETE"])
 @authentication_classes([SessionAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticatedOrReadOnly])
 def pemeriksaan_detail(request, pk):
     pemeriksaan = get_object_or_404(Pemeriksaan, pk=pk)
 

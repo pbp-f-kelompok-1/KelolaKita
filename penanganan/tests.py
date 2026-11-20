@@ -26,6 +26,41 @@ class PengajuanFormTests(TestCase):
                 self.assertNotIn(("", "---------"), choices)
 
 
+class AnonymousPenangananApiTests(TestCase):
+    def setUp(self):
+        user = User.objects.create_user(username="api_warga")
+        self.submission = Pemeriksaan.objects.create(
+            pengguna=user,
+            nama_barang="Barang API",
+            kategori_barang="Elektronik",
+            kondisi_barang="Layak pakai",
+        )
+        self.list_url = reverse("penanganan_api:api_v1_pengajuan_list")
+        self.detail_url = reverse(
+            "penanganan_api:api_v1_pengajuan_detail",
+            args=[self.submission.pk],
+        )
+
+    def test_anonymous_user_can_read_list_and_detail(self):
+        list_response = self.client.get(self.list_url)
+        detail_response = self.client.get(self.detail_url)
+
+        self.assertEqual(list_response.status_code, 200)
+        self.assertEqual(detail_response.status_code, 200)
+        self.assertEqual(list_response.json()[0]["id"], str(self.submission.pk))
+        self.assertEqual(detail_response.json()["id"], str(self.submission.pk))
+
+    def test_anonymous_user_cannot_write_to_list_or_detail(self):
+        self.assertEqual(self.client.post(self.list_url).status_code, 403)
+        for method in (self.client.put, self.client.patch, self.client.delete):
+            with self.subTest(method=method.__name__):
+                self.assertEqual(method(self.detail_url).status_code, 403)
+
+        self.assertTrue(
+            Pemeriksaan.objects.filter(pk=self.submission.pk).exists()
+        )
+
+
 class PenangananPermissionTests(TestCase):
     def setUp(self):
         self.manager = User.objects.create_user(username="permission_manager")
